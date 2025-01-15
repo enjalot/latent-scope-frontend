@@ -7,7 +7,7 @@ import useCurrentScope from '../hooks/useCurrentScope';
 import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
 import useScopeData from '../hooks/useScopeData';
 import { saeAvailable } from '../lib/SAE';
-import { apiUrl, apiService } from '../lib/apiService';
+import { apiService } from '../lib/apiService';
 
 import FilterActions from '../components/Explore/FilterActions';
 import SubNav from '../components/SubNav';
@@ -208,6 +208,7 @@ function Explore() {
     clearSearch,
     setSearchIndices,
   } = useNearestNeighborsSearch({
+    userId,
     datasetId,
     scope,
     deletedIndices,
@@ -317,16 +318,16 @@ function Explore() {
     if (feature >= 0 && activeFilterTab === FEATURE) {
       console.log('==== feature ==== ', feature);
       console.log('==== threshold ==== ', threshold);
-      apiService.searchSaeFeature(datasetId, sae?.id, feature, threshold, 100).then((data) => {
-        console.log('==== data ==== ', data);
-        setFeatureIndices(data.top_row_indices);
+      apiService.searchSaeFeature(userId, datasetId, scopeId, feature, threshold).then((data) => {
+        console.log('==== feature indices ==== ', data);
+        setFeatureIndices(data);
       });
     } else {
       // The feature filter is active, but the feature is no longer set
       // so we should clear the filtered indices
       setFeatureIndices([]);
     }
-  }, [datasetId, sae, feature, threshold, setFeatureIndices]);
+  }, [userId, datasetId, scopeId, feature, threshold, setFeatureIndices]);
 
   const handleScopeChange = useCallback(
     (e) => {

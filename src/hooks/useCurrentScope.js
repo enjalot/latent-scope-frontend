@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { apiUrl, apiService } from '../lib/apiService';
+import { apiService } from '../lib/apiService';
 
 const useCurrentScope = (userId, datasetId, scopeId) => {
     const [scope, setScope] = useState(null);

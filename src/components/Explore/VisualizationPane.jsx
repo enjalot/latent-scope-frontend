@@ -76,9 +76,9 @@ function VisualizationPane({
 
     const lookup = new Map();
     dataTableRows.forEach((data, index) => {
-      const activatedIdx = data.ls_features.top_indices.indexOf(feature);
+      const activatedIdx = data.sae_indices.indexOf(feature);
       if (activatedIdx !== -1) {
-        const activatedFeature = data.ls_features.top_acts[activatedIdx];
+        const activatedFeature = data.sae_acts[activatedIdx];
         // normalize the activation to be between 0 and 1
         const min = 0.0;
         const max = max_activations[feature];

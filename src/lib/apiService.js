@@ -1,4 +1,5 @@
-export const apiUrl = import.meta.env.VITE_API_URL;
+const dev = import.meta.env.VITE_DEV ? "-dev" : ""
+console.log("DEV", dev)
 
 export const apiService = {
   getScope: async (userId, datasetId, scopeId) => {
@@ -16,41 +17,33 @@ export const apiService = {
       response.json()
     );
   },
-
-  searchNearestNeighbors: async (datasetId, embedding, query) => {
-    const embeddingDimensions = embedding?.dimensions;
-    const searchParams = new URLSearchParams({
-      dataset: datasetId,
-      query,
-      embedding_id: embedding.id,
-      ...(embeddingDimensions !== undefined ? { dimensions: embeddingDimensions } : {}),
-    });
-
-    const nearestNeigborsUrl = `${apiUrl}/search/nn?${searchParams.toString()}`;
-    return fetch(nearestNeigborsUrl)
+  columnFilter: async (userId, datasetId, scopeId, query) => {
+    return fetch(`https://enjalot--latent-scope-api-app-column-filter-dev.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&query=${JSON.stringify(query)}`).then((response) =>
+      response.json()
+    );
+  },
+  searchNearestNeighbors: async (userId, datasetId, scope, query) => {
+    const scopeId = scope.id
+    // TODO: this should be a util function? converting the model to the HF name
+    const modelId = scope.embedding?.model_id.replace("___", "/").split("-").slice(1).join("-")
+    console.log("MODEL ID", modelId)
+    return fetch(`https://enjalot--latent-scope-api-app-nn-dev.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&model=${modelId}&query=${query}`)
       .then((response) => response.json())
       .then((data) => {
         let dists = [];
-        let inds = data.indices.map((idx, i) => {
-          dists[idx] = data.distances[i];
-          return idx;
-        });
+        let inds = data
+          .map((d, i) => {
+            dists[i] = d._distance
+            return d.index
+          })
         return {
           distances: dists,
           indices: inds,
-          searchEmbedding: data.search_embedding[0],
         };
       });
   },
-  searchSaeFeature: async (datasetId, saeId, featureId, threshold, topN) => {
-    const searchParams = new URLSearchParams({
-      dataset: datasetId,
-      sae_id: saeId,
-      feature_id: featureId,
-      threshold,
-      top_n: topN,
-    });
-    return fetch(`${apiUrl}/search/feature?${searchParams.toString()}`).then((response) =>
+  searchSaeFeature: async (userId, datasetId, scopeId, featureId, threshold) => {
+    return fetch(`https://enjalot--latent-scope-api-app-feature-dev.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&feature=${featureId}&threshold=${threshold}`).then((response) =>
       response.json()
     );
   },

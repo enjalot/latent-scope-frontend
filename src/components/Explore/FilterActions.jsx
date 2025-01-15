@@ -7,7 +7,6 @@ import NearestNeighbor from './NearestNeighbor';
 import FeatureFilter from './FeatureFilter';
 import { SEARCH, CLUSTER, SELECT, COLUMN, FEATURE } from '../../pages/FullScreenExplore';
 import useColumnFilter from '../../hooks/useColumnFilter';
-import { apiUrl } from '../../lib/apiService';
 
 export default function FilterActions({
   clusterLabels,
@@ -41,7 +40,6 @@ export default function FilterActions({
   searchText,
 }) {
   const { columnFiltersActive, setColumnFiltersActive, columnFilters } = useColumnFilter(
-    apiUrl,
     dataset,
     datasetId,
     setColumnFilterIndices

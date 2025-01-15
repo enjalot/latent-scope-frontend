@@ -1,7 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { apiService } from '../lib/apiService';
 
-const useColumnFilter = (apiUrl, dataset, datasetId, setColumnIndices) => {
+const useColumnFilter = (userId, datasetId, scope, setColumnIndices) => {
   const [columnFiltersActive, setColumnFiltersActive] = useState({});
+
+  const dataset = useMemo(() => {
+    return scope?.dataset
+  }, [scope]);
 
   const columnFilters = useMemo(() => {
     if (!dataset?.column_metadata) return [];
@@ -28,20 +33,11 @@ const useColumnFilter = (apiUrl, dataset, datasetId, setColumnIndices) => {
         }
       });
       console.log('query', query);
-      fetch(`${apiUrl}/column-filter`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ dataset: datasetId, filters: query }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          let indices = data.indices;
-          setColumnIndices(indices);
-        });
+      apiService.columnFilter(userId, datasetId, scopeId, query).then((indices) => {
+        setColumnIndices(indices);
+      });
     },
-    [apiUrl, datasetId]
+    [userId, datasetId, scope]
   );
 
   useEffect(() => {
@@ -49,7 +45,7 @@ const useColumnFilter = (apiUrl, dataset, datasetId, setColumnIndices) => {
     // console.log("active filters", active, columnFiltersActive)
     if (active > 0) {
       columnQuery(columnFiltersActive);
-    } else {
+    } else if(setColumnIndices){
       setColumnIndices([]);
     }
   }, [columnFiltersActive, columnQuery, setColumnIndices]);

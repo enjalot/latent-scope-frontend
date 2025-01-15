@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { apiUrl, apiService } from '../lib/apiService';
+import { apiService } from '../lib/apiService';
 
 const useScopeData = (userId, datasetId, scope) => {
   const [clusterMap, setClusterMap] = useState({});
@@ -54,7 +54,7 @@ const useScopeData = (userId, datasetId, scope) => {
         setDeletedIndices(scopeRows.filter((d) => d.deleted).map((d) => d.ls_index));
       })
       .catch((error) => console.error('Fetching data failed', error));
-  }, [apiUrl, datasetId, scope]);
+  }, [userId, datasetId, scope]);
 
   return {
     clusterMap,

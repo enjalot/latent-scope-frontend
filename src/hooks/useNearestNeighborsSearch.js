@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import { apiUrl, apiService } from '../lib/apiService';
+import { apiService } from '../lib/apiService';
 
 export default function useNearestNeighborsSearch({
+  userId,
   datasetId,
   scope,
-  onSearchEmbedding,
+  // onSearchEmbedding,
   deletedIndices,
   searchText,
   setSearchText,
@@ -15,42 +16,20 @@ export default function useNearestNeighborsSearch({
 
   const search = useCallback(
     async (query) => {
-      const emb = scope?.embedding
-      const embeddingDimensions = emb?.dimensions;
-
-      const searchParams = new URLSearchParams({
-        dataset: datasetId,
-        query,
-        embedding_id: scope.embedding_id,
-        ...(embeddingDimensions !== undefined ? { dimensions: embeddingDimensions } : {}),
-      });
-
       setIsLoading(true);
-      try {
-        const response = await fetch(`${apiUrl}/search/nn?${searchParams.toString()}`);
-        const data = await response.json();
-
-        let dists = [];
-        let inds = data.indices
-          .map((idx, i) => {
-            dists[idx] = data.distances[i];
-            return idx;
-          })
-          .filter((idx) => !deletedIndices.includes(idx));
-        // TODO: handle deleted indices
-
-        setDistances(dists);
+      apiService.searchNearestNeighbors(userId, datasetId, scope, query).then((data) => {
+        const inds = data.indices.filter((d) => {
+          return !deletedIndices.includes(d)
+        })
+        setDistances(data.distances);
         const limit = 20;
         // TODO: make the # of results configurable
         setSearchIndices(inds.slice(0, limit));
-        onSearchEmbedding?.(data.search_embedding[0]);
-      } catch (error) {
-        console.error('Search failed:', error);
-      } finally {
-        setIsLoading(false);
-      }
+        setIsLoading(false)
+        // onSearchEmbedding?.(data.search_embedding[0]);
+      })
     },
-    [apiUrl, datasetId, scope, onSearchEmbedding]
+    [datasetId, scope]
   );
 
   const clearSearch = useCallback(() => {
