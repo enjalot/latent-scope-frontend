@@ -367,7 +367,7 @@ function FilterDataTable({
         apiService.getRowsByIndices(userId, dataset.id, scope.id, paged)
           .then((rows) => {
             // console.log('query fetched data', rows);
-            setRows(rows.map((row, idx) => ({ ...row, ls_index: row.index })));
+            setRows(rows.map((row, idx) => ({ ...row, idx, ls_index: row.index })));
             onDataTableRows(rows);
             // setRowsLoading(false);
           });
@@ -497,8 +497,9 @@ function FilterDataTable({
           return <span>{JSON.stringify(row[col])}</span>;
         }
         if (col === 'ls_similarity') {
-          console.log('==== ls_similarity ==== ', row.ls_index, distances[row.ls_index], distances);
-          return <span>{parseFloat(1 - distances[row.ls_index]).toFixed(4)}</span>;
+          // console.log('==== ls_similarity ==== ', row.ls_index, distances[row.ls_index], distances);
+          // use the row index to get the distance
+          return <span>{parseFloat(1 - distances[row.idx]).toFixed(4)}</span>;
         }
 
         return <span title={row[col]}>{row[col]}</span>;

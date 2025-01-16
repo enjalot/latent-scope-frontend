@@ -123,28 +123,29 @@ function VisualizationPane({
       });
   }, [scopeRows]);
 
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  useEffect(() => {
-    if (hovered) {
-      // console.log("hovered", hovered, scopeRows[hovered.index])
-      const point = scopeRows[hovered.index];
-      if (point && xDomain && yDomain) {
-        let px = point.x;
-        if (px < xDomain[0]) px = xDomain[0];
-        if (px > xDomain[1]) px = xDomain[1];
-        let py = point.y;
-        if (py < yDomain[0]) py = yDomain[0];
-        if (py > yDomain[1]) py = yDomain[1];
-        const xPos = ((px - xDomain[0]) / (xDomain[1] - xDomain[0])) * width + 19;
-        const yPos = ((py - yDomain[1]) / (yDomain[0] - yDomain[1])) * size[1] + umapOffset - 28;
-        // console.log("xPos", xPos, "yPos", yPos)
-        setTooltipPosition({
-          x: xPos,
-          y: yPos,
-        });
-      }
-    }
-  }, [hovered, scopeRows, xDomain, yDomain, width, height, umapOffset]);
+  // const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  // useEffect(() => {
+  //   console.log('==== hovered ==== ', hovered);
+  //   if (hovered) {
+  //     // console.log("hovered", hovered, scopeRows[hovered.index])
+  //     const point = scopeRows[hovered.index];
+  //     if (point && xDomain && yDomain) {
+  //       let px = point.x;
+  //       if (px < xDomain[0]) px = xDomain[0];
+  //       if (px > xDomain[1]) px = xDomain[1];
+  //       let py = point.y;
+  //       if (py < yDomain[0]) py = yDomain[0];
+  //       if (py > yDomain[1]) py = yDomain[1];
+  //       const xPos = ((px - xDomain[0]) / (xDomain[1] - xDomain[0])) * width + 19;
+  //       const yPos = ((py - yDomain[1]) / (yDomain[0] - yDomain[1])) * size[1] + umapOffset - 28;
+  //       // console.log("xPos", xPos, "yPos", yPos)
+  //       setTooltipPosition({
+  //         x: xPos,
+  //         y: yPos,
+  //       });
+  //     }
+  //   }
+  // }, [hovered, scopeRows, xDomain, yDomain, width, height, umapOffset]);
 
   const hulls = useMemo(() => {
     return processHulls(clusterLabels, scopeRows, (d) => (d.deleted ? null : [d.x, d.y]));

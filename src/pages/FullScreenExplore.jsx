@@ -77,7 +77,6 @@ function Explore() {
   const hydrateIndices = useCallback(
     (indices, setter) => {
       apiService.getRowsByIndices(userId, datasetId, scopeId, indices).then((data) => {
-        if (!dataset) return;
         setter(data);
       });
     },
@@ -128,7 +127,7 @@ function Explore() {
     ) {
       hydrateIndices([hoveredIndex], (results) => {
         setHovered(results[0]);
-      });
+      })
     } else {
       setHovered(null);
     }
@@ -563,7 +562,7 @@ function Explore() {
                 filteredIndices={filteredIndices}
                 defaultIndices={defaultIndices}
                 deletedIndices={deletedIndices}
-                distances={distances}
+                distances={activeFilterTab === SEARCH ? distances : []}
                 clusterMap={clusterMap}
                 clusterLabels={clusterLabels}
                 onDataTableRows={setDataTableRows}
