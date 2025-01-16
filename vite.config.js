@@ -7,6 +7,7 @@ const mode = process.env.MODE || 'development';
 
 export default defineConfig(({ mode }) => ({
   // base: mode === 'production' ? '/latent-scope-frontend/' : '/',
+  base: './',
   plugins: [react(), wasm(), topLevelAwait()],
   build: {
     outDir: `dist/${mode}`,

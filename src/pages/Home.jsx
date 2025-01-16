@@ -9,9 +9,9 @@ import './Home.css';
 function Home() {
   const [datasets, setDatasets] = useState([]);
 
-  useEffect(() => {
-    apiService.fetchDatasets().then(setDatasets);
-  }, []);
+  // useEffect(() => {
+  //   apiService.fetchDatasets().then(setDatasets);
+  // }, []);
 
   const [scopes, setScopes] = useState({});
   return (

@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://latent.estate",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5174",
     "production": "vite build --mode production",
