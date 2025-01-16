@@ -1,4 +1,5 @@
-const dev = import.meta.env.MODE == "development" ? "-dev" : ""
+// const dev = import.meta.env.MODE == "development" ? "-dev" : ""
+const dev = ""
 
 export const apiService = {
   getScope: async (userId, datasetId, scopeId) => {
