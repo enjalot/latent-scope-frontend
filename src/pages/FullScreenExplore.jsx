@@ -74,9 +74,9 @@ function Explore() {
 
   // fectches a set of indexes from the server, and updates some state with the results
   // used to render points in the table after a user clicks on a point in the scatterplot
-  const hydrateIndices = useCallback(
-    (indices, setter) => {
-      apiService.getRowsByIndices(userId, datasetId, scopeId, indices).then((data) => {
+  const hydrateHoverText = useCallback(
+    (index, setter) => {
+      apiService.getHoverText(userId, datasetId, scopeId, index).then((data) => {
         setter(data);
       });
     },
@@ -125,13 +125,17 @@ function Explore() {
       hoveredIndex !== undefined &&
       !deletedIndices.includes(hoveredIndex)
     ) {
-      hydrateIndices([hoveredIndex], (results) => {
-        setHovered(results[0]);
+      hydrateHoverText(hoveredIndex, (text) => {
+        setHovered({
+          text: text,
+          index: hoveredIndex,
+          cluster: clusterMap[hoveredIndex],
+        });
       })
     } else {
       setHovered(null);
     }
-  }, [hoveredIndex, setHovered, hydrateIndices]);
+  }, [hoveredIndex, setHovered, hydrateHoverText]);
 
   const [hoveredCluster, setHoveredCluster] = useState(null);
   useEffect(() => {

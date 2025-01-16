@@ -395,7 +395,7 @@ function VisualizationPane({
             )}
             <br></br>
             <span>Index: {hovered.index}</span>
-            <p className="tooltip-text">{hovered[scope?.embedding?.text_column]}</p>
+            <p className="tooltip-text">{hovered.text}</p>
           </div>
         </Tooltip>
       )}

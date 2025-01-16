@@ -2,7 +2,8 @@ const dev = import.meta.env.MODE == "development" ? "-dev" : ""
 
 export const apiService = {
   getScope: async (userId, datasetId, scopeId) => {
-    return fetch(`https://enjalot--latent-scope-api-app-scope-meta${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}`).then((response) =>
+    // return fetch(`https://enjalot--latent-scope-api-app-scope-meta${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}`).then((response) =>
+    return fetch(`https://storage.googleapis.com/fun-data/latent-scope/demos/${userId}/${datasetId}/${scopeId}.json`).then((response) =>
       response.json()
     );
   },
@@ -10,6 +11,19 @@ export const apiService = {
     return fetch(`https://enjalot--latent-scope-api-app-rows-by-index${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&indices=${indices.toString()}`).then((response) =>
       response.json()
     );
+  },
+  getHoverText: async (userId, datasetId, scopeId, index) => {
+    const ranges = `bytes=${index*1000}-${(index+1)*1000-1}`;
+    return fetch(`https://storage.googleapis.com/fun-data/latent-scope/demos/${userId}/${datasetId}/${scopeId}.bin`, {
+      headers: {
+        'Range': ranges
+      }
+    }).then(async response => {
+      const buffer = await response.arrayBuffer();
+      const decoder = new TextDecoder();
+      const text = decoder.decode(buffer);
+      return text;
+    });
   },
   getScopeRows: async (userId, datasetId, scopeId) => {
     return fetch(`https://enjalot--latent-scope-api-app-scope-data${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}`).then((response) =>
