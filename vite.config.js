@@ -6,8 +6,8 @@ import topLevelAwait from 'vite-plugin-top-level-await';
 const mode = process.env.MODE || 'development';
 
 export default defineConfig(({ mode }) => ({
-  // base: mode === 'production' ? '/latent-scope-frontend/' : '/',
-  base: '/',
+  base: mode === 'production' ? `https://latent.estate/` : '/',
+  // base: '/',
   plugins: [react(), wasm(), topLevelAwait()],
   build: {
     outDir: `dist/${mode}`,
