@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { scaleLinear } from 'd3-scale';
+import scaleCanvas from '../lib/canvas';
+
 
 import "./AnnotationPlot.css"
 
@@ -14,7 +16,18 @@ const AnnotationPlot = ({
   width, 
   height
 }) => {
-  const container = useRef();
+  const canvasRef = useRef();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    canvas.width = width * window.devicePixelRatio;
+    canvas.height = height * window.devicePixelRatio;
+    context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    scaleCanvas(canvas, context, width, height);
+   
+  }, [width, height]);
+
   
   useEffect(() => {
     if(xDomain && yDomain) {
@@ -26,7 +39,7 @@ const AnnotationPlot = ({
         .range([height, 0])
 
       const zScale = (t) => t/(.1 + xDomain[1] - xDomain[0])
-      const canvas = container.current
+      const canvas = canvasRef.current
       const ctx = canvas.getContext('2d')
       ctx.clearRect(0, 0, width, height)
       ctx.fillStyle = fill 
@@ -58,7 +71,7 @@ const AnnotationPlot = ({
 
   return <canvas 
     className="annotation-plot"
-    ref={container} 
+    ref={canvasRef} 
     width={width} 
     height={height} />;
 };

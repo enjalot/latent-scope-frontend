@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { groups } from 'd3-array';
 import PropTypes from 'prop-types';
 import Scatter from '../Scatter';
+import ScatterCanvas from '../ScatterCanvas';
 import AnnotationPlot from '../AnnotationPlot';
 import HullPlot from '../HullPlot';
 import TilePlot from '../TilePlot';
@@ -29,6 +30,7 @@ function VisualizationPane({
   scopeRows,
   clusterLabels,
   hoverAnnotations,
+  selectedAnnotations,
   intersectedIndices,
   hoveredCluster,
   slide,
@@ -250,8 +252,8 @@ function VisualizationPane({
       </div>
 
       <div className={styles.scatters + ' ' + (isFullScreen ? styles.fullScreen : '')}>
-        {!isIOS() && scope ? (
-          <Scatter
+        {scope && 
+          <ScatterCanvas
             scope={scope}
             points={drawingPoints}
             duration={1000}
@@ -270,17 +272,7 @@ function VisualizationPane({
             onHover={onHover}
             activeFilterTab={activeFilterTab}
           />
-        ) : (
-          <AnnotationPlot
-            points={points}
-            fill="gray"
-            height={height}
-            width={width}
-            size="8"
-            xDomain={xDomain}
-            yDomain={yDomain}
-          />
-        )}
+        }
         {/* show all the hulls */}
         {vizConfig.showClusterOutlines && hulls.length && (
           <HullPlot
@@ -339,8 +331,18 @@ function VisualizationPane({
           size="16"
           xDomain={xDomain}
           yDomain={yDomain}
-          width={'100%'}
-          height={'100%'}
+          width={width}
+          height={height}
+        />
+        <AnnotationPlot
+          points={selectedAnnotations}
+          stroke="black"
+          fill="purple"
+          size="16"
+          xDomain={xDomain}
+          yDomain={yDomain}
+          width={width}
+          height={height}
         />
         {vizConfig.showHeatMap && tiles?.length > 1 && (
           <TilePlot
@@ -461,6 +463,7 @@ VisualizationPane.propTypes = {
   hoveredCluster: PropTypes.object,
   slide: PropTypes.object,
   scope: PropTypes.object,
+  selectedAnnotations: PropTypes.array.isRequired,
   onScatter: PropTypes.func.isRequired,
   onSelect: PropTypes.func.isRequired,
   onHover: PropTypes.func.isRequired,

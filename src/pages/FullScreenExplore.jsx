@@ -150,7 +150,7 @@ function Explore() {
   useEffect(() => {
     if (hoveredIndex !== null && hoveredIndex !== undefined) {
       let sr = scopeRows[hoveredIndex];
-      setHoverAnnotations([sr.x, sr.y]);
+      setHoverAnnotations([[sr.x, sr.y]]);
     } else {
       setHoverAnnotations([]);
     }
@@ -169,6 +169,16 @@ function Explore() {
   const [activeFilterTab, setActiveFilterTab] = useState(CLUSTER);
 
   const [selectedIndices, setSelectedIndices] = useState([]);
+  const [selectedAnnotations, setSelectedAnnotations] = useState([]);
+  useEffect(() => {
+    if (selectedIndices.length > 0) {
+      let annots = scopeRows.filter((d) => selectedIndices.includes(d.ls_index));
+      console.log('==== annots ==== ', annots);
+      setSelectedAnnotations(annots.map((d) => [d.x, d.y]));
+    } else {
+      setSelectedAnnotations([]);
+    }
+  }, [selectedIndices, scopeRows]);
 
   const [columnFilterIndices, setColumnFilterIndices] = useState([]);
 
@@ -596,6 +606,7 @@ function Explore() {
                 hoveredIndex={hoveredIndex}
                 hoverAnnotations={hoverAnnotations}
                 intersectedIndices={filteredIndices}
+                selectedAnnotations={selectedAnnotations}
                 hoveredCluster={hoveredCluster}
                 slide={cluster}
                 scope={scope}
