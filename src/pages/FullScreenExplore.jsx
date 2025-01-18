@@ -23,8 +23,16 @@ export const FEATURE = "feature";
 export const PER_PAGE = 100;
 
 function parseParams(searchParams) {
-    const cluster = searchParams.get("cluster") ? parseInt(searchParams.get("cluster")) : null;
-    const search = searchParams.get("search") ? searchParams.get("search") : null;
+    let cluster = null;
+    let search = null;
+
+    // Only take the first filter parameter (either cluster or search)
+    // as we can only have one active filter at a time
+    if (searchParams.has("cluster")) {
+        cluster = parseInt(searchParams.get("cluster"));
+    } else if (searchParams.has("search")) {
+        search = searchParams.get("search");
+    }
     return { cluster, search };
 }
 
@@ -34,9 +42,7 @@ function Explore() {
     const [urlParams, setUrlParams] = useSearchParams();
 
     const [cluster, setCluster] = useState(null);
-    const {
-        cluster: clusterParam,
-    } = parseParams(urlParams);
+    const { cluster: clusterParam, search: searchParam } = parseParams(urlParams);
 
     // fetch dataset and current scope metadata
     const { dataset, scope, sae } = useCurrentScope(userId, datasetId, scopeId);
@@ -217,7 +223,26 @@ function Explore() {
     // NN Search
     // ====================================================================================================
     // the text that the user has entered into the nearest neighbor search input
-    const [searchText, setSearchText] = useState("");
+    const [searchText, setSearchText] = useState(searchParam || "");
+
+    useEffect(() => {
+        if (searchParam) {
+            setSearchText(searchParam);
+            setActiveFilterTab(SEARCH);
+        }
+    }, [searchParam]);
+
+    // Update URL when search text changes
+    useEffect(() => {
+        setUrlParams((prev) => {
+            if (searchText) {
+                prev.set("search", searchText);
+            } else {
+                prev.delete("search");
+            }
+            return prev;
+        });
+    }, [searchText, setUrlParams]);
 
     // the indices returned from similarity search
     const {
@@ -244,8 +269,20 @@ function Explore() {
 
     const resetState = () => {
         setFilteredIndices(defaultIndices);
-        setActiveFilterTab(CLUSTER);
-        // setCluster(null);
+
+        // set search tab if searchText is set
+        if (searchText) {
+            setActiveFilterTab(SEARCH);
+        } else {
+            setActiveFilterTab(CLUSTER);
+        }
+
+        // set the cluster if it was passed in the URL
+        if (cluster) {
+            setCluster(cluster);
+        } else {
+            setCluster(null);
+        }
         setClusterAnnotations([]);
         setClusterIndices([]);
         setFeature(-1);
