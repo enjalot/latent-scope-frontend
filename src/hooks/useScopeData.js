@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { apiService } from '../lib/apiService';
 
-const useScopeData = (userId, datasetId, scope) => {
+const useScopeData = (userId, datasetId, scope, setScopeLoaded, setCluster, clusterParam) => {
     const [clusterMap, setClusterMap] = useState({});
     const [clusterIndices, setClusterIndices] = useState([]);
     const [clusterLabels, setClusterLabels] = useState([]);
@@ -49,12 +49,20 @@ const useScopeData = (userId, datasetId, scope) => {
                     scope.cluster_labels_lookup.filter((l) => nonDeletedClusters.has(l.cluster)) ||
                     [];
 
+                if (clusterParam) {
+                    const cluster = scope.cluster_labels_lookup[clusterParam];
+                    if (cluster) {
+                        setCluster(cluster);
+                    }
+                }
+
                 setClusterLabels(labelsData);
                 setClusterIndices(scopeRows.map((d) => d.cluster));
 
                 setClusterMap(clusterMap);
 
                 setDeletedIndices(scopeRows.filter((d) => d.deleted).map((d) => d.ls_index));
+                setScopeLoaded(true);
             })
             .catch((error) => console.error("Fetching data failed", error));
     }, [userId, datasetId, scope]);

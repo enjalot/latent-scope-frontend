@@ -1,31 +1,55 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-const { asyncBufferFromUrl, parquetRead } = await import('hyparquet');
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+const { asyncBufferFromUrl, parquetRead } = await import("hyparquet");
 
-import './Explore.css';
-import useCurrentScope from '../hooks/useCurrentScope';
-import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
-import useScopeData from '../hooks/useScopeData';
-import { saeAvailable } from '../lib/SAE';
-import { apiService } from '../lib/apiService';
+import "./Explore.css";
+import useCurrentScope from "../hooks/useCurrentScope";
+import useNearestNeighborsSearch from "../hooks/useNearestNeighborsSearch";
+import useScopeData from "../hooks/useScopeData";
+import { saeAvailable } from "../lib/SAE";
+import { apiService } from "../lib/apiService";
 
-import FilterActions from '../components/Explore/FilterActions';
-import SubNav from '../components/SubNav';
-import LeftPane from '../components/Explore/LeftPane';
-import VisualizationPane from '../components/Explore/VisualizationPane';
-import FilterDataTable from '../components/FilterDataTable';
+import FilterActions from "../components/Explore/FilterActions";
+import SubNav from "../components/SubNav";
+import LeftPane from "../components/Explore/LeftPane";
+import VisualizationPane from "../components/Explore/VisualizationPane";
+import FilterDataTable from "../components/FilterDataTable";
 
-export const SEARCH = 'search';
-export const CLUSTER = 'filter';
-export const SELECT = 'select';
-export const COLUMN = 'column';
-export const FEATURE = 'feature';
+export const SEARCH = "search";
+export const CLUSTER = "filter";
+export const SELECT = "select";
+export const COLUMN = "column";
+export const FEATURE = "feature";
 export const PER_PAGE = 100;
 
+function parseParams(searchParams) {
+    let cluster = null;
+    let search = null;
+
+    if (searchParams.has("cluster")) {
+        cluster = parseInt(searchParams.get("cluster"));
+    }
+
+    if (searchParams.has("search")) {
+        search = searchParams.get("search");
+    }
+    return { cluster, search };
+}
 
 function Explore() {
     const { user: userId, dataset: datasetId, scope: scopeId } = useParams();
     const navigate = useNavigate();
+
+    const [urlParams, setUrlParams] = useSearchParams();
+
+    // ====================================================================================================
+    // Clusters
+    // ====================================================================================================
+    // indices of items in a chosen slide
+    const [cluster, setCluster] = useState(null);
+    const { cluster: clusterParam, search: searchParam } = parseParams(urlParams);
+
+    const [scopeLoaded, setScopeLoaded] = useState(false);
 
     // fetch dataset and current scope metadata
     const { dataset, scope, sae } = useCurrentScope(userId, datasetId, scopeId);
@@ -34,7 +58,10 @@ function Explore() {
     const { fetchScopeRows, clusterMap, clusterLabels, scopeRows, deletedIndices } = useScopeData(
         userId,
         datasetId,
-        scope
+        scope,
+        setScopeLoaded,
+        setCluster,
+        clusterParam
     );
 
     // TODO: the user should be able to highlight a feature
@@ -216,6 +243,32 @@ function Explore() {
     // the text that the user has entered into the nearest neighbor search input
     const [searchText, setSearchText] = useState("");
 
+    useEffect(() => {
+        // set searchText if it was passed in the URL
+        if (searchParam) {
+            setSearchText(searchParam);
+            // if the cluster filter is not active, set the active filter tab to SEARCH
+            if (clusterParam === null) {
+                setActiveFilterTab(SEARCH);
+            }
+        }
+    }, [searchParam]);
+
+    // Update URL when search text changes
+    useEffect(() => {
+        setUrlParams((prev) => {
+            if (searchText) {
+                prev.set("search", searchText);
+            } else {
+                if (scopeLoaded && searchParam) {
+                    prev.delete("search");
+                }
+            }
+
+            return prev;
+        });
+    }, [searchText, setUrlParams]);
+
     // the indices returned from similarity search
     const {
         searchIndices,
@@ -232,38 +285,43 @@ function Explore() {
         setSearchText,
     });
 
-    // ====================================================================================================
-    // Clusters
-    // ====================================================================================================
-    // indices of items in a chosen slide
-    const [cluster, setCluster] = useState(null);
-    const [clusterAnnotations, setClusterAnnotations] = useState([]);
+    // const resetState = () => {
+    //     setFilteredIndices(defaultIndices);
 
-    const resetState = () => {
-        setFilteredIndices(defaultIndices);
-        setActiveFilterTab(CLUSTER);
-        setCluster(null);
-        setClusterAnnotations([]);
-        setClusterIndices([]);
-        setFeature(-1);
-        setFeatureIndices([]);
-        setSearchText("");
-        setFeatures([]);
-        setDataTableRows([]);
-        setHovered(null);
-        setHoveredIndex(null);
-        setHoveredCluster(null);
-        setHoverAnnotations([]);
-        setSelectedIndices([]);
-        setColumnFilterIndices([]);
-        setSearchIndices([]);
-        // setSae(null);
-    };
+    //     // load search tab if searchParam is set
+    //     if (searchParam) {
+    //         setActiveFilterTab(SEARCH);
+    //     } else {
+    //         setActiveFilterTab(CLUSTER);
+    //     }
+
+    //     if (clusterParam && scopeLoaded) {
+    //         setCluster(clusterLabels.find((d) => d.cluster == clusterParam));
+    //     } else {
+    //         setCluster(null);
+    //     }
+
+    //     setClusterIndices([]);
+    //     setFeature(-1);
+    //     setFeatureIndices([]);
+    //     setFeatures([]);
+    //     setDataTableRows([]);
+    //     setHovered(null);
+    //     setHoveredIndex(null);
+    //     setHoveredCluster(null);
+    //     setHoverAnnotations([]);
+    //     setSelectedIndices([]);
+    //     setColumnFilterIndices([]);
+    //     setSearchIndices([]);
+    //     // setSae(null);
+    // };
 
     useEffect(() => {
+        // fetch scope rows and reset state when scope changes
         if (scope) {
             fetchScopeRows();
-            resetState();
+            // this is not need for now because we are only showing one scope at a time
+            // resetState();
         }
     }, [fetchScopeRows, scope]);
 
@@ -320,14 +378,25 @@ function Explore() {
     useEffect(() => {
         if (cluster && activeFilterTab === CLUSTER) {
             const annots = scopeRows.filter((d) => d.cluster == cluster.cluster);
-            setClusterAnnotations(annots);
             const indices = annots.map((d) => d.ls_index);
             setClusterIndices(indices);
+
+            setUrlParams((prev) => {
+                prev.set("cluster", cluster.cluster);
+                return prev;
+            });
         } else {
-            setClusterAnnotations([]);
             setClusterIndices([]);
+
+            // do not delete the cluster param if the scope has not been loaded yet
+            if (scopeLoaded && clusterParam && cluster === null) {
+                setUrlParams((prev) => {
+                    prev.delete("cluster");
+                    return prev;
+                });
+            }
         }
-    }, [cluster, scopeRows, setClusterAnnotations, setClusterIndices]);
+    }, [cluster, scopeRows, setClusterIndices, scopeLoaded]);
 
     // ==== COLUMNS ====
 
