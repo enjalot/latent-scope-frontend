@@ -44,6 +44,8 @@ function Explore() {
     const [cluster, setCluster] = useState(null);
     const { cluster: clusterParam, search: searchParam } = parseParams(urlParams);
 
+    const [scopeLoaded, setScopeLoaded] = useState(false);
+
     // fetch dataset and current scope metadata
     const { dataset, scope, sae } = useCurrentScope(userId, datasetId, scopeId);
 
@@ -55,7 +57,8 @@ function Explore() {
         datasetId,
         scope,
         clusterParam,
-        setCluster
+        setCluster,
+        setScopeLoaded
     );
 
     // TODO: the user should be able to highlight a feature
@@ -236,17 +239,17 @@ function Explore() {
     }, [searchParam]);
 
     // Update URL when search text changes
-    // useEffect(() => {
-    //     setUrlParams((prev) => {
-    //         if (searchText) {
-    //             prev.set("search", searchText);
-    //         } else {
-    //             prev.delete("search");
-    //         }
+    useEffect(() => {
+        setUrlParams((prev) => {
+            if (searchText) {
+                prev.set("search", searchText);
+            } else {
+                prev.delete("search");
+            }
 
-    //         return prev;
-    //     });
-    // }, [searchText, setUrlParams]);
+            return prev;
+        });
+    }, [searchText, setUrlParams]);
 
     // update the search params with the current cluster
     useEffect(() => {
@@ -256,12 +259,15 @@ function Explore() {
                 return prev;
             });
         } else {
-            setUrlParams((prev) => {
-                prev.delete("cluster");
-                return prev;
-            });
+            // if the scope is loaded and there is no cluster, delete the cluster param from the URL
+            if (scopeLoaded) {
+                // setUrlParams((prev) => {
+                //     prev.delete("cluster");
+                //     return prev;
+                // });
+            }
         }
-    }, [cluster, setUrlParams]);
+    }, [cluster, setUrlParams, scopeLoaded]);
 
     // the indices returned from similarity search
     const {
@@ -382,11 +388,23 @@ function Explore() {
             setClusterAnnotations(annots);
             const indices = annots.map((d) => d.ls_index);
             setClusterIndices(indices);
+
+            setUrlParams((prev) => {
+                prev.set("cluster", cluster.cluster);
+                return prev;
+            });
         } else {
             setClusterAnnotations([]);
             setClusterIndices([]);
+
+            if (scopeLoaded) {
+                setUrlParams((prev) => {
+                    prev.delete("cluster");
+                    return prev;
+                });
+            }
         }
-    }, [cluster, scopeRows]);
+    }, [cluster, scopeRows, setUrlParams, scopeLoaded]);
 
     // ==== COLUMNS ====
 

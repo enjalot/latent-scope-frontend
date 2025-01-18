@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { apiService } from '../lib/apiService';
 
-const useScopeData = (userId, datasetId, scope, clusterParam, setCluster) => {
+const useScopeData = (userId, datasetId, scope, clusterParam, setCluster, setScopeLoaded) => {
+    console.log("=== scopeData ===", { clusterParam });
     const [clusterMap, setClusterMap] = useState({});
     const [clusterIndices, setClusterIndices] = useState([]);
     const [clusterLabels, setClusterLabels] = useState([]);
@@ -10,7 +11,6 @@ const useScopeData = (userId, datasetId, scope, clusterParam, setCluster) => {
 
     const [deletedIndices, setDeletedIndices] = useState([]);
 
-    console.log({ clusterParam });
     const fetchScopeRows = useCallback(() => {
         apiService
             .getScopeRows(userId, datasetId, scope.id)
@@ -52,6 +52,7 @@ const useScopeData = (userId, datasetId, scope, clusterParam, setCluster) => {
 
                 setClusterLabels(labelsData);
                 setClusterIndices(scopeRows.map((d) => d.cluster));
+                console.log({ clusterParam });
 
                 if (clusterParam) {
                     const cluster = scope.cluster_labels_lookup[clusterParam];
@@ -61,11 +62,11 @@ const useScopeData = (userId, datasetId, scope, clusterParam, setCluster) => {
                 }
 
                 setClusterMap(clusterMap);
-
                 setDeletedIndices(scopeRows.filter((d) => d.deleted).map((d) => d.ls_index));
+                setScopeLoaded(true);
             })
             .catch((error) => console.error("Fetching data failed", error));
-    }, [userId, datasetId, scope]);
+    }, [userId, datasetId, scope, clusterParam]);
 
     return {
         clusterMap,
@@ -74,6 +75,7 @@ const useScopeData = (userId, datasetId, scope, clusterParam, setCluster) => {
         scopeRows,
         fetchScopeRows,
         deletedIndices,
+        // scopeLoaded,
     };
 };
 
