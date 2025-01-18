@@ -47,6 +47,8 @@ function Explore() {
     // fetch dataset and current scope metadata
     const { dataset, scope, sae } = useCurrentScope(userId, datasetId, scopeId);
 
+    console.log("=== params ===", { clusterParam, searchParam });
+
     // fetch data for the current scope and populate data structures for scatterplot and clustering
     const { fetchScopeRows, clusterMap, clusterLabels, scopeRows, deletedIndices } = useScopeData(
         userId,
@@ -226,6 +228,7 @@ function Explore() {
     const [searchText, setSearchText] = useState(searchParam || "");
 
     useEffect(() => {
+        // set searchText if it was passed in the URL
         if (searchParam) {
             setSearchText(searchParam);
             setActiveFilterTab(SEARCH);
@@ -233,16 +236,32 @@ function Explore() {
     }, [searchParam]);
 
     // Update URL when search text changes
+    // useEffect(() => {
+    //     setUrlParams((prev) => {
+    //         if (searchText) {
+    //             prev.set("search", searchText);
+    //         } else {
+    //             prev.delete("search");
+    //         }
+
+    //         return prev;
+    //     });
+    // }, [searchText, setUrlParams]);
+
+    // update the search params with the current cluster
     useEffect(() => {
-        setUrlParams((prev) => {
-            if (searchText) {
-                prev.set("search", searchText);
-            } else {
-                prev.delete("search");
-            }
-            return prev;
-        });
-    }, [searchText, setUrlParams]);
+        if (cluster) {
+            setUrlParams((prev) => {
+                prev.set("cluster", cluster.cluster);
+                return prev;
+            });
+        } else {
+            setUrlParams((prev) => {
+                prev.delete("cluster");
+                return prev;
+            });
+        }
+    }, [cluster, setUrlParams]);
 
     // the indices returned from similarity search
     const {
@@ -275,6 +294,7 @@ function Explore() {
             setActiveFilterTab(SEARCH);
         } else {
             setActiveFilterTab(CLUSTER);
+            setSearchText("");
         }
 
         // set the cluster if it was passed in the URL
@@ -287,7 +307,6 @@ function Explore() {
         setClusterIndices([]);
         setFeature(-1);
         setFeatureIndices([]);
-        setSearchText("");
         setFeatures([]);
         setDataTableRows([]);
         setHovered(null);
@@ -368,21 +387,6 @@ function Explore() {
             setClusterIndices([]);
         }
     }, [cluster, scopeRows]);
-
-    // update the search params with the current cluster
-    useEffect(() => {
-        if (cluster) {
-            setUrlParams((prev) => {
-                prev.set("cluster", cluster.cluster);
-                return prev;
-            });
-        } else {
-            setUrlParams((prev) => {
-                prev.delete("cluster");
-                return prev;
-            });
-        }
-    }, [cluster, setUrlParams]);
 
     // ==== COLUMNS ====
 

@@ -10,6 +10,7 @@ const useScopeData = (userId, datasetId, scope, clusterParam, setCluster) => {
 
     const [deletedIndices, setDeletedIndices] = useState([]);
 
+    console.log({ clusterParam });
     const fetchScopeRows = useCallback(() => {
         apiService
             .getScopeRows(userId, datasetId, scope.id)
@@ -52,14 +53,14 @@ const useScopeData = (userId, datasetId, scope, clusterParam, setCluster) => {
                 setClusterLabels(labelsData);
                 setClusterIndices(scopeRows.map((d) => d.cluster));
 
-                setClusterMap(clusterMap);
-
                 if (clusterParam) {
                     const cluster = scope.cluster_labels_lookup[clusterParam];
                     if (cluster) {
                         setCluster(cluster);
                     }
                 }
+
+                setClusterMap(clusterMap);
 
                 setDeletedIndices(scopeRows.filter((d) => d.deleted).map((d) => d.ls_index));
             })
