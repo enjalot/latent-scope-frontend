@@ -592,7 +592,14 @@ function Explore() {
             <SubNav user={userId} dataset={dataset} scope={scope} />
             <div style={{ display: "flex", gap: "4px", height: "100%" }}>
                 <LeftPane dataset={dataset} scope={scope} deletedIndices={deletedIndices} />
-                {/* full-screen-explore-container is a grid with 50% for the filter table and 50% for the scatter plot */}
+                {(!scopeLoaded || searchLoading) && (
+                    <div className="loading-overlay">
+                        <div className="loading-container">
+                            <div className="loading-spinner"></div>
+                            <div>Loading</div>
+                        </div>
+                    </div>
+                )}
                 <div
                     ref={containerRef}
                     className="full-screen-explore-container"
@@ -698,6 +705,7 @@ function Explore() {
                         ) : null}
                     </div>
                 </div>
+                )}
             </div>
         </>
     );
