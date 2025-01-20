@@ -53,6 +53,12 @@ function ScatterCanvas({ points, width, height, pointScale = 1, onView, onSelect
     const yScaleRef = useRef(scaleLinear().domain([-1, 1]).range([height, 0]));
     const quadtreeRef = useRef(null);
 
+    // make xScaleRef and yScaleRef update when width and height change
+    useEffect(() => {
+        xScaleRef.current = scaleLinear().domain([-1, 1]).range([0, width]);
+        yScaleRef.current = scaleLinear().domain([-1, 1]).range([height, 0]);
+    }, [width, height]);
+
     // Setup canvas and scales
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -118,7 +124,7 @@ function ScatterCanvas({ points, width, height, pointScale = 1, onView, onSelect
     // Draw points when they change
     useEffect(() => {
         drawPoints();
-    }, [points, drawPoints]);
+    }, [points, drawPoints, width, height]);
 
     // Update useEffect to rebuild quadtree when points change
     useEffect(() => {
