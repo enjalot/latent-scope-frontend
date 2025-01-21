@@ -25,6 +25,8 @@ export const PER_PAGE = 100;
 function parseParams(searchParams) {
     let cluster = null;
     let search = null;
+    let feature = null;
+
     if (searchParams.has("cluster")) {
         cluster = parseInt(searchParams.get("cluster"));
     }
@@ -33,7 +35,11 @@ function parseParams(searchParams) {
         search = searchParams.get("search");
     }
 
-    return { cluster, search };
+    if (searchParams.has("feature")) {
+        feature = parseInt(searchParams.get("feature"));
+    }
+
+    return { cluster, search, feature };
 }
 
 function Explore() {
@@ -47,7 +53,11 @@ function Explore() {
     // ====================================================================================================
     // indices of items in a chosen slide
     const [cluster, setCluster] = useState(null);
-    const { cluster: clusterParam, search: searchParam } = parseParams(urlParams);
+    const {
+        cluster: clusterParam,
+        search: searchParam,
+        feature: featureParam,
+    } = parseParams(urlParams);
 
     const [scopeLoaded, setScopeLoaded] = useState(false);
 
@@ -265,9 +275,17 @@ function Explore() {
                 }
             }
 
+            if (feature && feature !== -1) {
+                prev.set("feature", feature);
+            } else {
+                if (scopeLoaded && featureParam) {
+                    prev.delete("feature");
+                }
+            }
+
             return prev;
         });
-    }, [searchText, setUrlParams]);
+    }, [searchText, featureParam, feature, setUrlParams]);
 
     // the indices returned from similarity search
     const {
@@ -400,6 +418,17 @@ function Explore() {
 
     // ==== COLUMNS ====
 
+    useEffect(() => {
+        if (featureParam) {
+            setFeature(parseInt(featureParam));
+
+            // set the active filter tab to FEATURE
+            if (clusterParam === null && searchParam === null) {
+                setActiveFilterTab(FEATURE);
+            }
+        }
+    }, [featureParam]);
+
     const [featureIndices, setFeatureIndices] = useState([]);
     useEffect(() => {
         if (feature >= 0 && activeFilterTab === FEATURE) {
@@ -412,7 +441,7 @@ function Explore() {
                     setFeatureIndices(data);
                 });
         } else {
-            // The feature filter is active, but the feature is no longer set
+            // The feature filter tab is active, but the feature is no longer set
             // so we should clear the filtered indices
             setFeatureIndices([]);
         }
