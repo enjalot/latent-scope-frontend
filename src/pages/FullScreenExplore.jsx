@@ -25,7 +25,6 @@ export const PER_PAGE = 100;
 function parseParams(searchParams) {
     let cluster = null;
     let search = null;
-
     if (searchParams.has("cluster")) {
         cluster = parseInt(searchParams.get("cluster"));
     }
@@ -33,6 +32,7 @@ function parseParams(searchParams) {
     if (searchParams.has("search")) {
         search = searchParams.get("search");
     }
+
     return { cluster, search };
 }
 

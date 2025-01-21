@@ -10,24 +10,18 @@ import {
     mapSelectionColorsDark,
     mapSelectionOpacity,
     mapPointSizeRange,
+    mapSelectionKey,
 } from "../lib/colors";
 
 import styles from "./Scatter.module.css";
 
 import PropTypes from "prop-types";
+import { reSplitAlphaNumeric } from "@tanstack/react-table";
 ScatterCanvas.propTypes = {
     points: PropTypes.array.isRequired, // an array of [x,y] points
     width: PropTypes.number.isRequired,
-    height: PropTypes.number.isRequired,
     pointScale: PropTypes.number,
-    colorDomain: PropTypes.array,
-    colorRange: PropTypes.array,
-    colorInterpolator: PropTypes.func,
-    opacityBy: PropTypes.string,
-    opacityRange: PropTypes.array,
-    pointSizeRange: PropTypes.array,
-    duration: PropTypes.number,
-    onScatter: PropTypes.func,
+    height: PropTypes.number.isRequired,
     onView: PropTypes.func,
     onSelect: PropTypes.func,
     onHover: PropTypes.func,
@@ -37,7 +31,11 @@ const calculatePointColor = (valueA) => {
     return mapSelectionColorsLight[valueA];
 };
 
-const calculatePointOpacity = (valueA) => {
+const calculatePointOpacity = (featureIsSelected, valueA, activation) => {
+    // when a feature is selected, we want to use the activation value to set the opacity
+    if (featureIsSelected && valueA === mapSelectionKey.selected && activation !== undefined) {
+        return activation;
+    }
     return mapSelectionOpacity[valueA];
 };
 
@@ -45,7 +43,16 @@ const calculatePointSize = (valueA) => {
     return mapPointSizeRange[valueA];
 };
 
-function ScatterCanvas({ points, width, height, pointScale = 1, onView, onSelect, onHover }) {
+function ScatterCanvas({
+    points,
+    width,
+    height,
+    pointScale = 1,
+    onView,
+    onSelect,
+    onHover,
+    featureIsSelected,
+}) {
     const canvasRef = useRef(null);
     const contextRef = useRef(null);
     const transformRef = useRef(zoomIdentity);
@@ -101,9 +108,9 @@ function ScatterCanvas({ points, width, height, pointScale = 1, onView, onSelect
         context.clearRect(0, 0, width, height);
 
         // Draw each point
-        points.forEach(([x, y, valueA]) => {
+        points.forEach(([x, y, valueA, activation]) => {
+            const opacity = calculatePointOpacity(featureIsSelected, valueA, activation);
             const color = calculatePointColor(valueA);
-            const opacity = calculatePointOpacity(valueA);
             const pointSize = calculatePointSize(valueA);
             // color is a hex string, opacity is a number between 0 and 1
             // convert hex string to rgb
