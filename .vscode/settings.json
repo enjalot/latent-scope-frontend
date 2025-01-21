@@ -1,0 +1,18 @@
+{
+  "[javascriptreact]": {
+       "editor.defaultFormatter": "esbenp.prettier-vscode"
+   },
+ "editor.formatOnSave": true,
+ "editor.defaultFormatter": "esbenp.prettier-vscode",
+ "[scss]": {
+   "editor.defaultFormatter": "sibiraj-s.vscode-scss-formatter"
+ },
+ "[css]": {
+   "editor.defaultFormatter": "sibiraj-s.vscode-scss-formatter"
+ },
+ "scss.format.enable": true,
+ "css.format.enable": true,
+ "css.format.newlineBetweenRules": true,
+ "css.format.newlineBetweenSelectors": false,
+ "css.format.spaceAroundSelectorSeparator": false
+}
