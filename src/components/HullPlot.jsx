@@ -90,6 +90,12 @@ const HullPlot = ({
     return Math.max(baseFontSize * scaleFactor, 8); // Ensure minimum font size of 8px
   };
 
+  const calculateTextWidth = (text, fontSize) => {
+    // Approximate width per character (assuming monospace font)
+    const charWidth = fontSize * 0.6; // Monospace fonts are typically ~60% as wide as they are tall
+    return text.length * charWidth + 2 * fontSize; // Add padding of 1 character width on each side
+  };
+
   useEffect(() => {
     if (!xDomain || !yDomain || !hulls.length) return;
 
@@ -193,11 +199,6 @@ const HullPlot = ({
 
     if (label) {
       // Add this helper function to calculate text width
-      const calculateTextWidth = (text, fontSize) => {
-        // Approximate width per character (assuming monospace font)
-        const charWidth = fontSize * 0.6; // Monospace fonts are typically ~60% as wide as they are tall
-        return text.length * charWidth + 2 * fontSize; // Add padding of 1 character width on each side
-      };
 
       labelBgSel
         .enter()
@@ -285,9 +286,46 @@ const HullPlot = ({
     // Handle hull labels
     let labelSel = svg.selectAll('text.hull-label').data(hulls);
 
+    // Add background rectangles for labels so that can be seen over the data points
+    let labelBgSel = svg.selectAll('rect.hull-label-bg').data(hulls);
+
     labelSel.exit().remove();
 
     if (label) {
+      labelBgSel
+        .enter()
+        .append('rect')
+        .attr('class', 'hull-label-bg')
+        .merge(labelBgSel)
+        .attr('fill', '#7baf5a')
+        .attr('rx', 3)
+        .attr('ry', 3)
+        .attr('opacity', 0.85)
+        .attr('x', (d) => {
+          const centroid = hullToSvgCoordinate(
+            calculateCentroid(d),
+            xDomain,
+            yDomain,
+            width,
+            height
+          );
+          const fontSize = calculateScaledFontSize(width, height);
+          const textWidth = calculateTextWidth(labelToShow, fontSize);
+          return centroid.x - textWidth / 2; // Center the background
+        })
+        .attr('y', (d) => {
+          const highest = hullToSvgCoordinate(findHighestPoint(d), xDomain, yDomain, width, height);
+          return highest.y - 20; // Position above the highest point
+        })
+        .attr('width', (d) => {
+          const fontSize = calculateScaledFontSize(width, height);
+          return calculateTextWidth(labelToShow, fontSize);
+        })
+        .attr('height', (d) => {
+          const fontSize = calculateScaledFontSize(width, height);
+          return fontSize * 2; // Make height 1.5 times the font size for proper padding
+        });
+
       labelSel
         .enter()
         .append('text')
