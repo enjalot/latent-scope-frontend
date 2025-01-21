@@ -76,57 +76,63 @@ function FeatureModal({
     fontWeight: featIdx === selectedFeature ? 'bold' : 'normal',
   });
 
-  const handleFilterClick = (featIdx, activation) => {
-    handleFeatureClick(featIdx, activation);
-    onClose();
+  const featureClick = (featIdx, activation) => {
+      handleFeatureClick(featIdx, activation);
+      onClose();
   };
 
   return (
-    <Modal
-      className="feature-modal"
-      isVisible={isOpen}
-      onClose={onClose}
-      title={`Features for Index ${rowIndex}`}
-    >
-      <div className="feature-modal-close">
-        <span className="feature-modal-text">Top {TO_SHOW} Activated SAE Features</span>
-        <Button onClick={onClose} icon="x" color="primary" variant="outline" size="small" />
-      </div>
-      <div className="feature-modal-content">
-        {topIndices.slice(0, TO_SHOW).map((featIdx, i) => (
-          <div className="feature-modal-item" key={i} style={itemStyle(featIdx)}>
-            <div
-              className="feature-modal-item-background"
-              style={{
-                width: getWidth(topActs[i]),
-                borderBottom: hoveredIdx === i ? '2px solid #b87333' : 'none',
-                backgroundColor: hoveredIdx === i ? '#b87333' : '#aaa',
-              }}
-            />
-            <div className="feature-label">
-              <Button
-                className="feature-modal-item-filter-button"
-                icon="filter"
-                color="primary"
-                variant="outline"
-                size="small"
-                onClick={() => handleFeatureClick(featIdx, topActs[i])}
-              />
-              <span
-                title={`${baseUrl}${featIdx}`}
-                onClick={() => window.open(`${baseUrl}${featIdx}`, '_blank', 'noopener,noreferrer')}
-                className="feature-modal-item-filter-link"
-              >
-                {featIdx}:
-              </span>
-              <span className="feature-modal-item-filter-label">
-                {features?.[featIdx]?.label} ({topActs?.[i]?.toFixed(3)})
-              </span>
-            </div>
+      <Modal
+          className="feature-modal"
+          isVisible={isOpen}
+          onClose={onClose}
+          title={`Features for Index ${rowIndex}`}
+      >
+          <div className="feature-modal-close">
+              <span className="feature-modal-text">Top {TO_SHOW} Activated SAE Features</span>
+              <Button onClick={onClose} icon="x" color="primary" variant="outline" size="small" />
           </div>
-        ))}
-      </div>
-    </Modal>
+          <div className="feature-modal-content">
+              {topIndices.slice(0, TO_SHOW).map((featIdx, i) => (
+                  <div className="feature-modal-item" key={i} style={itemStyle(featIdx)}>
+                      <div
+                          className="feature-modal-item-background"
+                          style={{
+                              width: getWidth(topActs[i]),
+                              borderBottom: hoveredIdx === i ? "2px solid #b87333" : "none",
+                              backgroundColor: hoveredIdx === i ? "#b87333" : "#aaa",
+                          }}
+                      />
+                      <div className="feature-label">
+                          <Button
+                              className="feature-modal-item-filter-button"
+                              icon="filter"
+                              color="primary"
+                              variant="outline"
+                              size="small"
+                              onClick={() => featureClick(featIdx, topActs[i])}
+                          />
+                          <span
+                              title={`${baseUrl}${featIdx}`}
+                              onClick={() =>
+                                  window.open(
+                                      `${baseUrl}${featIdx}`,
+                                      "_blank",
+                                      "noopener,noreferrer"
+                                  )
+                              }
+                              className="feature-modal-item-filter-link"
+                          >
+                              {featIdx}:
+                          </span>
+                          <span className="feature-modal-item-filter-label">
+                              {features?.[featIdx]?.label} ({topActs?.[i]?.toFixed(3)})
+                          </span>
+                      </div>
+                  </div>
+              ))}
+          </div>
+      </Modal>
   );
 }
 
@@ -365,9 +371,13 @@ function FilterDataTable({
               console.log("fetching query", paged, timestamp);
 
               apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
-                  // console.log('query fetched data', rows);
-                  setRows(rows.map((row, idx) => ({ ...row, idx, ls_index: row.index })));
-                  onDataTableRows(rows);
+                  const rowsWithIdx = rows.map((row, idx) => ({
+                      ...row,
+                      idx,
+                      ls_index: row.index,
+                  }));
+                  setRows(rowsWithIdx);
+                  onDataTableRows(rowsWithIdx);
                   setRowsLoading(false);
               });
           } else {
