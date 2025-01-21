@@ -26,8 +26,6 @@ export default function FilterActions({ scatter }) {
 
   const { scope, features, clusterLabels } = useScope();
 
-  console.log('activeFilterTab', activeFilterTab);
-
   let filterComponent = null;
   switch (activeFilterTab) {
     case filterConstants.CLUSTER:

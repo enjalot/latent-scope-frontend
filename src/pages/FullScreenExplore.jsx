@@ -38,7 +38,6 @@ function ExploreContent() {
     filteredIndices,
     defaultIndices,
     featureFilter,
-    searchFilter,
     setSelectedIndices,
     filterConstants,
     setActiveFilterTab,
@@ -262,14 +261,6 @@ function ExploreContent() {
       <SubNav user={userId} dataset={dataset} scope={scope} />
       <div style={{ display: 'flex', gap: '4px', height: '100%' }}>
         <LeftPane dataset={dataset} scope={scope} deletedIndices={deletedIndices} />
-        {(!scopeLoaded || searchFilter.searchLoading) && (
-          <div className="loading-overlay">
-            <div className="loading-container">
-              <div className="loading-spinner"></div>
-              <div>Loading</div>
-            </div>
-          </div>
-        )}
         <div
           ref={containerRef}
           className="full-screen-explore-container"
