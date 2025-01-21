@@ -26,6 +26,8 @@ export default function FilterActions({ scatter }) {
 
   const { scope, features, clusterLabels } = useScope();
 
+  console.log('activeFilterTab', activeFilterTab);
+
   let filterComponent = null;
   switch (activeFilterTab) {
     case filterConstants.CLUSTER:
@@ -50,7 +52,7 @@ export default function FilterActions({ scatter }) {
       <div className={styles.actionsContainer}>
         <Button
           onClick={toggleFilter}
-          className={`${styles.actionsButton} ${activeFilterTab === 'CLUSTER' ? styles.active : styles.notActive}`}
+          className={`${styles.actionsButton} ${activeFilterTab === filterConstants.CLUSTER ? styles.active : styles.notActive}`}
           size="small"
           icon="filter"
           text={`Filter by Cluster (${clusterFilter?.clusterIndices?.length})`}
@@ -61,7 +63,7 @@ export default function FilterActions({ scatter }) {
         {columnFilters?.length > 0 && (
           <Button
             onClick={toggleColumn}
-            className={`${styles.actionsButton} ${activeFilterTab === 'COLUMN' ? styles.active : styles.notActive}`}
+            className={`${styles.actionsButton} ${activeFilterTab === filterConstants.COLUMN ? styles.active : styles.notActive}`}
             size="small"
             icon="columns"
             text={`Filter by Column (${columnFilter?.columnFilterIndices?.length})`}
@@ -72,7 +74,7 @@ export default function FilterActions({ scatter }) {
 
         <Button
           onClick={toggleSelect}
-          className={`${styles.actionsButton} ${activeFilterTab === 'SELECT' ? styles.active : styles.notActive}`}
+          className={`${styles.actionsButton} ${activeFilterTab === filterConstants.SELECT ? styles.active : styles.notActive}`}
           size="small"
           icon="crosshair"
           text={`Select (${selectedIndices?.length})`}
@@ -82,7 +84,7 @@ export default function FilterActions({ scatter }) {
 
         <Button
           onClick={toggleSearch}
-          className={`${styles.actionsButton} ${activeFilterTab === 'SEARCH' ? styles.active : styles.notActive}`}
+          className={`${styles.actionsButton} ${activeFilterTab === filterConstants.SEARCH ? styles.active : styles.notActive}`}
           size="small"
           icon="search"
           text={`Search (${searchFilter?.searchIndices?.length})`}
@@ -93,7 +95,7 @@ export default function FilterActions({ scatter }) {
         {features?.length ? (
           <Button
             onClick={toggleFeature}
-            className={`${styles.actionsButton} ${activeFilterTab === 'FEATURE' ? styles.active : styles.notActive}`}
+            className={`${styles.actionsButton} ${activeFilterTab === filterConstants.FEATURE ? styles.active : styles.notActive}`}
             size="small"
             icon="search"
             text={`Feature (${featureFilter?.featureIndices?.length})`}

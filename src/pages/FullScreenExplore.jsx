@@ -17,8 +17,6 @@ import { useFilter } from '../contexts/FilterContext';
 
 // Create a new component that wraps the main content
 function ExploreContent() {
-  const navigate = useNavigate();
-
   // Get scope-related state from ScopeContext
   const {
     userId,
@@ -38,13 +36,9 @@ function ExploreContent() {
   const {
     activeFilterTab,
     filteredIndices,
-    setFilteredIndices,
     defaultIndices,
-    clusterFilter,
-    columnFilter,
     featureFilter,
     searchFilter,
-    selectedIndices,
     setSelectedIndices,
     filterConstants,
     setActiveFilterTab,
@@ -268,14 +262,14 @@ function ExploreContent() {
       <SubNav user={userId} dataset={dataset} scope={scope} />
       <div style={{ display: 'flex', gap: '4px', height: '100%' }}>
         <LeftPane dataset={dataset} scope={scope} deletedIndices={deletedIndices} />
-        {/* {(!scopeLoaded || searchLoading) && (
-                    <div className="loading-overlay">
-                        <div className="loading-container">
-                            <div className="loading-spinner"></div>
-                            <div>Loading</div>
-                        </div>
-                    </div>
-                )} */}
+        {(!scopeLoaded || searchFilter.searchLoading) && (
+          <div className="loading-overlay">
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <div>Loading</div>
+            </div>
+          </div>
+        )}
         <div
           ref={containerRef}
           className="full-screen-explore-container"
