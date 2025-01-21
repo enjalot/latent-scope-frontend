@@ -98,9 +98,9 @@ function VisualizationPane({
                   const activation = featureActivationMap.get(p.ls_index);
                   return activation !== undefined
                       ? [p.x, p.y, mapSelectionKey.selected, activation]
-                      : [p.x, p.y, mapSelectionKey.hidden, 0.0];
+                      : [p.x, p.y, mapSelectionKey.notSelected, 0.0];
               }
-              return [p.x, p.y, mapSelectionKey.hidden, 0.0];
+              return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
           }
 
           if (p.deleted) {

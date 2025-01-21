@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { select } from 'd3-selection';
 import { scaleLinear, scaleSequential, scaleLog } from 'd3-scale';
 import { zoom, zoomIdentity } from 'd3-zoom';
@@ -66,6 +66,7 @@ function ScatterCanvas({
         yScaleRef.current = scaleLinear().domain([-1, 1]).range([height, 0]);
     }, [width, height]);
 
+    const [transform, setTransform] = useState(zoomIdentity);
     // Setup canvas and scales
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -79,7 +80,7 @@ function ScatterCanvas({
         const zoomBehavior = zoom()
             .scaleExtent([0.1, 10])
             .on("zoom", (event) => {
-                transformRef.current = event.transform;
+                setTransform(event.transform);
                 const newXScale = event.transform.rescaleX(xScaleRef.current);
                 const newYScale = event.transform.rescaleY(yScaleRef.current);
 
@@ -87,7 +88,7 @@ function ScatterCanvas({
                     if (onView) {
                         onView(newXScale.domain(), newYScale.domain());
                     }
-                    drawPoints();
+                    // drawPoints();
                 });
             });
 
@@ -102,7 +103,7 @@ function ScatterCanvas({
         if (!points || !points.length) return;
 
         const context = contextRef.current;
-        const transform = transformRef.current;
+        // const transform = transformRef.current;
 
         // Clear canvas
         context.clearRect(0, 0, width, height);
@@ -111,7 +112,7 @@ function ScatterCanvas({
         points.forEach(([x, y, valueA, activation]) => {
             const opacity = calculatePointOpacity(featureIsSelected, valueA, activation);
             const color = calculatePointColor(valueA);
-            const pointSize = calculatePointSize(valueA);
+            const pointSize = calculatePointSize(valueA) * transform.k;
             // color is a hex string, opacity is a number between 0 and 1
             // convert hex string to rgb
             const rgbColor = rgb(color);
@@ -126,7 +127,7 @@ function ScatterCanvas({
             context.arc(screenX, screenY, pointSize, 0, 2 * Math.PI);
             context.fill();
         });
-    }, [points, width, height, pointScale]);
+    }, [transform,points, width, height, pointScale]);
 
     // Draw points when they change
     useEffect(() => {
@@ -136,11 +137,12 @@ function ScatterCanvas({
     // Update useEffect to rebuild quadtree when points change
     useEffect(() => {
         if (!points || !points.length) return;
+        console.log("update quadtree points", points.map(d => d[2]))
 
         quadtreeRef.current = quadtree()
             .x((d) => d[0])
             .y((d) => d[1])
-            .addAll(points);
+            .addAll(points.filter(d => d[2] !== mapSelectionKey.hidden && d[2] !== mapSelectionKey.notSelected));
     }, [points]);
 
     // Replace the existing handleMouseMove with this updated version
@@ -148,7 +150,7 @@ function ScatterCanvas({
         (x, y) => {
             if (!points || !quadtreeRef.current) return -1;
 
-            const transform = transformRef.current;
+            // const transform = transformRef.current;
             // Convert screen coordinates back to data space
             const dataX = xScaleRef.current.invert(transform.invertX(x));
             const dataY = yScaleRef.current.invert(transform.invertY(y));
@@ -180,13 +182,14 @@ function ScatterCanvas({
                     y2 < dataY - radius
                 );
             });
+            
 
             if (nearest && Math.sqrt(minDistance) <= radius) {
                 return points.findIndex((p) => p[0] === nearest[0] && p[1] === nearest[1]);
             }
             return -1;
         },
-        [points, width]
+        [points, width, transform]
     );
 
     const handleMouseMove = useCallback(
