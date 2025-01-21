@@ -6,8 +6,8 @@ import ColumnFilter from './ColumnFilter';
 import NearestNeighbor from './NearestNeighbor';
 import FeatureFilter from './FeatureFilter';
 import { useFilter } from '../../contexts/FilterContext';
-
-export default function FilterActions({ clusterLabels, scatter, scope, dataset }) {
+import { useScope } from '../../contexts/ScopeContext';
+export default function FilterActions({ scatter }) {
   const {
     activeFilterTab,
     toggleSearch,
@@ -15,15 +15,16 @@ export default function FilterActions({ clusterLabels, scatter, scope, dataset }
     toggleSelect,
     toggleColumn,
     toggleFeature,
-    clusterIndices,
-    columnFilterIndices,
+    clusterFilter,
+    columnFilter,
     selectedIndices,
-    searchIndices,
-    featureIndices,
-    features,
+    searchFilter,
+    featureFilter,
     columnFilters,
-    filterConstants
+    filterConstants,
   } = useFilter();
+
+  const { scope, features, clusterLabels } = useScope();
 
   let filterComponent = null;
   switch (activeFilterTab) {
@@ -52,7 +53,7 @@ export default function FilterActions({ clusterLabels, scatter, scope, dataset }
           className={`${styles.actionsButton} ${activeFilterTab === 'CLUSTER' ? styles.active : styles.notActive}`}
           size="small"
           icon="filter"
-          text={`Filter by Cluster (${clusterIndices?.length})`}
+          text={`Filter by Cluster (${clusterFilter?.clusterIndices?.length})`}
           color="secondary"
           title="Filter data points by cluster"
         />
@@ -63,7 +64,7 @@ export default function FilterActions({ clusterLabels, scatter, scope, dataset }
             className={`${styles.actionsButton} ${activeFilterTab === 'COLUMN' ? styles.active : styles.notActive}`}
             size="small"
             icon="columns"
-            text={`Filter by Column (${columnFilterIndices?.length})`}
+            text={`Filter by Column (${columnFilter?.columnFilterIndices?.length})`}
             color="secondary"
             title="Filter data points by column"
           />
@@ -84,7 +85,7 @@ export default function FilterActions({ clusterLabels, scatter, scope, dataset }
           className={`${styles.actionsButton} ${activeFilterTab === 'SEARCH' ? styles.active : styles.notActive}`}
           size="small"
           icon="search"
-          text={`Search (${searchIndices?.length})`}
+          text={`Search (${searchFilter?.searchIndices?.length})`}
           color="secondary"
           title="Search"
         />
@@ -95,7 +96,7 @@ export default function FilterActions({ clusterLabels, scatter, scope, dataset }
             className={`${styles.actionsButton} ${activeFilterTab === 'FEATURE' ? styles.active : styles.notActive}`}
             size="small"
             icon="search"
-            text={`Feature (${featureIndices?.length})`}
+            text={`Feature (${featureFilter?.featureIndices?.length})`}
             color="secondary"
             title="Feature"
           />

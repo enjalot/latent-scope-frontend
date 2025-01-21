@@ -1,175 +1,169 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import { useScope } from './ScopeContext';
 import useColumnFilter from '../hooks/useColumnFilter';
 import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
-
-export const SEARCH = "search";
-export const CLUSTER = "filter";
-export const SELECT = "select";
-export const COLUMN = "column";
-export const FEATURE = "feature";
+import useClusterFilter from '../hooks/useClusterFilter';
+import useFeatureFilter from '../hooks/useFeatureFilter';
+export const SEARCH = 'search';
+export const CLUSTER = 'filter';
+export const SELECT = 'select';
+export const COLUMN = 'column';
+export const FEATURE = 'feature';
 
 const FilterContext = createContext(null);
 
 export function FilterProvider({ children }) {
-    const { 
-      scopeRows, 
-      deletedIndices, 
-      dataset,
-      datasetId,
-      userId,
-      scope,
-    } = useScope();
-    
-    // Active filter state
-    const [activeFilterTab, setActiveFilterTab] = useState(CLUSTER);
-    const [filteredIndices, setFilteredIndices] = useState([]);
-    const [defaultIndices, setDefaultIndices] = useState([]);
+  const [urlParams, setUrlParams] = useSearchParams();
 
-    // Filter-specific states
-    const [clusterIndices, setClusterIndices] = useState([]);
-    const [selectedIndices, setSelectedIndices] = useState([]);
-    const [columnFilterIndices, setColumnFilterIndices] = useState([]);
-    const [featureIndices, setFeatureIndices] = useState([]);
+  const { scopeRows, deletedIndices, dataset, datasetId, userId, scope, scopeLoaded } = useScope();
 
-    // Search state
-    const [searchText, setSearchText] = useState('');
+  // Active filter state
+  const [activeFilterTab, setActiveFilterTab] = useState(CLUSTER);
+  const [filteredIndices, setFilteredIndices] = useState([]);
+  const [defaultIndices, setDefaultIndices] = useState([]);
+  const [selectedIndices, setSelectedIndices] = useState([]);
 
-    // Cluster state
-    const [cluster, setCluster] = useState(null);
+  const clusterFilter = useClusterFilter({
+    scopeRows,
+    scope,
+    scopeLoaded,
+    urlParams,
+    setUrlParams,
+  });
+  const columnFilter = useColumnFilter(dataset, datasetId);
+  const searchFilter = useNearestNeighborsSearch({
+    userId,
+    datasetId,
+    scope,
+    deletedIndices,
+    urlParams,
+    setUrlParams,
+    scopeLoaded,
+  });
+  const featureFilter = useFeatureFilter({
+    userId,
+    datasetId,
+    scope,
+    urlParams,
+    setUrlParams,
+    scopeLoaded,
+  });
 
-    // Column filter state
-    const { columnFiltersActive, setColumnFiltersActive, columnFilters } = useColumnFilter(
-        dataset,
-        datasetId,
-        setColumnFilterIndices
-    );
+  // Toggle functions
+  const toggleSearch = () => setActiveFilterTab((prev) => (prev === SEARCH ? null : SEARCH));
+  const toggleFilter = () => setActiveFilterTab((prev) => (prev === CLUSTER ? null : CLUSTER));
+  const toggleSelect = () => setActiveFilterTab((prev) => (prev === SELECT ? null : SELECT));
+  const toggleColumn = () => setActiveFilterTab((prev) => (prev === COLUMN ? null : COLUMN));
+  const toggleFeature = () => setActiveFilterTab((prev) => (prev === FEATURE ? null : FEATURE));
 
-    // Feature filter state
-    const [feature, setFeature] = useState(-1);
-    const [threshold, setThreshold] = useState(0.1);
+  // Update defaultIndices when scopeRows changes
+  useEffect(() => {
+    if (scopeRows?.length) {
+      const indexes = scopeRows
+        .filter((row) => !deletedIndices.includes(row.ls_index))
+        .map((row) => row.ls_index);
+      setDefaultIndices(indexes);
+      setFilteredIndices([]);
+    }
+  }, [scopeRows, deletedIndices]);
 
-    // Search functionality using useNearestNeighborsSearch
-    const {
-        searchIndices,
-        distances,
-        searchLoading,
-        search,
-        clearSearch,
-    } = useNearestNeighborsSearch({
-        userId,
-        datasetId,
-        scope,
-        deletedIndices,
-        searchText,
-        setSearchText,
-    });
+  // Update filtered indices based on active filter
+  useEffect(() => {
+    switch (activeFilterTab) {
+      case CLUSTER:
+        setFilteredIndices(clusterFilter.clusterIndices);
+        break;
+      case SEARCH:
+        setFilteredIndices(searchFilter.searchIndices);
+        break;
+      case SELECT:
+        setFilteredIndices(selectedIndices);
+        break;
+      case COLUMN:
+        setFilteredIndices(columnFilter.columnFilterIndices);
+        break;
+      case FEATURE:
+        setFilteredIndices(featureFilter.featureIndices);
+        break;
+      default:
+        setFilteredIndices(defaultIndices);
+    }
+  }, [
+    activeFilterTab,
+    clusterFilter.clusterIndices,
+    searchFilter.searchIndices,
+    selectedIndices,
+    columnFilter.columnFilterIndices,
+    featureFilter.featureIndices,
+    defaultIndices,
+  ]);
 
-    // Toggle functions
-    const toggleSearch = () => setActiveFilterTab(prev => prev === SEARCH ? null : SEARCH);
-    const toggleFilter = () => setActiveFilterTab(prev => prev === CLUSTER ? null : CLUSTER);
-    const toggleSelect = () => setActiveFilterTab(prev => prev === SELECT ? null : SELECT);
-    const toggleColumn = () => setActiveFilterTab(prev => prev === COLUMN ? null : COLUMN);
-    const toggleFeature = () => setActiveFilterTab(prev => prev === FEATURE ? null : FEATURE);
+  // Update active tab based on URL params
+  useEffect(() => {
+    if (urlParams.has('cluster')) {
+      setActiveFilterTab(CLUSTER);
+    } else if (urlParams.has('feature')) {
+      setActiveFilterTab(FEATURE);
+    } else if (urlParams.has('search')) {
+      setActiveFilterTab(SEARCH);
+    }
+  }, [urlParams]);
 
-    // Update defaultIndices when scopeRows changes
-    useEffect(() => {
-        if (scopeRows?.length) {
-            const indexes = scopeRows
-                .filter(row => !deletedIndices.includes(row.ls_index))
-                .map(row => row.ls_index);
-            setDefaultIndices(indexes);
-            setFilteredIndices([]);
-        }
-    }, [scopeRows, deletedIndices]);
+  const value = {
+    activeFilterTab,
+    setActiveFilterTab,
+    filteredIndices,
+    setFilteredIndices,
+    defaultIndices,
+    setDefaultIndices,
+    selectedIndices,
+    setSelectedIndices,
 
-    // Update filtered indices based on active filter
-    useEffect(() => {
-        switch (activeFilterTab) {
-            case CLUSTER:
-                setFilteredIndices(clusterIndices);
-                break;
-            case SEARCH:
-                setFilteredIndices(searchIndices);
-                break;
-            case SELECT:
-                setFilteredIndices(selectedIndices);
-                break;
-            case COLUMN:
-                setFilteredIndices(columnFilterIndices);
-                break;
-            case FEATURE:
-                setFilteredIndices(featureIndices);
-                break;
-            default:
-                setFilteredIndices(defaultIndices);
-        }
-    }, [
-        activeFilterTab,
-        clusterIndices,
-        searchIndices,
-        selectedIndices,
-        columnFilterIndices,
-        featureIndices,
-        defaultIndices
-    ]);
+    featureFilter,
+    // featureIndices,
+    // setFeatureIndices,
+    // feature,
+    // setFeature,
+    // threshold,
+    // setThreshold,
 
+    searchFilter,
+    // searchIndices,
+    // searchLoading,
+    // distances,
+    // clearSearch,
 
-    const value = {
-        activeFilterTab,
-        setActiveFilterTab,
-        filteredIndices,
-        setFilteredIndices,
-        defaultIndices,
-        setDefaultIndices,
-        clusterIndices,
-        setClusterIndices,
-        searchIndices,
-        selectedIndices,
-        setSelectedIndices,
-        columnFilterIndices,
-        setColumnFilterIndices,
-        featureIndices,
-        setFeatureIndices,
-        feature,
-        setFeature,
-        threshold,
-        setThreshold,
-        searchText,
-        setSearchText,
-        searchLoading,
-        cluster,
-        setCluster,
-        columnFiltersActive,
-        setColumnFiltersActive,
-        columnFilters,
-        clearSearch,
-        toggleSearch,
-        toggleFilter,
-        toggleSelect,
-        toggleColumn,
-        toggleFeature,
-        filterConstants: {
-            SEARCH,
-            CLUSTER,
-            SELECT,
-            COLUMN,
-            FEATURE
-        },
-        distances,
-    };
+    clusterFilter,
+    // setCluster,
 
-    return (
-        <FilterContext.Provider value={value}>
-            {children}
-        </FilterContext.Provider>
-    );
+    columnFilter,
+    // columnFiltersActive,
+    // setColumnFiltersActive,
+    // columnFilters,
+
+    toggleSearch,
+    toggleFilter,
+    toggleSelect,
+    toggleColumn,
+    toggleFeature,
+    filterConstants: {
+      SEARCH,
+      CLUSTER,
+      SELECT,
+      COLUMN,
+      FEATURE,
+    },
+  };
+
+  return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;
 }
 
 export function useFilter() {
-    const context = useContext(FilterContext);
-    if (!context) {
-        throw new Error('useFilter must be used within a FilterProvider');
-    }
-    return context;
+  const context = useContext(FilterContext);
+  if (!context) {
+    throw new Error('useFilter must be used within a FilterProvider');
+  }
+  return context;
 }

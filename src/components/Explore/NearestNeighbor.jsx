@@ -4,13 +4,14 @@ import styles from './NearestNeighbor.module.scss';
 import { useFilter } from '../../contexts/FilterContext';
 
 export default function NearestNeighbor() {
-  const { 
-    searchIndices, 
-    searchLoading, 
-    setSearchText, 
-    clearSearch, 
+  const { searchFilter } = useFilter();
+  const {
+    searchIndices,
+    searchLoading,
+    setSearchText,
+    clearSearch,
     searchText: defaultValue,
-  } = useFilter();
+  } = searchFilter;
   const [inputValue, setInputValue] = useState(defaultValue);
 
   useEffect(() => {

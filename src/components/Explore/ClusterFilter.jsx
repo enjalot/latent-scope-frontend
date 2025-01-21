@@ -4,7 +4,8 @@ import { selectStyles } from './SelectStyles';
 import { useFilter } from '../../contexts/FilterContext';
 
 export default function ClusterFilter({ clusterLabels }) {
-  const { cluster, setCluster, clusterIndices } = useFilter();
+  const { clusterFilter } = useFilter();
+  const { cluster, setCluster, clusterIndices } = clusterFilter;
 
   const selectOptions = clusterLabels?.map((cl) => ({
     value: cl.cluster,

@@ -355,22 +355,20 @@ const HullPlot = ({
 
 export default HullPlot;
 
-
-
-// const HullPlotCanvas = ({ 
-//   points, 
+// const HullPlotCanvas = ({
+//   points,
 //   hulls,
 //   fill,
 //   stroke,
 //   strokeWidth,
 //   symbol,
-//   xDomain, 
-//   yDomain, 
-//   width, 
+//   xDomain,
+//   yDomain,
+//   width,
 //   height
 // }) => {
 //   const container = useRef();
-  
+
 //   useEffect(() => {
 //     if(xDomain && yDomain) {
 //       const xScale = scaleLinear()
@@ -384,7 +382,7 @@ export default HullPlot;
 //       const canvas = container.current
 //       const ctx = canvas.getContext('2d')
 //       ctx.clearRect(0, 0, width, height)
-//       ctx.fillStyle = fill 
+//       ctx.fillStyle = fill
 //       ctx.strokeStyle = stroke
 //       ctx.font = `${zScale(strokeWidth)}px monospace`
 //       ctx.globalAlpha = 0.75
@@ -411,10 +409,10 @@ export default HullPlot;
 
 //   }, [points, hulls, fill, stroke, strokeWidth, xDomain, yDomain, width, height])
 
-//   return <canvas 
+//   return <canvas
 //     className="hull-plot"
-//     ref={container} 
-//     width={width} 
+//     ref={container}
+//     width={width}
 //     height={height} />;
 // };
 

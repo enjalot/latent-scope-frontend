@@ -7,9 +7,11 @@ export default function useNearestNeighborsSearch({
   scope,
   // onSearchEmbedding,
   deletedIndices,
-  searchText,
-  setSearchText,
+  urlParams,
+  setUrlParams,
+  scopeLoaded,
 }) {
+  const [searchText, setSearchText] = useState('');
   const [searchIndices, setSearchIndices] = useState([]);
   const [distances, setDistances] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -19,15 +21,15 @@ export default function useNearestNeighborsSearch({
       setSearchLoading(true);
       apiService.searchNearestNeighbors(userId, datasetId, scope, query).then((data) => {
         const inds = data.indices.filter((d) => {
-          return !deletedIndices.includes(d)
-        })
+          return !deletedIndices.includes(d);
+        });
         setDistances(data.distances);
         const limit = 20;
         // TODO: make the # of results configurable
         setSearchIndices(inds.slice(0, limit));
-        setSearchLoading(false)
+        setSearchLoading(false);
         // onSearchEmbedding?.(data.search_embedding[0]);
-      })
+      });
     },
     [datasetId, scope]
   );
@@ -45,12 +47,35 @@ export default function useNearestNeighborsSearch({
     }
   }, [searchText, search]);
 
+  // Initialize search from URL params
+  useEffect(() => {
+    if (scopeLoaded && urlParams.has('search')) {
+      const searchParam = urlParams.get('search');
+      setSearchText(searchParam);
+    }
+  }, [scopeLoaded, urlParams]);
+
+  // Update URL params when search changes
+  useEffect(() => {
+    if (scopeLoaded) {
+      setUrlParams((prev) => {
+        if (searchText) {
+          prev.set('search', searchText);
+        } else {
+          prev.delete('search');
+        }
+        return prev;
+      });
+    }
+  }, [searchText, scopeLoaded, setUrlParams]);
+
   return {
+    searchText,
+    setSearchText,
     setSearchIndices,
     searchIndices,
     distances,
     searchLoading,
-    search,
     clearSearch,
   };
 }

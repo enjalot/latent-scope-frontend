@@ -3,17 +3,13 @@ import { FixedSizeList as List } from 'react-window';
 import classNames from 'classnames';
 import styles from './FeatureFilter.module.scss';
 import { useFilter } from '../../contexts/FilterContext';
+import { useScope } from '../../contexts/ScopeContext';
 
-export default function FeatureFilter({ scope }) {
-  const {
-    features,
-    feature,
-    featureIndices,
-    setFeature,
-    setFeatureIndices,
-    threshold,
-    setThreshold
-  } = useFilter();
+export default function FeatureFilter() {
+  const { scope, features } = useScope();
+  const { featureFilter } = useFilter();
+  const { feature, featureIndices, setFeature, setFeatureIndices, threshold, setThreshold } =
+    featureFilter;
 
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -30,15 +26,6 @@ export default function FeatureFilter({ scope }) {
       setInputValue(featureLabel(feature));
     }
   }, [feature]);
-
-  // default the threshold to half the max activation of the feature
-  useEffect(() => {
-    if (feature >= 0) {
-      const maxActivation = scope?.sae?.max_activations[feature] || 0;
-      let t = maxActivation < 0.2 ? maxActivation / 2 : 0.1;
-      setThreshold(t);
-    }
-  }, [feature, scope, setThreshold]);
 
   const items = useMemo(
     () =>

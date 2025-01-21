@@ -13,44 +13,48 @@ import { processHulls } from '../../utils';
 import { useScope } from '../../contexts/ScopeContext';
 import { useFilter } from '../../contexts/FilterContext';
 
-import {
-  mapSelectionOpacity,
-  mapPointSizeRange,
-  mapSelectionKey,
-} from '../../lib/colors';
+import { mapSelectionOpacity, mapPointSizeRange, mapSelectionKey } from '../../lib/colors';
 import styles from './VisualizationPane.module.scss';
 import ConfigurationPanel from './ConfigurationPanel';
 import { Icon, Button } from 'react-element-forge';
 
+// VisualizationPane.propTypes = {
+//   hoverAnnotations: PropTypes.array.isRequired,
+//   hoveredCluster: PropTypes.object,
+//   cluster: PropTypes.object,
+//   scope: PropTypes.object,
+//   selectedAnnotations: PropTypes.array.isRequired,
+//   onScatter: PropTypes.func.isRequired,
+//   onSelect: PropTypes.func.isRequired,
+//   onHover: PropTypes.func.isRequired,
+//   hovered: PropTypes.object,
+//   dataset: PropTypes.object.isRequired,
+//   containerRef: PropTypes.object.isRequired,
+// };
 
 function VisualizationPane({
-    width,
-    height,
-    onScatter,
-    hovered,
-    hoveredIndex,
-    onHover,
-    onSelect,
-    hoverAnnotations,
-    selectedAnnotations,
-    hoveredCluster,
-    dataTableRows,
+  width,
+  height,
+  onScatter,
+  hovered,
+  hoveredIndex,
+  onHover,
+  onSelect,
+  hoverAnnotations,
+  selectedAnnotations,
+  hoveredCluster,
+  dataTableRows,
 }) {
-    const {
-        scopeRows,
-        clusterLabels,
-        clusterMap,
-        deletedIndices,
-        scope
-    } = useScope();
+  const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
 
-    const {
-        activeFilterTab,
-        filteredIndices,
-        feature,
-        selectedIndices,
-        filterConstants
-    } = useFilter();
+  const {
+    activeFilterTab,
+    filteredIndices,
+    selectedIndices,
+    filterConstants,
+    featureFilter,
+    clusterFilter,
+  } = useFilter();
 
   const { sae: { max_activations = [] } = {} } = scope || {};
 
@@ -74,7 +78,8 @@ function VisualizationPane({
 
   const size = [width, height];
 
-  const featureIsSelected = feature !== -1 && activeFilterTab === filterConstants.FEATURE;
+  const featureIsSelected =
+    featureFilter.feature !== -1 && activeFilterTab === filterConstants.FEATURE;
 
   // Add new memoized feature activation lookup
   const featureActivationMap = useMemo(() => {
@@ -84,51 +89,51 @@ function VisualizationPane({
 
     const lookup = new Map();
     dataTableRows.forEach((data, index) => {
-      const activatedIdx = data.sae_indices.indexOf(feature);
+      const activatedIdx = data.sae_indices.indexOf(featureFilter.feature);
       if (activatedIdx !== -1) {
         const activatedFeature = data.sae_acts[activatedIdx];
         // normalize the activation to be between 0 and 1
         const min = 0.0;
-        const max = max_activations[feature];
+        const max = max_activations[featureFilter.feature];
         const normalizedActivation = (activatedFeature - min) / (max - min);
         lookup.set(data.ls_index, normalizedActivation);
       }
     });
     return lookup;
-  }, [featureIsSelected, dataTableRows, feature]);
+  }, [featureIsSelected, dataTableRows, featureFilter.feature, max_activations]);
 
   const drawingPoints = useMemo(() => {
-      return scopeRows.map((p, i) => {
-          if (featureIsSelected) {
-              if (filteredIndices?.includes(i)) {
-                  const activation = featureActivationMap.get(p.ls_index);
-                  return activation !== undefined
-                      ? [p.x, p.y, mapSelectionKey.selected, activation]
-                      : [p.x, p.y, mapSelectionKey.notSelected, 0.0];
-              }
-              return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
-          }
+    return scopeRows.map((p, i) => {
+      if (featureIsSelected) {
+        if (filteredIndices?.includes(i)) {
+          const activation = featureActivationMap.get(p.ls_index);
+          return activation !== undefined
+            ? [p.x, p.y, mapSelectionKey.selected, activation]
+            : [p.x, p.y, mapSelectionKey.notSelected, 0.0];
+        }
+        return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
+      }
 
-          if (p.deleted) {
-              return [-10, -10, mapSelectionKey.hidden];
-          } else if (hoveredIndex === i) {
-              return [p.x, p.y, mapSelectionKey.hovered];
-          } else if (filteredIndices?.includes(i)) {
-              return [p.x, p.y, mapSelectionKey.selected];
-          } else if (filteredIndices?.length) {
-              return [p.x, p.y, mapSelectionKey.notSelected];
-          } else {
-              return [p.x, p.y, mapSelectionKey.normal];
-          }
-      });
+      if (p.deleted) {
+        return [-10, -10, mapSelectionKey.hidden];
+      } else if (hoveredIndex === i) {
+        return [p.x, p.y, mapSelectionKey.hovered];
+      } else if (filteredIndices?.includes(i)) {
+        return [p.x, p.y, mapSelectionKey.selected];
+      } else if (filteredIndices?.length) {
+        return [p.x, p.y, mapSelectionKey.notSelected];
+      } else {
+        return [p.x, p.y, mapSelectionKey.normal];
+      }
+    });
   }, [scopeRows, filteredIndices, hoveredIndex, featureActivationMap, featureIsSelected]);
 
   const points = useMemo(() => {
-      return scopeRows
-          .filter((p) => !p.deleted)
-          .map((p) => {
-              return [p.x, p.y];
-          });
+    return scopeRows
+      .filter((p) => !p.deleted)
+      .map((p) => {
+        return [p.x, p.y];
+      });
   }, [scopeRows]);
 
   // const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -156,34 +161,34 @@ function VisualizationPane({
   // }, [hovered, scopeRows, xDomain, yDomain, width, height, umapOffset]);
 
   const hulls = useMemo(() => {
-      return processHulls(clusterLabels, scopeRows, (d) => (d.deleted ? null : [d.x, d.y]));
+    return processHulls(clusterLabels, scopeRows, (d) => (d.deleted ? null : [d.x, d.y]));
   }, [scopeRows, clusterLabels]);
 
-  // derive the hulls from the slide, and filter deleted points via an accessor
+  // derive the hulls from the cluster, and filter deleted points via an accessor
   const clusterHulls = useMemo(() => {
-      if (!slide || !scopeRows) return [];
-      return processHulls([slide], scopeRows, (d) => (d.deleted ? null : [d.x, d.y]));
-  }, [slide, scopeRows]);
+    if (!clusterFilter.cluster || !scopeRows) return [];
+    return processHulls([clusterFilter.cluster], scopeRows, (d) => (d.deleted ? null : [d.x, d.y]));
+  }, [clusterFilter.cluster, scopeRows]);
 
   const hoveredHulls = useMemo(() => {
-      if (!hoveredCluster || !scopeRows) return [];
-      return processHulls([hoveredCluster], scopeRows, (d) => (d.deleted ? null : [d?.x, d?.y]));
+    if (!hoveredCluster || !scopeRows) return [];
+    return processHulls([hoveredCluster], scopeRows, (d) => (d.deleted ? null : [d?.x, d?.y]));
   }, [hoveredCluster, scopeRows]);
 
   // TODO: these should just be based on which tile we choose, 32, 64 or 128
   const tileMeta = useMemo(() => {
-      return {
-          size: 2 / 64,
-          cols: 64,
-      };
+    return {
+      size: 2 / 64,
+      cols: 64,
+    };
   }, []);
   const tiles = useMemo(() => {
-      return groups(scopeRows, (d) => d.tile_index_64).map((tile) => {
-          return {
-              tile_index: tile[0],
-              points: tile[1],
-          };
-      });
+    return groups(scopeRows, (d) => d.tile_index_64).map((tile) => {
+      return {
+        tile_index: tile[0],
+        points: tile[1],
+      };
+    });
   }, [scopeRows]);
 
   // ====================================================================================================
@@ -191,218 +196,218 @@ function VisualizationPane({
   // ====================================================================================================
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [vizConfig, setVizConfig] = useState({
-      showHeatMap: false,
-      showClusterOutlines: true,
-      pointSize: 1,
-      pointOpacity: 1,
+    showHeatMap: false,
+    showClusterOutlines: true,
+    pointSize: 1,
+    pointOpacity: 1,
   });
 
   useEffect(() => {
-      if (scopeRows?.length <= 1000) {
-          setVizConfig((prev) => ({ ...prev, pointSize: 2.25 }));
-      } else if (scopeRows?.length <= 10000) {
-          setVizConfig((prev) => ({ ...prev, pointSize: 1.25 }));
-      } else if (scopeRows?.length <= 100000) {
-          setVizConfig((prev) => ({ ...prev, pointSize: 0.75 }));
-      } else {
-          setVizConfig((prev) => ({ ...prev, pointSize: 0.5 }));
-      }
+    if (scopeRows?.length <= 1000) {
+      setVizConfig((prev) => ({ ...prev, pointSize: 2.25 }));
+    } else if (scopeRows?.length <= 10000) {
+      setVizConfig((prev) => ({ ...prev, pointSize: 1.25 }));
+    } else if (scopeRows?.length <= 100000) {
+      setVizConfig((prev) => ({ ...prev, pointSize: 0.75 }));
+    } else {
+      setVizConfig((prev) => ({ ...prev, pointSize: 0.5 }));
+    }
   }, [scopeRows]);
 
   const toggleShowHeatMap = useCallback(() => {
-      setVizConfig((prev) => ({ ...prev, showHeatMap: !prev.showHeatMap }));
+    setVizConfig((prev) => ({ ...prev, showHeatMap: !prev.showHeatMap }));
   }, []);
 
   const toggleShowClusterOutlines = useCallback(() => {
-      setVizConfig((prev) => ({ ...prev, showClusterOutlines: !prev.showClusterOutlines }));
+    setVizConfig((prev) => ({ ...prev, showClusterOutlines: !prev.showClusterOutlines }));
   }, []);
 
   const updatePointSize = useCallback((value) => {
-      setVizConfig((prev) => ({ ...prev, pointSize: value }));
+    setVizConfig((prev) => ({ ...prev, pointSize: value }));
   }, []);
 
   const updatePointOpacity = useCallback((value) => {
-      setVizConfig((prev) => ({ ...prev, pointOpacity: value }));
+    setVizConfig((prev) => ({ ...prev, pointOpacity: value }));
   }, []);
 
   const pointSizeRange = useMemo(() => {
-      return mapPointSizeRange.map((d) => d * vizConfig.pointSize);
+    return mapPointSizeRange.map((d) => d * vizConfig.pointSize);
   }, [vizConfig.pointSize]);
   const pointOpacityRange = useMemo(() => {
-      return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
+    return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
   }, [vizConfig.pointOpacity]);
 
   return (
-      // <div style={{ width, height }} ref={umapRef}>
-      <div ref={umapRef} style={{ width: "100%", height: "100%" }}>
-          <div className={styles.configToggleContainer}>
-              <Button
-                  className={styles["configToggle"]}
-                  onClick={() => setIsPanelOpen(!isPanelOpen)}
-                  aria-label="Toggle configuration panel"
-                  icon={"settings"}
-                  size="small"
-                  // color="#333"
-              />
+    // <div style={{ width, height }} ref={umapRef}>
+    <div ref={umapRef} style={{ width: '100%', height: '100%' }}>
+      <div className={styles.configToggleContainer}>
+        <Button
+          className={styles['configToggle']}
+          onClick={() => setIsPanelOpen(!isPanelOpen)}
+          aria-label="Toggle configuration panel"
+          icon={'settings'}
+          size="small"
+          // color="#333"
+        />
 
-              <ConfigurationPanel
-                  isOpen={isPanelOpen}
-                  onClose={() => setIsPanelOpen(false)}
-                  title="View Settings"
-                  vizConfig={vizConfig}
-                  toggleShowHeatMap={toggleShowHeatMap}
-                  toggleShowClusterOutlines={toggleShowClusterOutlines}
-                  updatePointSize={updatePointSize}
-                  updatePointOpacity={updatePointOpacity}
-              />
-          </div>
+        <ConfigurationPanel
+          isOpen={isPanelOpen}
+          onClose={() => setIsPanelOpen(false)}
+          title="View Settings"
+          vizConfig={vizConfig}
+          toggleShowHeatMap={toggleShowHeatMap}
+          toggleShowClusterOutlines={toggleShowClusterOutlines}
+          updatePointSize={updatePointSize}
+          updatePointOpacity={updatePointOpacity}
+        />
+      </div>
 
-          <div className={styles.scatters + " " + (isFullScreen ? styles.fullScreen : "")}>
-              {scope && (
-                  <ScatterCanvas
-                      points={drawingPoints}
-                      width={width}
-                      height={height}
-                      onView={handleView}
-                      onSelect={onSelect}
-                      onHover={onHover}
-                      featureIsSelected={featureIsSelected}
-                  />
-              )}
-              {/* show all the hulls */}
-              {vizConfig.showClusterOutlines && hulls.length && (
-                  <HullPlot
-                      hulls={hulls}
-                      // stroke="#E7C7AA"
-                      // stroke={slide && slide.hull ? 'lightgray' : '#E7C7AA'}
-                      // stroke={isDark ? '#E0EFFF' : '#d4b297'}
-                      stroke="#d4b297"
-                      // stroke={'#E0EFFF'}
-                      fill="none"
-                      duration={200}
-                      strokeWidth={0.15}
-                      xDomain={xDomain}
-                      yDomain={yDomain}
-                      width={width}
-                      height={height}
-                  />
-              )}
-              {hoveredCluster && hoveredCluster.hull && scope.cluster_labels_lookup && (
-                  <HullPlot
-                      hulls={hoveredHulls}
-                      fill="#8bcf66"
-                      stroke="#6aa64f"
-                      strokeWidth={2.5}
-                      // if there are selected indices already, that means other points will be less visible
-                      // so we can make the hull a bit more transparent
-                      opacity={filteredIndices?.length ? 0.15 : 0.5}
-                      duration={0}
-                      xDomain={xDomain}
-                      yDomain={yDomain}
-                      width={width}
-                      height={height}
-                      label={scope.cluster_labels_lookup[hoveredCluster.cluster]}
-                  />
-              )}
-              {/* Cluster is selected via filter */}
-              {showHull &&
-                  slide &&
-                  slide.hull &&
-                  !scope.ignore_hulls &&
-                  scope.cluster_labels_lookup && (
-                      <HullPlot
-                          hulls={clusterHulls}
-                          fill="#D3965E"
-                          stroke="#C77C37"
-                          strokeWidth={3}
-                          opacity={0.25}
-                          duration={0}
-                          xDomain={xDomain}
-                          yDomain={yDomain}
-                          width={width}
-                          height={height}
-                          label={scope.cluster_labels_lookup[slide.cluster]}
-                      />
-                  )}
-              <AnnotationPlot
-                  points={hoverAnnotations}
-                  stroke="black"
-                  fill="purple"
-                  size="16"
-                  xDomain={xDomain}
-                  yDomain={yDomain}
-                  width={width}
-                  height={height}
-              />
-              <AnnotationPlot
-                  points={selectedAnnotations}
-                  stroke="black"
-                  fill="purple"
-                  size="16"
-                  xDomain={xDomain}
-                  yDomain={yDomain}
-                  width={width}
-                  height={height}
-              />
-              {vizConfig.showHeatMap && tiles?.length > 1 && (
-                  <TilePlot
-                      tiles={tiles}
-                      tileMeta={tileMeta}
-                      xDomain={xDomain}
-                      yDomain={yDomain}
-                      width={width}
-                      height={height}
-                      fill="gray"
-                      // stroke="black"
-                  />
-              )}
-          </div>
-
-          {/* Hover information display */}
-          {hovered && (
-              <div
-                  data-tooltip-id="featureTooltip"
-                  style={{
-                      position: "absolute",
-                      right: 225,
-                      top: 0,
-                      pointerEvents: "none",
-                  }}
-              ></div>
+      <div className={styles.scatters + ' ' + (isFullScreen ? styles.fullScreen : '')}>
+        {scope && (
+          <ScatterCanvas
+            points={drawingPoints}
+            width={width}
+            height={height}
+            onView={handleView}
+            onSelect={onSelect}
+            onHover={onHover}
+            featureIsSelected={featureIsSelected}
+          />
+        )}
+        {/* show all the hulls */}
+        {vizConfig.showClusterOutlines && hulls.length && (
+          <HullPlot
+            hulls={hulls}
+            // stroke="#E7C7AA"
+            // stroke={cluster && cluster.hull ? 'lightgray' : '#E7C7AA'}
+            // stroke={isDark ? '#E0EFFF' : '#d4b297'}
+            stroke="#d4b297"
+            // stroke={'#E0EFFF'}
+            fill="none"
+            duration={200}
+            strokeWidth={0.15}
+            xDomain={xDomain}
+            yDomain={yDomain}
+            width={width}
+            height={height}
+          />
+        )}
+        {hoveredCluster && hoveredCluster.hull && scope.cluster_labels_lookup && (
+          <HullPlot
+            hulls={hoveredHulls}
+            fill="#8bcf66"
+            stroke="#6aa64f"
+            strokeWidth={2.5}
+            // if there are selected indices already, that means other points will be less visible
+            // so we can make the hull a bit more transparent
+            opacity={filteredIndices?.length ? 0.15 : 0.5}
+            duration={0}
+            xDomain={xDomain}
+            yDomain={yDomain}
+            width={width}
+            height={height}
+            label={scope.cluster_labels_lookup[hoveredCluster.cluster]}
+          />
+        )}
+        {/* Cluster is selected via filter */}
+        {showHull &&
+          clusterFilter.cluster &&
+          clusterFilter.cluster.hull &&
+          !scope.ignore_hulls &&
+          scope.cluster_labels_lookup && (
+            <HullPlot
+              hulls={clusterHulls}
+              fill="#D3965E"
+              stroke="#C77C37"
+              strokeWidth={3}
+              opacity={0.25}
+              duration={0}
+              xDomain={xDomain}
+              yDomain={yDomain}
+              width={width}
+              height={height}
+              label={scope.cluster_labels_lookup[clusterFilter.cluster.cluster]}
+            />
           )}
-          {hovered && (
-              <Tooltip
-                  id="featureTooltip"
-                  isOpen={hovered !== null}
-                  delayShow={0}
-                  delayHide={0}
-                  delayUpdate={0}
-                  noArrow={true}
-                  className="tooltip-area"
-                  style={{
-                      position: "absolute",
-                      left: 0,
-                      top: 0,
-                      pointerEvents: "none",
-                      width: "400px",
-                      backgroundColor: "#D3965E",
-                  }}
-              >
-                  <div className="tooltip-content">
-                      {hoveredCluster && (
-                          <span>
-                              <span className="key">Cluster {hoveredCluster.cluster}: </span>
-                              <span className="value">{hoveredCluster.label}</span>
-                          </span>
-                      )}
-                      <br></br>
-                      <span>Index: {hovered.index}</span>
-                      <p className="tooltip-text">{hovered.text}</p>
-                  </div>
-              </Tooltip>
-          )}
+        <AnnotationPlot
+          points={hoverAnnotations}
+          stroke="black"
+          fill="purple"
+          size="16"
+          xDomain={xDomain}
+          yDomain={yDomain}
+          width={width}
+          height={height}
+        />
+        <AnnotationPlot
+          points={selectedAnnotations}
+          stroke="black"
+          fill="purple"
+          size="16"
+          xDomain={xDomain}
+          yDomain={yDomain}
+          width={width}
+          height={height}
+        />
+        {vizConfig.showHeatMap && tiles?.length > 1 && (
+          <TilePlot
+            tiles={tiles}
+            tileMeta={tileMeta}
+            xDomain={xDomain}
+            yDomain={yDomain}
+            width={width}
+            height={height}
+            fill="gray"
+            // stroke="black"
+          />
+        )}
+      </div>
 
-          {/* {!isMobileDevice() && (
+      {/* Hover information display */}
+      {hovered && (
+        <div
+          data-tooltip-id="featureTooltip"
+          style={{
+            position: 'absolute',
+            right: 225,
+            top: 0,
+            pointerEvents: 'none',
+          }}
+        ></div>
+      )}
+      {hovered && (
+        <Tooltip
+          id="featureTooltip"
+          isOpen={hovered !== null}
+          delayShow={0}
+          delayHide={0}
+          delayUpdate={0}
+          noArrow={true}
+          className="tooltip-area"
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            pointerEvents: 'none',
+            width: '400px',
+            backgroundColor: '#D3965E',
+          }}
+        >
+          <div className="tooltip-content">
+            {hoveredCluster && (
+              <span>
+                <span className="key">Cluster {hoveredCluster.cluster}: </span>
+                <span className="value">{hoveredCluster.label}</span>
+              </span>
+            )}
+            <br></br>
+            <span>Index: {hovered.index}</span>
+            <p className="tooltip-text">{hovered.text}</p>
+          </div>
+        </Tooltip>
+      )}
+
+      {/* {!isMobileDevice() && (
               <div className="hovered-point">
                   {hoveredCluster && (
                       <span>
@@ -453,23 +458,8 @@ function VisualizationPane({
             })}
               </div>
           )} */}
-      </div>
+    </div>
   );
 }
-
-VisualizationPane.propTypes = {
-  scopeRows: PropTypes.array.isRequired,
-  hoverAnnotations: PropTypes.array.isRequired,
-  hoveredCluster: PropTypes.object,
-  slide: PropTypes.object,
-  scope: PropTypes.object,
-  selectedAnnotations: PropTypes.array.isRequired,
-  onScatter: PropTypes.func.isRequired,
-  onSelect: PropTypes.func.isRequired,
-  onHover: PropTypes.func.isRequired,
-  hovered: PropTypes.object,
-  dataset: PropTypes.object.isRequired,
-  containerRef: PropTypes.object.isRequired,
-};
 
 export default VisualizationPane;
