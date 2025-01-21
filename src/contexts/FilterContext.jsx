@@ -32,7 +32,7 @@ export function FilterProvider({ children }) {
     urlParams,
     setUrlParams,
   });
-  const columnFilter = useColumnFilter(dataset, datasetId);
+  const columnFilter = useColumnFilter(userId, datasetId, scope);
   const searchFilter = useNearestNeighborsSearch({
     userId,
     datasetId,
@@ -73,6 +73,7 @@ export function FilterProvider({ children }) {
   useEffect(() => {
     switch (activeFilterTab) {
       case CLUSTER:
+        // If cluster is set, use cluster indices, otherwise use default indices
         if (clusterFilter.cluster) {
           setFilteredIndices(clusterFilter.clusterIndices);
         } else {
@@ -86,7 +87,7 @@ export function FilterProvider({ children }) {
         setFilteredIndices(selectedIndices);
         break;
       case COLUMN:
-        setFilteredIndices(columnFilter.columnFilterIndices);
+        setFilteredIndices(columnFilter.columnIndices);
         break;
       case FEATURE:
         setFilteredIndices(featureFilter.featureIndices);
@@ -99,7 +100,7 @@ export function FilterProvider({ children }) {
     clusterFilter.clusterIndices,
     searchFilter.searchIndices,
     selectedIndices,
-    columnFilter.columnFilterIndices,
+    columnFilter.columnIndices,
     featureFilter.featureIndices,
     defaultIndices,
   ]);
@@ -146,6 +147,7 @@ export function FilterProvider({ children }) {
     // columnFiltersActive,
     // setColumnFiltersActive,
     // columnFilters,
+    // columnIndices,
 
     toggleSearch,
     toggleFilter,

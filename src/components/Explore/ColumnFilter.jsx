@@ -5,24 +5,29 @@ import { selectStyles } from './SelectStyles';
 import { useFilter } from '../../contexts/FilterContext';
 
 const ColumnFilter = () => {
+  const { columnFilter } = useFilter();
   const {
     columnFilters,
-    columnFilterIndices,
+    columnIndices,
     columnFiltersActive,
     setColumnFiltersActive,
-    setColumnFilterIndices,
-  } = useFilter();
+    setColumnIndices,
+  } = columnFilter;
 
   return columnFilters?.length ? (
-    <div className={`${styles.container} ${columnFilterIndices?.length ? styles.active : ''}`}>
+    <div className={`${styles.container} ${columnIndices?.length ? styles.active : ''}`}>
       <div className={styles.filterCell}>
         {columnFilters.map((column) => (
           <span key={column.column}>
             <Select
-              value={columnFiltersActive[column.column] ? {
-                value: columnFiltersActive[column.column],
-                label: `${columnFiltersActive[column.column]} (${column.counts[columnFiltersActive[column.column]]})`,
-              } : null}
+              value={
+                columnFiltersActive[column.column]
+                  ? {
+                      value: columnFiltersActive[column.column],
+                      label: `${columnFiltersActive[column.column]} (${column.counts[columnFiltersActive[column.column]]})`,
+                    }
+                  : null
+              }
               onChange={(selectedOption) => {
                 let active = { ...columnFiltersActive };
                 active[column.column] = selectedOption ? selectedOption.value : '';
@@ -41,12 +46,12 @@ const ColumnFilter = () => {
         ))}
       </div>
       <div className={styles.count}>
-        {columnFilterIndices?.length ? <span>{columnFilterIndices?.length} rows</span> : null}
-        {columnFilterIndices?.length ? (
+        {columnIndices?.length ? <span>{columnIndices?.length} rows</span> : null}
+        {columnIndices?.length ? (
           <Button
             onClick={() => {
               setColumnFiltersActive({});
-              setColumnFilterIndices([]);
+              setColumnIndices([]);
             }}
             icon="x"
             color="secondary"

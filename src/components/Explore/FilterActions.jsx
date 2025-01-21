@@ -20,7 +20,6 @@ export default function FilterActions({ scatter }) {
     selectedIndices,
     searchFilter,
     featureFilter,
-    columnFilters,
     filterConstants,
   } = useFilter();
 
@@ -58,13 +57,13 @@ export default function FilterActions({ scatter }) {
           title="Filter data points by cluster"
         />
 
-        {columnFilters?.length > 0 && (
+        {columnFilter.columnFilters?.length > 0 && (
           <Button
             onClick={toggleColumn}
             className={`${styles.actionsButton} ${activeFilterTab === filterConstants.COLUMN ? styles.active : styles.notActive}`}
             size="small"
             icon="columns"
-            text={`Filter by Column (${columnFilter?.columnFilterIndices?.length})`}
+            text={`Filter by Column (${columnFilter?.columnIndices?.length})`}
             color="secondary"
             title="Filter data points by column"
           />
