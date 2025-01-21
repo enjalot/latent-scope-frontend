@@ -76,57 +76,63 @@ function FeatureModal({
     fontWeight: featIdx === selectedFeature ? 'bold' : 'normal',
   });
 
-  const handleFilterClick = (featIdx, activation) => {
-    handleFeatureClick(featIdx, activation);
-    onClose();
+  const featureClick = (featIdx, activation) => {
+      handleFeatureClick(featIdx, activation);
+      onClose();
   };
 
   return (
-    <Modal
-      className="feature-modal"
-      isVisible={isOpen}
-      onClose={onClose}
-      title={`Features for Index ${rowIndex}`}
-    >
-      <div className="feature-modal-close">
-        <span className="feature-modal-text">Top {TO_SHOW} Activated SAE Features</span>
-        <Button onClick={onClose} icon="x" color="primary" variant="outline" size="small" />
-      </div>
-      <div className="feature-modal-content">
-        {topIndices.slice(0, TO_SHOW).map((featIdx, i) => (
-          <div className="feature-modal-item" key={i} style={itemStyle(featIdx)}>
-            <div
-              className="feature-modal-item-background"
-              style={{
-                width: getWidth(topActs[i]),
-                borderBottom: hoveredIdx === i ? '2px solid #b87333' : 'none',
-                backgroundColor: hoveredIdx === i ? '#b87333' : '#aaa',
-              }}
-            />
-            <div className="feature-label">
-              <Button
-                className="feature-modal-item-filter-button"
-                icon="filter"
-                color="primary"
-                variant="outline"
-                size="small"
-                onClick={() => handleFeatureClick(featIdx, topActs[i])}
-              />
-              <span
-                title={`${baseUrl}${featIdx}`}
-                onClick={() => window.open(`${baseUrl}${featIdx}`, '_blank', 'noopener,noreferrer')}
-                className="feature-modal-item-filter-link"
-              >
-                {featIdx}:
-              </span>
-              <span className="feature-modal-item-filter-label">
-                {features?.[featIdx]?.label} ({topActs?.[i]?.toFixed(3)})
-              </span>
-            </div>
+      <Modal
+          className="feature-modal"
+          isVisible={isOpen}
+          onClose={onClose}
+          title={`Features for Index ${rowIndex}`}
+      >
+          <div className="feature-modal-close">
+              <span className="feature-modal-text">Top {TO_SHOW} Activated SAE Features</span>
+              <Button onClick={onClose} icon="x" color="primary" variant="outline" size="small" />
           </div>
-        ))}
-      </div>
-    </Modal>
+          <div className="feature-modal-content">
+              {topIndices.slice(0, TO_SHOW).map((featIdx, i) => (
+                  <div className="feature-modal-item" key={i} style={itemStyle(featIdx)}>
+                      <div
+                          className="feature-modal-item-background"
+                          style={{
+                              width: getWidth(topActs[i]),
+                              borderBottom: hoveredIdx === i ? "2px solid #b87333" : "none",
+                              backgroundColor: hoveredIdx === i ? "#b87333" : "#aaa",
+                          }}
+                      />
+                      <div className="feature-label">
+                          <Button
+                              className="feature-modal-item-filter-button"
+                              icon="filter"
+                              color="primary"
+                              variant="outline"
+                              size="small"
+                              onClick={() => featureClick(featIdx, topActs[i])}
+                          />
+                          <span
+                              title={`${baseUrl}${featIdx}`}
+                              onClick={() =>
+                                  window.open(
+                                      `${baseUrl}${featIdx}`,
+                                      "_blank",
+                                      "noopener,noreferrer"
+                                  )
+                              }
+                              className="feature-modal-item-filter-link"
+                          >
+                              {featIdx}:
+                          </span>
+                          <span className="feature-modal-item-filter-label">
+                              {features?.[featIdx]?.label} ({topActs?.[i]?.toFixed(3)})
+                          </span>
+                      </div>
+                  </div>
+              ))}
+          </div>
+      </Modal>
   );
 }
 
@@ -348,7 +354,7 @@ function FilterDataTable({
   const rowsPerPage = 100;
   const [pageCount, setPageCount] = useState(0);
   useEffect(() => {
-    setPageCount(Math.ceil(filteredIndices.length / rowsPerPage));
+      setPageCount(Math.ceil(filteredIndices.length / rowsPerPage));
   }, [filteredIndices]);
 
   // feature tooltip content
@@ -356,276 +362,290 @@ function FilterDataTable({
 
   const [rowsLoading, setRowsLoading] = useState(false);
   const hydrateIndices = useCallback(
-    (indices) => {
-      // console.log("hydrate!", dataset, scope, indices)
-      if (dataset && scope && indices.length) {
-        // setRowsLoading(true);
-        let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
-        const timestamp = Date.now();
-        console.log('fetching query', paged, timestamp);
+      (indices) => {
+          // console.log("hydrate!", dataset, scope, indices)
+          if (dataset && scope && indices.length) {
+              setRowsLoading(true);
+              let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+              const timestamp = Date.now();
+              console.log("fetching query", paged, timestamp);
 
-        apiService.getRowsByIndices(userId, dataset.id, scope.id, paged)
-          .then((rows) => {
-            // console.log('query fetched data', rows);
-            setRows(rows.map((row, idx) => ({ ...row, idx, ls_index: row.index })));
-            onDataTableRows(rows);
-            // setRowsLoading(false);
-          });
-      } else {
-        setRows([]);
-        onDataTableRows && onDataTableRows([]);
-        // setRowsLoading(false);
-        // setPageCount(totalPages);
-      }
-    },
-    [dataset, page, sae_id, setRowsLoading]
+              apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
+                  const rowsWithIdx = rows.map((row, idx) => ({
+                      ...row,
+                      idx,
+                      ls_index: row.index,
+                  }));
+                  setRows(rowsWithIdx);
+                  onDataTableRows(rowsWithIdx);
+                  setRowsLoading(false);
+              });
+          } else {
+              setRows([]);
+              onDataTableRows && onDataTableRows([]);
+              setRowsLoading(false);
+              // setPageCount(totalPages);
+          }
+      },
+      [dataset, page, sae_id, setRowsLoading]
   );
 
   const formattedColumns = useMemo(() => {
-    const ls_features_column = 'ls_features';
-    let columns = ['ls_index'];
-    // Text column is always the first column (after index)
+      const ls_features_column = "ls_features";
+      let columns = ["ls_index"];
+      // Text column is always the first column (after index)
 
-    columns.push(dataset.text_column);
+      columns.push(dataset.text_column);
 
-    if (distances && distances.length) columns.push('ls_similarity');
-    if (sae_id) columns.push(ls_features_column);
-    if (clusterMap && Object.keys(clusterMap).length) columns.push('ls_cluster');
-    // if (tagset && Object.keys(tagset).length) columns.push('tags');
+      if (distances && distances.length) columns.push("ls_similarity");
+      if (sae_id) columns.push(ls_features_column);
+      if (clusterMap && Object.keys(clusterMap).length) columns.push("ls_cluster");
+      // if (tagset && Object.keys(tagset).length) columns.push('tags');
 
-    columns = columns.concat(dataset.columns.filter((d) => d !== dataset.text_column));
+      columns = columns.concat(dataset.columns.filter((d) => d !== dataset.text_column));
 
-    let columnDefs = columns.map((col) => {
-      const metadata = dataset.column_metadata ? dataset.column_metadata[col] : null;
+      let columnDefs = columns.map((col) => {
+          const metadata = dataset.column_metadata ? dataset.column_metadata[col] : null;
 
-      const baseCol = {
-        key: col,
-        name: col,
-        resizable: true,
-        className: 'filter-data-table-row',
-      };
+          const baseCol = {
+              key: col,
+              name: col,
+              resizable: true,
+              className: "filter-data-table-row",
+          };
 
-      // dropping tag support for now.
-      // if (col === 'tags') {
-      //   return {
-      //     ...baseCol,
-      //     width: 100,
-      //     renderCell: ({ row }) => renderTags(tags, row, tagset, handleTagClick),
-      //   };
-      // }
+          // dropping tag support for now.
+          // if (col === 'tags') {
+          //   return {
+          //     ...baseCol,
+          //     width: 100,
+          //     renderCell: ({ row }) => renderTags(tags, row, tagset, handleTagClick),
+          //   };
+          // }
 
-      if (metadata?.image) {
-        return {
-          ...baseCol,
-          renderCell: ({ row }) => (
-            <a href={row[col]} target="_blank" rel="noreferrer">
-              <img src={row[col]} alt="" style={{ height: '100px' }} />
-            </a>
-          ),
-        };
-      } else if (metadata?.url) {
-        return {
-          ...baseCol,
-          renderCell: ({ row }) => (
-            <a href={row[col]} target="_blank" rel="noreferrer">
-              url
-            </a>
-          ),
-        };
-      } else if (metadata?.type === 'array') {
-        return {
-          ...baseCol,
-          renderCell: ({ row }) => <span>{`[${row[col].length}]`}</span>,
-        };
-      }
+          if (metadata?.image) {
+              return {
+                  ...baseCol,
+                  renderCell: ({ row }) => (
+                      <a href={row[col]} target="_blank" rel="noreferrer">
+                          <img src={row[col]} alt="" style={{ height: "100px" }} />
+                      </a>
+                  ),
+              };
+          } else if (metadata?.url) {
+              return {
+                  ...baseCol,
+                  renderCell: ({ row }) => (
+                      <a href={row[col]} target="_blank" rel="noreferrer">
+                          url
+                      </a>
+                  ),
+              };
+          } else if (metadata?.type === "array") {
+              return {
+                  ...baseCol,
+                  renderCell: ({ row }) => <span>{`[${row[col].length}]`}</span>,
+              };
+          }
 
-      if (col === 'ls_cluster') {
-        return {
-          ...baseCol,
-          width: 200,
-          renderCell({ row }) {
-            const cluster = clusterMap[row.ls_index];
-            return cluster ? <span>{cluster.label}</span> : null;
-          },
-        };
-      }
+          if (col === "ls_cluster") {
+              return {
+                  ...baseCol,
+                  width: 200,
+                  renderCell({ row }) {
+                      const cluster = clusterMap[row.ls_index];
+                      return cluster ? <span>{cluster.label}</span> : null;
+                  },
+              };
+          }
 
-      if (col === dataset.text_column) {
-        return {
-          ...baseCol,
-          width: 500,
-          renderHeaderCell: () => <div className="text-column">{dataset.text_column}</div>,
-          renderCell: ({ row }) => {
-            return <span title={row[col]}>{row[col]}</span>;
-          },
-        };
-      }
+          if (col === dataset.text_column) {
+              return {
+                  ...baseCol,
+                  width: 500,
+                  renderHeaderCell: () => <div className="text-column">{dataset.text_column}</div>,
+                  renderCell: ({ row }) => {
+                      return <span title={row[col]}>{row[col]}</span>;
+                  },
+              };
+          }
 
-      if (col === ls_features_column) {
-        const baseWidth = 200;
+          if (col === ls_features_column) {
+              const baseWidth = 200;
 
-        return {
-          ...baseCol,
-          width: baseWidth,
-          renderHeaderCell: () => (
-            <div className="feature-column-header" style={{ position: 'relative' }}>
-              <span>{ls_features_column}</span>
-              <span
-                data-tooltip-id="feature-column-info-tooltip"
-                className="feature-column-info-tooltip-icon"
-              >
-                🤔
-              </span>
-            </div>
-          ),
-          renderCell: ({ row }) =>
-            row.sae_indices && (
-              <FeaturePlot
-                width={baseWidth}
-                row={row}
-                feature={feature}
-                features={features}
-                handleFeatureClick={handleFeatureClick}
-                setFeatureTooltipContent={setFeatureTooltipContent}
-              />
-            ),
-        };
-      }
+              return {
+                  ...baseCol,
+                  width: baseWidth,
+                  renderHeaderCell: () => (
+                      <div className="feature-column-header" style={{ position: "relative" }}>
+                          <span>{ls_features_column}</span>
+                          <span
+                              data-tooltip-id="feature-column-info-tooltip"
+                              className="feature-column-info-tooltip-icon"
+                          >
+                              🤔
+                          </span>
+                      </div>
+                  ),
+                  renderCell: ({ row }) =>
+                      row.sae_indices && (
+                          <FeaturePlot
+                              width={baseWidth}
+                              row={row}
+                              feature={feature}
+                              features={features}
+                              handleFeatureClick={handleFeatureClick}
+                              setFeatureTooltipContent={setFeatureTooltipContent}
+                          />
+                      ),
+              };
+          }
 
-      const renderCell = ({ row }) => {
-        if (typeof row[col] === 'object') {
-          return <span>{JSON.stringify(row[col])}</span>;
-        }
-        if (col === 'ls_similarity') {
-          // console.log('==== ls_similarity ==== ', row.ls_index, distances[row.ls_index], distances);
-          // use the row index to get the distance
-          return <span>{parseFloat(1 - distances[row.idx]).toFixed(4)}</span>;
-        }
+          const renderCell = ({ row }) => {
+              if (typeof row[col] === "object") {
+                  return <span>{JSON.stringify(row[col])}</span>;
+              }
+              if (col === "ls_similarity") {
+                  // console.log('==== ls_similarity ==== ', row.ls_index, distances[row.ls_index], distances);
+                  // use the row index to get the distance
+                  return <span>{parseFloat(1 - distances[row.idx]).toFixed(4)}</span>;
+              }
 
-        return <span title={row[col]}>{row[col]}</span>;
-      };
+              return <span title={row[col]}>{row[col]}</span>;
+          };
 
-      return {
-        ...baseCol,
-        width: col == 'ls_index' ? 60 : 150,
-        renderCell,
-      };
-    });
-    return columnDefs;
+          return {
+              ...baseCol,
+              width: col == "ls_index" ? 60 : 150,
+              renderCell,
+          };
+      });
+      return columnDefs;
   }, [dataset, clusterMap, distances, features, feature, sae_id]);
 
   useEffect(() => {
-    let indicesToUse = [];
-    if (filteredIndices.length) {
-      indicesToUse = filteredIndices.filter((i) => !deletedIndices.includes(i));
-    } else {
-      indicesToUse = defaultIndices;
-    }
-    hydrateIndices(indicesToUse);
+      let indicesToUse = [];
+      if (filteredIndices.length) {
+          indicesToUse = filteredIndices.filter((i) => !deletedIndices.includes(i));
+      } else {
+          indicesToUse = defaultIndices;
+      }
+      hydrateIndices(indicesToUse);
   }, [filteredIndices, page, defaultIndices, deletedIndices, hydrateIndices]);
 
   const renderRowWithHover = useCallback(
-    (key, props) => {
-      return <RowWithHover key={key} props={props} onHover={onHover} />;
-    },
-    [onHover]
+      (key, props) => {
+          return <RowWithHover key={key} props={props} onHover={onHover} />;
+      },
+      [onHover]
   );
 
   // console.log('==== FILTER DATA TABLE =====', { filteredIndices, defaultIndices, rows });
 
   return (
-    <div
-      className={`filter-data-table ${rowsLoading ? 'loading' : ''}`}
-      // style={{ visibility: indices.length ? 'visible' : 'hidden' }}
-    >
-      {/* Scrollable Table Body */}
-      <div className="filter-table-scrollable-body table-body" style={{ overflowY: 'auto' }}>
-        <Tooltip
-          id="feature-tooltip"
-          place="bottom"
-          effect="solid"
-          content={featureTooltipContent?.content || ''}
-          className="feature-tooltip"
-          float={true}
-          isOpen={!!featureTooltipContent}
-          // float={true}
-          position="fixed"
-          style={{
-            zIndex: 9999,
-            maxWidth: 'none',
-            whiteSpace: 'nowrap',
-            backgroundColor: '#D3965E',
-            position: 'fixed',
-            marginTop: 10,
-            top: -200,
-            // left: featureTooltipContent?.x || 0,
-            // top: (featureTooltipContent?.y || 0) - 30,
-          }}
-        />
-        <DataGrid
-          rows={rows}
-          columns={formattedColumns}
-          rowClass={(row, index) => {
-            if (row.ls_index === 0) {
-              return 'test';
-            }
-            return '';
-          }}
-          rowGetter={(i) => rows[i]}
-          rowHeight={sae_id ? 50 : 35}
-          style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
-          renderers={{ renderRow: renderRowWithHover }}
-        />
+      <div
+          className={`filter-data-table ${rowsLoading ? "loading" : ""}`}
+          // style={{ visibility: indices.length ? 'visible' : 'hidden' }}
+      >
+          {rowsLoading ? (
+              <div className="loading-overlay">
+                  <div className="loading-container">
+                      <div className="loading-spinner"></div>
+                      <div>Loading</div>
+                  </div>
+              </div>
+          ) : (
+              <div className="filter-table-scrollable-body table-body" style={{ overflowY: "auto" }}>
+                  <Tooltip
+                  id="feature-tooltip"
+                  place="bottom"
+                  effect="solid"
+                  content={featureTooltipContent?.content || ""}
+                  className="feature-tooltip"
+                  float={true}
+                  isOpen={!!featureTooltipContent}
+                  // float={true}
+                  position="fixed"
+                  style={{
+                      zIndex: 9999,
+                      maxWidth: "none",
+                      whiteSpace: "nowrap",
+                      backgroundColor: "#D3965E",
+                      position: "fixed",
+                      marginTop: 10,
+                      top: -200,
+                      // left: featureTooltipContent?.x || 0,
+                      // top: (featureTooltipContent?.y || 0) - 30,
+                  }}
+              />
+              <DataGrid
+                  rows={rows}
+                  columns={formattedColumns}
+                  rowClass={(row, index) => {
+                      if (row.ls_index === 0) {
+                          return "test";
+                      }
+                      return "";
+                  }}
+                  rowGetter={(i) => rows[i]}
+                  rowHeight={sae_id ? 50 : 35}
+                  style={{ height: "100%", color: "var(--text-color-main-neutral)" }}
+                  renderers={{ renderRow: renderRowWithHover }}
+              />
 
-        <Tooltip
-          id="feature-column-info-tooltip"
-          className="feature-column-info-tooltip"
-          place="top"
-          effect="solid"
-          clickable={true}
-          delayHide={500} // give the user a chance to click the tooltip links
-        >
-          <div onClick={(e) => e.stopPropagation()}>
-            The vertical bars represent activations for different{' '}
-            <a
-              href="https://enjalot.github.io/latent-taxonomy/articles/about"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Sparse Autoencoder (SAE)
-            </a>{' '}
-            features corresponding to each embedding. Higher activations indicate that the feature
-            captures an important semantic element of the embedding.
-            <br />
-            <br />
-            Click each cell to see the labels for each feature and to filter rows by a particular
-            feature.
+              <Tooltip
+                  id="feature-column-info-tooltip"
+                  className="feature-column-info-tooltip"
+                  place="top"
+                  effect="solid"
+                  clickable={true}
+                  delayHide={500} // give the user a chance to click the tooltip links
+              >
+                  <div onClick={(e) => e.stopPropagation()}>
+                      The vertical bars represent activations for different{" "}
+                      <a
+                          href="https://enjalot.github.io/latent-taxonomy/articles/about"
+                          target="_blank"
+                          rel="noreferrer"
+                      >
+                          Sparse Autoencoder (SAE)
+                      </a>{" "}
+                      features corresponding to each embedding. Higher activations indicate that the
+                      feature captures an important semantic element of the embedding.
+                      <br />
+                      <br />
+                      Click each cell to see the labels for each feature and to filter rows by a
+                      particular feature.
+                  </div>
+              </Tooltip>
           </div>
-        </Tooltip>
+          )}
+          {showNavigation && (
+              <div className="filter-data-table-page-controls">
+                  <button onClick={() => setPage(0)} disabled={page === 0}>
+                      First
+                  </button>
+                  <button
+                      onClick={() => setPage((old) => Math.max(0, old - 1))}
+                      disabled={page === 0}
+                  >
+                      ←
+                  </button>
+                  <span>
+                      Page {page + 1} of {pageCount || 1}
+                  </span>
+                  <button
+                      onClick={() => setPage((old) => Math.min(pageCount - 1, old + 1))}
+                      disabled={page === pageCount - 1}
+                  >
+                      →
+                  </button>
+                  <button onClick={() => setPage(pageCount - 1)} disabled={page === pageCount - 1}>
+                      Last
+                  </button>
+              </div>
+          )}
       </div>
-      {showNavigation && (
-        <div className="filter-data-table-page-controls">
-          <button onClick={() => setPage(0)} disabled={page === 0}>
-            First
-          </button>
-          <button onClick={() => setPage((old) => Math.max(0, old - 1))} disabled={page === 0}>
-            ←
-          </button>
-          <span>
-            Page {page + 1} of {pageCount || 1}
-          </span>
-          <button
-            onClick={() => setPage((old) => Math.min(pageCount - 1, old + 1))}
-            disabled={page === pageCount - 1}
-          >
-            →
-          </button>
-          <button onClick={() => setPage(pageCount - 1)} disabled={page === pageCount - 1}>
-            Last
-          </button>
-        </div>
-      )}
-    </div>
   );
 }
 export default memo(FilterDataTable);
