@@ -78,7 +78,7 @@ function VisualizationPane({
 
   // Add new memoized feature activation lookup
   const featureActivationMap = useMemo(() => {
-    if (!featureIsSelected || !dataTableRows || !intersectedIndices) {
+    if (!featureIsSelected || !dataTableRows || !filteredIndices) {
       return new Map();
     }
 
@@ -100,7 +100,7 @@ function VisualizationPane({
   const drawingPoints = useMemo(() => {
       return scopeRows.map((p, i) => {
           if (featureIsSelected) {
-              if (intersectedIndices?.includes(i)) {
+              if (filteredIndices?.includes(i)) {
                   const activation = featureActivationMap.get(p.ls_index);
                   return activation !== undefined
                       ? [p.x, p.y, mapSelectionKey.selected, activation]
@@ -113,15 +113,15 @@ function VisualizationPane({
               return [-10, -10, mapSelectionKey.hidden];
           } else if (hoveredIndex === i) {
               return [p.x, p.y, mapSelectionKey.hovered];
-          } else if (intersectedIndices?.includes(i)) {
+          } else if (filteredIndices?.includes(i)) {
               return [p.x, p.y, mapSelectionKey.selected];
-          } else if (intersectedIndices?.length) {
+          } else if (filteredIndices?.length) {
               return [p.x, p.y, mapSelectionKey.notSelected];
           } else {
               return [p.x, p.y, mapSelectionKey.normal];
           }
       });
-  }, [scopeRows, intersectedIndices, hoveredIndex, featureActivationMap, featureIsSelected]);
+  }, [scopeRows, filteredIndices, hoveredIndex, featureActivationMap, featureIsSelected]);
 
   const points = useMemo(() => {
       return scopeRows
@@ -295,7 +295,7 @@ function VisualizationPane({
                       strokeWidth={2.5}
                       // if there are selected indices already, that means other points will be less visible
                       // so we can make the hull a bit more transparent
-                      opacity={intersectedIndices?.length ? 0.15 : 0.5}
+                      opacity={filteredIndices?.length ? 0.15 : 0.5}
                       duration={0}
                       xDomain={xDomain}
                       yDomain={yDomain}
