@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { groups } from 'd3-array';
 import PropTypes from 'prop-types';
-import Scatter from '../Scatter';
+// import Scatter from '../Scatter';
 import ScatterCanvas from '../ScatterCanvas';
 import AnnotationPlot from '../AnnotationPlot';
 import HullPlot from '../HullPlot';
 import TilePlot from '../TilePlot';
 import { Tooltip } from 'react-tooltip';
 import { processHulls } from '../../utils';
-import { useColorMode } from '../../hooks/useColorMode';
+// import { useColorMode } from '../../hooks/useColorMode';
+
+import { useScope } from '../../contexts/ScopeContext';
+import { useFilter } from '../../contexts/FilterContext';
+
 import {
-  mapSelectionColorsLight,
-  mapSelectionDomain,
   mapSelectionOpacity,
   mapPointSizeRange,
   mapSelectionKey,
@@ -19,37 +21,41 @@ import {
 import styles from './VisualizationPane.module.scss';
 import ConfigurationPanel from './ConfigurationPanel';
 import { Icon, Button } from 'react-element-forge';
-import { CLUSTER, FEATURE } from '../../pages/FullScreenExplore';
 
-// unfortunately regl-scatter doesn't even render in iOS
-const isIOS = () => {
-  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
-};
 
 function VisualizationPane({
-  scopeRows,
-  clusterLabels,
-  hoverAnnotations,
-  selectedAnnotations,
-  intersectedIndices,
-  hoveredCluster,
-  slide,
-  scope,
-  hoveredIndex,
-  onScatter,
-  onSelect,
-  onHover,
-  hovered,
-  width,
-  height,
-  activeFilterTab,
-  feature,
-  dataTableRows,
+    width,
+    height,
+    onScatter,
+    hovered,
+    hoveredIndex,
+    onHover,
+    onSelect,
+    hoverAnnotations,
+    selectedAnnotations,
+    hoveredCluster,
+    dataTableRows,
 }) {
+    const {
+        scopeRows,
+        clusterLabels,
+        clusterMap,
+        deletedIndices,
+        scope
+    } = useScope();
+
+    const {
+        activeFilterTab,
+        filteredIndices,
+        feature,
+        selectedIndices,
+        filterConstants
+    } = useFilter();
+
   const { sae: { max_activations = [] } = {} } = scope || {};
 
   // only show the hull if we are filtering by cluster
-  const showHull = activeFilterTab === CLUSTER;
+  const showHull = activeFilterTab === filterConstants.CLUSTER;
 
   const [xDomain, setXDomain] = useState([-1, 1]);
   const [yDomain, setYDomain] = useState([-1, 1]);
@@ -68,7 +74,7 @@ function VisualizationPane({
 
   const size = [width, height];
 
-  const featureIsSelected = feature !== -1 && activeFilterTab === FEATURE;
+  const featureIsSelected = feature !== -1 && activeFilterTab === filterConstants.FEATURE;
 
   // Add new memoized feature activation lookup
   const featureActivationMap = useMemo(() => {

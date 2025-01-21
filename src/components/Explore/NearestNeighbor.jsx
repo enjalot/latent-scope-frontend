@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Input, Button } from 'react-element-forge';
 import styles from './NearestNeighbor.module.scss';
+import { useFilter } from '../../contexts/FilterContext';
 
-export default function NearestNeighbor({
-  searchIndices,
-  searchLoading,
-  setSearchText,
-  clearSearch,
-  defaultValue = '',
-}) {
+export default function NearestNeighbor() {
+  const { 
+    searchIndices, 
+    searchLoading, 
+    setSearchText, 
+    clearSearch, 
+    searchText: defaultValue,
+  } = useFilter();
   const [inputValue, setInputValue] = useState(defaultValue);
 
   useEffect(() => {
@@ -32,9 +34,7 @@ export default function NearestNeighbor({
           className={styles.searchInput}
           value={inputValue}
           placeholder="Filter by nearest neighbors to search query..."
-          onChange={(e) => {
-            setInputValue(e.target.value);
-          }}
+          onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !searchLoading) {
               setSearchText(e.target.value);

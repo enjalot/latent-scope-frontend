@@ -2,20 +2,23 @@ import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import classNames from 'classnames';
 import styles from './FeatureFilter.module.scss';
+import { useFilter } from '../../contexts/FilterContext';
 
-export default function FeatureFilter({
-  scope,
-  features,
-  feature,
-  featureIndices,
-  setFeature,
-  setFeatureIndices,
-  onThreshold,
-}) {
+export default function FeatureFilter({ scope }) {
+  const {
+    features,
+    feature,
+    featureIndices,
+    setFeature,
+    setFeatureIndices,
+    threshold,
+    setThreshold
+  } = useFilter();
+
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef(null);
-  const [threshold, setThreshold] = useState(0.1);
+  const clickingItemRef = useRef(false);
 
   const featureLabel = (featIdx) => {
     const featureObj = features.find((f) => f.feature === featIdx);
@@ -34,9 +37,8 @@ export default function FeatureFilter({
       const maxActivation = scope?.sae?.max_activations[feature] || 0;
       let t = maxActivation < 0.2 ? maxActivation / 2 : 0.1;
       setThreshold(t);
-      onThreshold(t);
     }
-  }, [feature, scope, onThreshold]);
+  }, [feature, scope, setThreshold]);
 
   const items = useMemo(
     () =>
@@ -59,8 +61,6 @@ export default function FeatureFilter({
     () => (feature ? items.find((f) => f.value === feature) : null),
     [items, feature]
   );
-
-  const clickingItemRef = useRef(false);
 
   const handleSelect = useCallback(
     (item) => {
@@ -126,8 +126,8 @@ export default function FeatureFilter({
 
   const handleThresholdChanged = useCallback(() => {
     console.log('threshold', threshold);
-    onThreshold(threshold);
-  }, [threshold, setFeature]);
+    setThreshold(threshold);
+  }, [threshold, setThreshold]);
 
   return (
     <div className={classNames(styles.container)}>

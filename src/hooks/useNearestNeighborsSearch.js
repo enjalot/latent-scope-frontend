@@ -12,11 +12,11 @@ export default function useNearestNeighborsSearch({
 }) {
   const [searchIndices, setSearchIndices] = useState([]);
   const [distances, setDistances] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const search = useCallback(
     async (query) => {
-      setIsLoading(true);
+      setSearchLoading(true);
       apiService.searchNearestNeighbors(userId, datasetId, scope, query).then((data) => {
         const inds = data.indices.filter((d) => {
           return !deletedIndices.includes(d)
@@ -25,7 +25,7 @@ export default function useNearestNeighborsSearch({
         const limit = 20;
         // TODO: make the # of results configurable
         setSearchIndices(inds.slice(0, limit));
-        setIsLoading(false)
+        setSearchLoading(false)
         // onSearchEmbedding?.(data.search_embedding[0]);
       })
     },
@@ -49,7 +49,7 @@ export default function useNearestNeighborsSearch({
     setSearchIndices,
     searchIndices,
     distances,
-    isLoading,
+    searchLoading,
     search,
     clearSearch,
   };

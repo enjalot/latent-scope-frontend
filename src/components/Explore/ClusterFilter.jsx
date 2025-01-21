@@ -1,8 +1,11 @@
 import React from 'react';
 import Select from 'react-select';
 import { selectStyles } from './SelectStyles';
+import { useFilter } from '../../contexts/FilterContext';
 
-export default function ClusterFilter({ clusterLabels, cluster, clusterIndices, setCluster }) {
+export default function ClusterFilter({ clusterLabels }) {
+  const { cluster, setCluster, clusterIndices } = useFilter();
+
   const selectOptions = clusterLabels?.map((cl) => ({
     value: cl.cluster,
     label: `${cl.cluster}: ${cl.label} (${cl.count})`,
