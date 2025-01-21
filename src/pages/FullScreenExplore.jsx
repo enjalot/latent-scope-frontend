@@ -734,7 +734,6 @@ function Explore() {
                         ) : null}
                     </div>
                 </div>
-                )}
             </div>
         </>
     );
