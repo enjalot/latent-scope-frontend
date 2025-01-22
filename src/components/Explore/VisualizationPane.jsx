@@ -238,10 +238,6 @@ function VisualizationPane({
     return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
   }, [vizConfig.pointOpacity]);
 
-  useEffect(() => {
-    console.log('hoveredCluster', hoveredCluster);
-  }, [hoveredCluster]);
-
   return (
     // <div style={{ width, height }} ref={umapRef}>
     <div ref={umapRef} style={{ width: '100%', height: '100%' }}>
@@ -277,6 +273,7 @@ function VisualizationPane({
             onSelect={onSelect}
             onHover={onHover}
             featureIsSelected={featureIsSelected}
+            ignoreNotSelected={activeFilterTab !== filterConstants.SELECT}
           />
         )}
         {/* show all the hulls */}

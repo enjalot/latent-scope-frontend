@@ -35,7 +35,6 @@ const useColumnFilter = (userId, datasetId, scope) => {
       });
       console.log('query', query);
       apiService.columnFilter(userId, datasetId, scope?.id, query).then((indices) => {
-        console.log('==== indices ==== ', indices);
         setColumnIndices(indices.map((d) => d.index));
       });
     },

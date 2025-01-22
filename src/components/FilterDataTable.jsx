@@ -120,12 +120,6 @@ function FilterDataTable({
     [dataset, page, sae_id, setRowsLoading]
   );
 
-  console.log(
-    '=== defaultIndices ===',
-    { defaultIndices, page, useDefaultIndices, defaultRows, filteredIndices }
-    // deletedIndices
-  );
-
   useEffect(() => {
     hydrateIndices(defaultIndices, setDefaultRows);
   }, [defaultIndices, page, hydrateIndices]);

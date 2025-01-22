@@ -22,6 +22,7 @@ ScatterGL.propTypes = {
   width: PropTypes.number.isRequired,
   pointScale: PropTypes.number,
   quadtreeRadius: PropTypes.number,
+  ignoreNotSelected: PropTypes.bool,
   height: PropTypes.number.isRequired,
   onView: PropTypes.func,
   onSelect: PropTypes.func,
@@ -35,7 +36,7 @@ const calculatePointColor = (valueA) => {
 const calculatePointOpacity = (featureIsSelected, valueA, activation) => {
   // when a feature is selected, we want to use the activation value to set the opacity
   if (featureIsSelected && valueA === mapSelectionKey.selected && activation !== undefined) {
-    return activation;
+    return activation + 0.5;
   }
   return mapSelectionOpacity[valueA];
 };
@@ -70,6 +71,7 @@ function ScatterGL({
   onSelect,
   onHover,
   featureIsSelected,
+  ignoreNotSelected = true,
 }) {
   const canvasRef = useRef(null);
   const reglRef = useRef(null);
@@ -197,10 +199,14 @@ function ScatterGL({
       blend: {
         enable: true,
         func: {
-          srcRGB: 'src alpha',
-          srcAlpha: 'src alpha',
-          dstRGB: 'one',
-          dstAlpha: 'one',
+          // srcRGB: 'src alpha', // dark mode
+          // srcAlpha: 'src alpha', // dark mode
+          // dstRGB: 'one', // dark mode
+          // dstAlpha: 'one', // dark mode
+          srcRGB: 'one',
+          srcAlpha: 'one',
+          dstRGB: 'one minus src alpha',
+          dstAlpha: 'one minus src alpha',
         },
       },
       depth: {
@@ -235,7 +241,8 @@ function ScatterGL({
     if (!reglRef.current || !drawPointsRef.current) return;
 
     reglRef.current.clear({
-      color: [0.01, 0.01, 0.01, 1],
+      // color: [0.01, 0.01, 0.01, 1], // dark mode
+      color: [0.98, 0.98, 0.98, 1],
       depth: 1,
     });
 
@@ -261,10 +268,12 @@ function ScatterGL({
       .y((d) => d[1])
       .addAll(
         points.filter(
-          (d) => d[2] !== mapSelectionKey.hidden && d[2] !== mapSelectionKey.notSelected
+          (d) =>
+            d[2] !== mapSelectionKey.hidden &&
+            (ignoreNotSelected ? d[2] !== mapSelectionKey.notSelected : true)
         )
       );
-  }, [points]);
+  }, [points, ignoreNotSelected]);
 
   // Replace the existing handleMouseMove with this updated version
   const findNearestPoint = useCallback(

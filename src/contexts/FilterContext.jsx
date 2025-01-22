@@ -133,8 +133,6 @@ export function FilterProvider({ children }) {
     columnFilter.columnIndices,
   ]);
 
-  console.log('=== useDefaultIndices ===', useDefaultIndices, urlParams.get('cluster'));
-
   const value = {
     activeFilterTab,
     setActiveFilterTab,
@@ -183,15 +181,6 @@ export function FilterProvider({ children }) {
     useDefaultIndices,
     setUrlParams,
   };
-
-  console.log('=== indices', {
-    filteredIndices,
-    clusterFilter: clusterFilter.clusterIndices,
-    searchFilter: searchFilter.searchIndices,
-    selectedIndices,
-    columnFilter: columnFilter.columnIndices,
-    featureFilter: featureFilter.featureIndices,
-  });
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;
 }
