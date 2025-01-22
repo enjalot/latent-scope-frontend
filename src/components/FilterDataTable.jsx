@@ -69,6 +69,7 @@ function FilterDataTable({
   deletedIndices = [],
   page,
   setPage,
+  useDefaultIndices = false,
 }) {
   const [rows, setRows] = useState([]);
 
@@ -247,15 +248,17 @@ function FilterDataTable({
     return columnDefs;
   }, [dataset, clusterMap, distances, features, feature, sae_id]);
 
-  useEffect(() => {
-    let indicesToUse = [];
-    if (filteredIndices.length) {
-      indicesToUse = filteredIndices.filter((i) => !deletedIndices.includes(i));
-    } else {
-      indicesToUse = defaultIndices;
+  const indicesToUse = useMemo(() => {
+    console.log('=== indicesToUse ===', filteredIndices, useDefaultIndices, defaultIndices);
+    if (useDefaultIndices) {
+      return defaultIndices;
     }
+    return filteredIndices.filter((i) => !deletedIndices.includes(i));
+  }, [filteredIndices, useDefaultIndices, defaultIndices, deletedIndices]);
+
+  useEffect(() => {
     hydrateIndices(indicesToUse);
-  }, [filteredIndices, page, defaultIndices, deletedIndices, hydrateIndices]);
+  }, [indicesToUse, page, hydrateIndices]);
 
   const renderRowWithHover = useCallback(
     (key, props) => {

@@ -14,12 +14,26 @@ export const FEATURE = 'feature';
 
 const FilterContext = createContext(null);
 
+function parseUrlParams(urlParams) {
+  // return the first non-null value from the url params
+  const params = new URLSearchParams(urlParams);
+
+  const keys = ['cluster', 'feature', 'search'];
+
+  for (const key of keys) {
+    const value = params.get(key);
+    if (value) {
+      return value;
+    }
+  }
+  return null;
+}
+
 export function FilterProvider({ children }) {
   const [urlParams, setUrlParams] = useSearchParams();
 
   const { scopeRows, deletedIndices, dataset, datasetId, userId, scope, scopeLoaded } = useScope();
 
-  // Active filter state
   const [activeFilterTab, setActiveFilterTab] = useState(CLUSTER);
   const [filteredIndices, setFilteredIndices] = useState([]);
   const [defaultIndices, setDefaultIndices] = useState([]);
@@ -100,7 +114,7 @@ export function FilterProvider({ children }) {
     defaultIndices,
   ]);
 
-  // Update active tab based on URL params
+  // Update active tab based on URL params, but only on first load.
   useEffect(() => {
     if (urlParams.has('cluster')) {
       setActiveFilterTab(CLUSTER);
@@ -109,7 +123,7 @@ export function FilterProvider({ children }) {
     } else if (urlParams.has('search')) {
       setActiveFilterTab(SEARCH);
     }
-  }, [urlParams]);
+  }, []);
 
   const value = {
     activeFilterTab,
@@ -156,7 +170,17 @@ export function FilterProvider({ children }) {
       COLUMN,
       FEATURE,
     },
+    useDefaultIndices: filteredIndices.length === 0,
   };
+
+  console.log('=== indices', {
+    filteredIndices,
+    clusterFilter: clusterFilter.clusterIndices,
+    searchFilter: searchFilter.searchIndices,
+    selectedIndices,
+    columnFilter: columnFilter.columnIndices,
+    featureFilter: featureFilter.featureIndices,
+  });
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;
 }

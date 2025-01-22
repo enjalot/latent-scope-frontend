@@ -16,8 +16,6 @@ export default function useClusterFilter({
     if (scopeLoaded && urlParams.has('cluster')) {
       const clusterParam = parseInt(urlParams.get('cluster'));
       const clusterFromParam = scope?.cluster_labels_lookup?.[clusterParam];
-      console.log('PARAMS', clusterParam);
-      console.log('clusterFromParam', clusterFromParam);
       if (clusterFromParam) {
         setCluster(clusterFromParam);
       }

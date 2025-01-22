@@ -8,8 +8,15 @@ import { useScope } from '../../contexts/ScopeContext';
 export default function FeatureFilter() {
   const { scope, features } = useScope();
   const { featureFilter } = useFilter();
-  const { feature, featureIndices, setFeature, setFeatureIndices, threshold, setThreshold } =
-    featureFilter;
+  const {
+    featureIndicesLoaded,
+    feature,
+    featureIndices,
+    setFeature,
+    setFeatureIndices,
+    threshold,
+    setThreshold,
+  } = featureFilter;
 
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -22,10 +29,10 @@ export default function FeatureFilter() {
   };
 
   useEffect(() => {
-    if (feature !== -1) {
+    if (feature !== -1 && featureIndicesLoaded) {
       setInputValue(featureLabel(feature));
     }
-  }, [feature]);
+  }, [feature, featureIndicesLoaded]);
 
   const items = useMemo(
     () =>
@@ -86,6 +93,8 @@ export default function FeatureFilter() {
     setInputValue('');
     setFeature(-1);
     setFeatureIndices([]);
+    setIsOpen(false);
+    clickingItemRef.current = false;
     inputRef.current?.focus();
   }, [setFeature, setInputValue, inputRef]);
 
