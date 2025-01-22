@@ -76,8 +76,8 @@ function FilterDataTable({
   const rowsPerPage = 100;
   const [pageCount, setPageCount] = useState(0);
   useEffect(() => {
-    const count = Math.ceil(filteredIndices.length / rowsPerPage);
-    console.log('==== page count ==== ', count, filteredIndices.length, defaultIndices.length);
+    let inds = filteredIndices.length ? filteredIndices.length : defaultIndices.length;
+    const count = Math.ceil(inds / rowsPerPage);
     setPageCount(count);
   }, [filteredIndices]);
 
@@ -92,7 +92,7 @@ function FilterDataTable({
         setRowsLoading(true);
         let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
         const timestamp = Date.now();
-        console.log('fetching query', paged, timestamp);
+        // console.log('fetching query', paged, timestamp);
 
         apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
           const rowsWithIdx = rows.map((row, idx) => ({

@@ -49,12 +49,7 @@ export function ScopeProvider({ children }) {
     apiService
       .getScopeRows(userId, datasetId, scope.id)
       .then((scopeRows) => {
-        scopeRows.forEach((row, i) => {
-          row.index = i;
-          row.ls_index = i;
-        });
         setScopeRows(scopeRows);
-
         let clusterMap = {};
         let nonDeletedClusters = new Set();
 

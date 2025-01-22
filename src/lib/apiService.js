@@ -39,6 +39,14 @@ export const apiService = {
         file: buffer,
         rowFormat: 'object',
         onComplete: (data) => {
+          data.forEach((row, i) => {
+            row.ls_index = i;
+            row.cluster = parseInt(row.cluster);
+            row.raw_cluster = parseInt(row.raw_cluster);
+            row.tile_index_32 = parseInt(row.tile_index_32);
+            row.tile_index_64 = parseInt(row.tile_index_64);
+            row.tile_index_128 = parseInt(row.tile_index_128);
+          });
           console.log('DATA', data);
           resolve(data);
         },
