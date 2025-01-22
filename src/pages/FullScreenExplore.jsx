@@ -15,6 +15,24 @@ import { FilterProvider } from '../contexts/FilterContext';
 import { useScope } from '../contexts/ScopeContext';
 import { useFilter } from '../contexts/FilterContext';
 
+// Add this custom hook near the top of the file
+const useDebounce = (callback, delay) => {
+  const timeoutRef = useRef(null);
+
+  return useCallback(
+    (...args) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        callback(...args);
+      }, delay);
+    },
+    [callback, delay]
+  );
+};
+
 // Create a new component that wraps the main content
 function ExploreContent() {
   // Get scope-related state from ScopeContext
@@ -76,9 +94,11 @@ function ExploreContent() {
           index: hoveredIndex,
           cluster: clusterMap[hoveredIndex],
         });
+        setHoveredCluster(clusterMap[hoveredIndex]);
       });
     } else {
       setHovered(null);
+      setHoveredCluster(null);
     }
   }, [hoveredIndex, deletedIndices, clusterMap, hydrateHoverText]);
 
@@ -104,6 +124,8 @@ function ExploreContent() {
     },
     [deletedIndices]
   );
+
+  const debouncedHandleHover = useDebounce(handleHover, 5);
 
   const handleSelected = useCallback(
     (indices) => {
@@ -297,7 +319,7 @@ function ExploreContent() {
                 sae_id={sae?.id}
                 feature={featureFilter.feature}
                 features={features}
-                onHover={handleHover}
+                onHover={debouncedHandleHover}
                 onClick={handleClicked}
                 page={page}
                 setPage={setPage}
@@ -320,7 +342,7 @@ function ExploreContent() {
                 onScatter={setScatter}
                 hovered={hovered}
                 hoveredIndex={hoveredIndex}
-                onHover={handleHover}
+                onHover={debouncedHandleHover}
                 onSelect={handleSelected}
                 hoverAnnotations={hoverAnnotations}
                 selectedAnnotations={selectedAnnotations}

@@ -65,7 +65,7 @@ function FilterDataTable({
   sae_id = null,
   feature = -1,
   features = [],
-  onHover,
+  onHover = () => {},
   deletedIndices = [],
   page,
   setPage,

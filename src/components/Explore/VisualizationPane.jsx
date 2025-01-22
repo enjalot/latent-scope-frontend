@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { groups } from 'd3-array';
 import PropTypes from 'prop-types';
 // import Scatter from '../Scatter';
-import ScatterCanvas from '../ScatterCanvas';
+// import Scatter from '../ScatterCanvas';
+import Scatter from '../ScatterGL';
 import AnnotationPlot from '../AnnotationPlot';
 import HullPlot from '../HullPlot';
 import TilePlot from '../TilePlot';
@@ -115,18 +116,18 @@ function VisualizationPane({
       }
 
       if (p.deleted) {
-        return [-10, -10, mapSelectionKey.hidden];
-      } else if (hoveredIndex === i) {
-        return [p.x, p.y, mapSelectionKey.hovered];
+        return [-10, -10, mapSelectionKey.hidden, 0.0];
+        //   } else if (hoveredIndex === i) {
+        //     return [p.x, p.y, mapSelectionKey.hovered, 0.0];
       } else if (filteredIndices?.includes(i)) {
-        return [p.x, p.y, mapSelectionKey.selected];
+        return [p.x, p.y, mapSelectionKey.selected, 0.0];
       } else if (filteredIndices?.length) {
-        return [p.x, p.y, mapSelectionKey.notSelected];
+        return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
       } else {
-        return [p.x, p.y, mapSelectionKey.normal];
+        return [p.x, p.y, mapSelectionKey.normal, 0.0];
       }
     });
-  }, [scopeRows, filteredIndices, hoveredIndex, featureActivationMap, featureIsSelected]);
+  }, [scopeRows, filteredIndices, featureActivationMap, featureIsSelected]);
 
   const points = useMemo(() => {
     return scopeRows
@@ -237,6 +238,10 @@ function VisualizationPane({
     return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
   }, [vizConfig.pointOpacity]);
 
+  useEffect(() => {
+    console.log('hoveredCluster', hoveredCluster);
+  }, [hoveredCluster]);
+
   return (
     // <div style={{ width, height }} ref={umapRef}>
     <div ref={umapRef} style={{ width: '100%', height: '100%' }}>
@@ -264,7 +269,7 @@ function VisualizationPane({
 
       <div className={styles.scatters + ' ' + (isFullScreen ? styles.fullScreen : '')}>
         {scope && (
-          <ScatterCanvas
+          <Scatter
             points={drawingPoints}
             width={width}
             height={height}
@@ -292,7 +297,7 @@ function VisualizationPane({
             height={height}
           />
         )}
-        {hoveredCluster && hoveredCluster.hull && scope.cluster_labels_lookup && (
+        {hoveredCluster && hoveredHulls && scope.cluster_labels_lookup && (
           <HullPlot
             hulls={hoveredHulls}
             fill="#8bcf66"
@@ -332,8 +337,8 @@ function VisualizationPane({
         <AnnotationPlot
           points={hoverAnnotations}
           stroke="black"
-          fill="purple"
-          size="16"
+          fill="#8bcf66"
+          size="26"
           xDomain={xDomain}
           yDomain={yDomain}
           width={width}
