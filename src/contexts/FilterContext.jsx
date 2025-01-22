@@ -73,12 +73,7 @@ export function FilterProvider({ children }) {
   useEffect(() => {
     switch (activeFilterTab) {
       case CLUSTER:
-        // If cluster is set, use cluster indices, otherwise use default indices
-        if (clusterFilter.cluster) {
-          setFilteredIndices(clusterFilter.clusterIndices);
-        } else {
-          setFilteredIndices(defaultIndices);
-        }
+        setFilteredIndices(clusterFilter.clusterIndices);
         break;
       case SEARCH:
         setFilteredIndices(searchFilter.searchIndices);
