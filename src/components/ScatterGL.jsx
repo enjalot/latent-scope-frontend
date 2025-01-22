@@ -165,7 +165,9 @@ function ScatterGL({
           
           // Make the falloff much sharper with pow()
           float alpha = v_opacity * (1.0 - pow(dist, 4.0));
+          // dark mode
           vec3 color = v_color * 0.95;
+          // vec3 color = vec3(1.0 - v_color.rgb);
           gl_FragColor = vec4(color * alpha, alpha);
         }
       `,
@@ -199,10 +201,14 @@ function ScatterGL({
       blend: {
         enable: true,
         func: {
-          srcRGB: 'src alpha',
-          srcAlpha: 'src alpha',
-          dstRGB: 'one',
-          dstAlpha: 'one',
+          // srcRGB: 'src alpha',  // dark mode
+          // srcAlpha: 'src alpha', // dark mode
+          srcRGB: 'one',
+          srcAlpha: 'one',
+          // dstRGB: 'one',  // dark mode
+          // dstAlpha: 'one', // dark mode
+          dstRGB: 'one minus src alpha',
+          dstAlpha: 'one minus src alpha',
         },
       },
       depth: {
@@ -237,7 +243,8 @@ function ScatterGL({
     if (!reglRef.current || !drawPointsRef.current) return;
 
     reglRef.current.clear({
-      color: [0.01, 0.01, 0.01, 1],
+      // color: [0.01, 0.01, 0.01, 1], // dark mode
+      color: [0.98, 0.98, 0.98, 1],
       depth: 1,
     });
 
