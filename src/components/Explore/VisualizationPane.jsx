@@ -277,6 +277,7 @@ function VisualizationPane({
             onSelect={onSelect}
             onHover={onHover}
             featureIsSelected={featureIsSelected}
+            ignoreNotSelected={activeFilterTab !== filterConstants.SELECT}
           />
         )}
         {/* show all the hulls */}

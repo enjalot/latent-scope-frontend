@@ -31,7 +31,7 @@ export const mapSelectionColorsDark = [
 export const mapSelectionOpacity = [
   0.75, // normal
   0.95, // selected
-  0.33, // not selected
+  0.25, // not selected
   1, // hovered
   0, // hidden
 ];

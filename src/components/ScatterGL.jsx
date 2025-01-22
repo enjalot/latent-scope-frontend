@@ -22,6 +22,7 @@ ScatterGL.propTypes = {
   width: PropTypes.number.isRequired,
   pointScale: PropTypes.number,
   quadtreeRadius: PropTypes.number,
+  ignoreNotSelected: PropTypes.bool,
   height: PropTypes.number.isRequired,
   onView: PropTypes.func,
   onSelect: PropTypes.func,
@@ -35,7 +36,7 @@ const calculatePointColor = (valueA) => {
 const calculatePointOpacity = (featureIsSelected, valueA, activation) => {
   // when a feature is selected, we want to use the activation value to set the opacity
   if (featureIsSelected && valueA === mapSelectionKey.selected && activation !== undefined) {
-    return activation;
+    return activation + 0.5;
   }
   return mapSelectionOpacity[valueA];
 };
@@ -70,6 +71,7 @@ function ScatterGL({
   onSelect,
   onHover,
   featureIsSelected,
+  ignoreNotSelected = true,
 }) {
   const canvasRef = useRef(null);
   const reglRef = useRef(null);
@@ -261,10 +263,12 @@ function ScatterGL({
       .y((d) => d[1])
       .addAll(
         points.filter(
-          (d) => d[2] !== mapSelectionKey.hidden && d[2] !== mapSelectionKey.notSelected
+          (d) =>
+            d[2] !== mapSelectionKey.hidden &&
+            (ignoreNotSelected ? d[2] !== mapSelectionKey.notSelected : true)
         )
       );
-  }, [points]);
+  }, [points, ignoreNotSelected]);
 
   // Replace the existing handleMouseMove with this updated version
   const findNearestPoint = useCallback(
