@@ -72,7 +72,7 @@ function ExploreContent() {
   const [selectedAnnotations, setSelectedAnnotations] = useState([]);
   const [page, setPage] = useState(0);
 
-  // Hover text hydration
+  // Hover text hydration with debouncing
   const hydrateHoverText = useCallback(
     (index, setter) => {
       apiService.getHoverText(userId, datasetId, scope?.id, index).then((data) => {
@@ -82,25 +82,25 @@ function ExploreContent() {
     [userId, datasetId, scope]
   );
 
+  const debouncedHydrateHoverText = useDebounce(hydrateHoverText, 5);
+
   useEffect(() => {
     if (
       hoveredIndex !== null &&
       hoveredIndex !== undefined &&
       !deletedIndices.includes(hoveredIndex)
     ) {
-      hydrateHoverText(hoveredIndex, (text) => {
+      debouncedHydrateHoverText(hoveredIndex, (text) => {
         setHovered({
           text: text,
           index: hoveredIndex,
           cluster: clusterMap[hoveredIndex],
         });
-        setHoveredCluster(clusterMap[hoveredIndex]);
       });
     } else {
       setHovered(null);
-      setHoveredCluster(null);
     }
-  }, [hoveredIndex, deletedIndices, clusterMap, hydrateHoverText]);
+  }, [hoveredIndex, deletedIndices, clusterMap, debouncedHydrateHoverText]);
 
   // Update hover annotations
   useEffect(() => {
@@ -121,11 +121,14 @@ function ExploreContent() {
     (index) => {
       const nonDeletedIndex = deletedIndices.includes(index) ? null : index;
       setHoveredIndex(nonDeletedIndex);
+      if (nonDeletedIndex >= 0) {
+        setHoveredCluster(clusterMap[nonDeletedIndex]);
+      } else {
+        setHoveredCluster(null);
+      }
     },
     [deletedIndices]
   );
-
-  const debouncedHandleHover = useDebounce(handleHover, 5);
 
   const handleSelected = useCallback(
     (indices) => {
@@ -319,7 +322,7 @@ function ExploreContent() {
                 sae_id={sae?.id}
                 feature={featureFilter.feature}
                 features={features}
-                onHover={debouncedHandleHover}
+                onHover={handleHover}
                 onClick={handleClicked}
                 page={page}
                 setPage={setPage}
@@ -342,7 +345,7 @@ function ExploreContent() {
                 onScatter={setScatter}
                 hovered={hovered}
                 hoveredIndex={hoveredIndex}
-                onHover={debouncedHandleHover}
+                onHover={handleHover}
                 onSelect={handleSelected}
                 hoverAnnotations={hoverAnnotations}
                 selectedAnnotations={selectedAnnotations}
