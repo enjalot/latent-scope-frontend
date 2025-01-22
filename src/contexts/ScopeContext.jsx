@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-const { asyncBufferFromUrl, parquetRead } = await import('hyparquet');
 
 import { apiService } from '../lib/apiService';
 import { saeAvailable } from '../lib/SAE';
@@ -32,34 +31,9 @@ export function ScopeProvider({ children }) {
 
   const [features, setFeatures] = useState([]);
 
-  // TODO: this should be in API service?
   useEffect(() => {
-    const asyncRead = async (meta) => {
-      if (!meta) return;
-      const buffer = await asyncBufferFromUrl(meta.url);
-      parquetRead({
-        file: buffer,
-        onComplete: (data) => {
-          // let pts = []
-          // console.log("DATA", data)
-          let fts = data.map((f) => {
-            // pts.push([f[2], f[3], parseInt(f[5])])
-            return {
-              feature: parseInt(f[0]),
-              max_activation: f[1],
-              label: f[6],
-              order: f[7],
-            };
-          });
-          // .filter(d => d.label.indexOf("linear") >= 0)
-          // .sort((a,b) => a.order - b.order)
-          setFeatures(fts);
-        },
-      });
-    };
     if (scope?.sae_id) {
-      // console.log("SAE ID", scope.sae_id, saeAvailable[scope.sae_id])
-      asyncRead(saeAvailable[scope.embedding?.model_id]);
+      apiService.getSaeFeatures(saeAvailable[scope.embedding?.model_id], setFeatures);
     }
   }, [scope]);
 
@@ -75,8 +49,9 @@ export function ScopeProvider({ children }) {
     apiService
       .getScopeRows(userId, datasetId, scope.id)
       .then((scopeRows) => {
-        scopeRows.forEach((row) => {
-          row.ls_index = row.index;
+        scopeRows.forEach((row, i) => {
+          row.index = i;
+          row.ls_index = i;
         });
         setScopeRows(scopeRows);
 
