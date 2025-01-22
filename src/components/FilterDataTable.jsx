@@ -72,6 +72,7 @@ function FilterDataTable({
   useDefaultIndices = false,
 }) {
   const [rows, setRows] = useState([]);
+  const [defaultRows, setDefaultRows] = useState([]);
 
   // page count is the total number of pages available
   const rowsPerPage = 100;
@@ -87,33 +88,58 @@ function FilterDataTable({
 
   const [rowsLoading, setRowsLoading] = useState(false);
   const hydrateIndices = useCallback(
-    (indices) => {
-      // console.log("hydrate!", dataset, scope, indices)
+    (indices, setRowsTarget) => {
       if (dataset && scope && indices.length) {
         setRowsLoading(true);
         let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
         const timestamp = Date.now();
         console.log('fetching query', paged, timestamp);
 
-        apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
-          const rowsWithIdx = rows.map((row, idx) => ({
-            ...row,
-            idx,
-            ls_index: row.index,
-          }));
-          setRows(rowsWithIdx);
-          onDataTableRows(rowsWithIdx);
+        if (paged.length) {
+          apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
+            const rowsWithIdx = rows.map((row, idx) => ({
+              ...row,
+              idx,
+              ls_index: row.index,
+            }));
+            setRowsTarget(rowsWithIdx);
+            onDataTableRows(rowsWithIdx);
+            setRowsLoading(false);
+          });
+        } else {
+          setRowsTarget([]);
+          onDataTableRows && onDataTableRows([]);
           setRowsLoading(false);
-        });
+        }
       } else {
-        setRows([]);
+        setRowsTarget([]);
         onDataTableRows && onDataTableRows([]);
         setRowsLoading(false);
-        // setPageCount(totalPages);
       }
     },
     [dataset, page, sae_id, setRowsLoading]
   );
+
+  console.log(
+    '=== defaultIndices ===',
+    { defaultIndices, page, useDefaultIndices, defaultRows, filteredIndices }
+    // deletedIndices
+  );
+
+  useEffect(() => {
+    hydrateIndices(defaultIndices, setDefaultRows);
+  }, [defaultIndices, page, hydrateIndices]);
+
+  useEffect(() => {
+    if (!useDefaultIndices) {
+      const filteredWithoutDeleted = filteredIndices.filter((i) => !deletedIndices.includes(i));
+      hydrateIndices(filteredWithoutDeleted, setRows);
+    }
+  }, [filteredIndices, deletedIndices, page, hydrateIndices, useDefaultIndices]);
+
+  const displayRows = useMemo(() => {
+    return useDefaultIndices ? defaultRows : rows;
+  }, [useDefaultIndices, defaultRows, rows]);
 
   const formattedColumns = useMemo(() => {
     const ls_features_column = 'ls_features';
@@ -248,19 +274,6 @@ function FilterDataTable({
     return columnDefs;
   }, [dataset, clusterMap, distances, features, feature, sae_id]);
 
-  const indicesToUse = useMemo(() => {
-    if (useDefaultIndices) {
-      return defaultIndices;
-    }
-    return filteredIndices.filter((i) => !deletedIndices.includes(i));
-  }, [filteredIndices, useDefaultIndices, defaultIndices, deletedIndices]);
-
-  console.log('=== indicesToUse ===', indicesToUse);
-
-  useEffect(() => {
-    hydrateIndices(indicesToUse);
-  }, [indicesToUse, page, hydrateIndices]);
-
   const renderRowWithHover = useCallback(
     (key, props) => {
       return <RowWithHover key={key} props={props} onHover={onHover} />;
@@ -307,7 +320,7 @@ function FilterDataTable({
             }}
           />
           <DataGrid
-            rows={rows}
+            rows={displayRows}
             columns={formattedColumns}
             rowClass={(row, index) => {
               if (row.ls_index === 0) {
@@ -315,7 +328,7 @@ function FilterDataTable({
               }
               return '';
             }}
-            rowGetter={(i) => rows[i]}
+            rowGetter={(i) => displayRows[i]}
             rowHeight={sae_id ? 50 : 35}
             style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
             renderers={{ renderRow: renderRowWithHover }}

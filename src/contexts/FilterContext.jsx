@@ -115,7 +115,6 @@ export function FilterProvider({ children }) {
     } else if (activeFilterTab === FEATURE) {
       return urlParams.get('feature') === null && featureFilter.feature === null;
     } else if (activeFilterTab === SEARCH) {
-      console.log('=== searchFilter.searchText ===', searchFilter.searchText);
       return urlParams.get('search') === null && searchFilter.searchText === '';
     } else if (activeFilterTab === SELECT) {
       return urlParams.get('select') === null && selectedIndices.length === 0;
