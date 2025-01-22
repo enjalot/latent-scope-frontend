@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useScope } from './ScopeContext';
@@ -13,21 +13,6 @@ export const COLUMN = 'column';
 export const FEATURE = 'feature';
 
 const FilterContext = createContext(null);
-
-function parseUrlParams(urlParams) {
-  // return the first non-null value from the url params
-  const params = new URLSearchParams(urlParams);
-
-  const keys = ['cluster', 'feature', 'search'];
-
-  for (const key of keys) {
-    const value = params.get(key);
-    if (value) {
-      return value;
-    }
-  }
-  return null;
-}
 
 export function FilterProvider({ children }) {
   const [urlParams, setUrlParams] = useSearchParams();
@@ -44,7 +29,6 @@ export function FilterProvider({ children }) {
     scope,
     scopeLoaded,
     urlParams,
-    setUrlParams,
   });
   const columnFilter = useColumnFilter(userId, datasetId, scope);
   const searchFilter = useNearestNeighborsSearch({
@@ -53,7 +37,6 @@ export function FilterProvider({ children }) {
     scope,
     deletedIndices,
     urlParams,
-    setUrlParams,
     scopeLoaded,
   });
   const featureFilter = useFeatureFilter({
@@ -61,7 +44,6 @@ export function FilterProvider({ children }) {
     datasetId,
     scope,
     urlParams,
-    setUrlParams,
     scopeLoaded,
   });
 
@@ -115,6 +97,8 @@ export function FilterProvider({ children }) {
   ]);
 
   // Update active tab based on URL params, but only on first load.
+  // We only do this on first load to prevent us from switching tabs unintentionally when the URL params are removed
+  // (e.g. when a filter is removed through the UI)
   useEffect(() => {
     if (urlParams.has('cluster')) {
       setActiveFilterTab(CLUSTER);
@@ -124,6 +108,33 @@ export function FilterProvider({ children }) {
       setActiveFilterTab(SEARCH);
     }
   }, []);
+
+  const useDefaultIndices = useMemo(() => {
+    if (activeFilterTab === CLUSTER) {
+      return urlParams.get('cluster') === null && clusterFilter.cluster === null;
+    } else if (activeFilterTab === FEATURE) {
+      return urlParams.get('feature') === null && featureFilter.feature === null;
+    } else if (activeFilterTab === SEARCH) {
+      console.log('=== searchFilter.searchText ===', searchFilter.searchText);
+      return urlParams.get('search') === null && searchFilter.searchText === '';
+    } else if (activeFilterTab === SELECT) {
+      return urlParams.get('select') === null && selectedIndices.length === 0;
+    } else if (activeFilterTab === COLUMN) {
+      return urlParams.get('column') === null && columnFilter.columnIndices.length === 0;
+    }
+
+    return false;
+  }, [
+    activeFilterTab,
+    urlParams,
+    clusterFilter.clusterIndices,
+    featureFilter.featureIndices,
+    searchFilter.searchIndices,
+    selectedIndices,
+    columnFilter.columnIndices,
+  ]);
+
+  console.log('=== useDefaultIndices ===', useDefaultIndices, urlParams.get('cluster'));
 
   const value = {
     activeFilterTab,
@@ -170,7 +181,8 @@ export function FilterProvider({ children }) {
       COLUMN,
       FEATURE,
     },
-    useDefaultIndices: filteredIndices.length === 0,
+    useDefaultIndices,
+    setUrlParams,
   };
 
   console.log('=== indices', {

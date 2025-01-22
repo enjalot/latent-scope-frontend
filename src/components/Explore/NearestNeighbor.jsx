@@ -4,7 +4,7 @@ import styles from './NearestNeighbor.module.scss';
 import { useFilter } from '../../contexts/FilterContext';
 
 export default function NearestNeighbor() {
-  const { searchFilter } = useFilter();
+  const { searchFilter, setUrlParams } = useFilter();
   const {
     searchIndices,
     searchLoading,
@@ -21,11 +21,19 @@ export default function NearestNeighbor() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSearchText(inputValue);
+    setUrlParams((prev) => {
+      prev.set('search', inputValue);
+      return prev;
+    });
   };
 
   const handleClear = () => {
     clearSearch();
     setInputValue('');
+    setUrlParams((prev) => {
+      prev.delete('search');
+      return prev;
+    });
   };
 
   return (
@@ -39,6 +47,10 @@ export default function NearestNeighbor() {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !searchLoading) {
               setSearchText(e.target.value);
+              setUrlParams((prev) => {
+                prev.set('search', e.target.value);
+                return prev;
+              });
             }
           }}
         />

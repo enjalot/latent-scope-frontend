@@ -5,10 +5,8 @@ export default function useNearestNeighborsSearch({
   userId,
   datasetId,
   scope,
-  // onSearchEmbedding,
   deletedIndices,
   urlParams,
-  setUrlParams,
   scopeLoaded,
 }) {
   const [searchText, setSearchText] = useState('');
@@ -54,20 +52,6 @@ export default function useNearestNeighborsSearch({
       setSearchText(searchParam);
     }
   }, [scopeLoaded, urlParams]);
-
-  // Update URL params when search changes
-  useEffect(() => {
-    if (scopeLoaded) {
-      setUrlParams((prev) => {
-        if (searchText) {
-          prev.set('search', searchText);
-        } else {
-          prev.delete('search');
-        }
-        return prev;
-      });
-    }
-  }, [searchText, scopeLoaded, setUrlParams]);
 
   return {
     searchText,

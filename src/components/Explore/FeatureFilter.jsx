@@ -7,7 +7,7 @@ import { useScope } from '../../contexts/ScopeContext';
 
 export default function FeatureFilter() {
   const { scope, features } = useScope();
-  const { featureFilter } = useFilter();
+  const { featureFilter, setUrlParams } = useFilter();
   const {
     featureIndicesLoaded,
     feature,
@@ -62,8 +62,12 @@ export default function FeatureFilter() {
       setInputValue(item.label);
       setIsOpen(false);
       clickingItemRef.current = false;
+      setUrlParams((prev) => {
+        prev.set('feature', item.value);
+        return prev;
+      });
     },
-    [setFeature, setInputValue, setIsOpen]
+    [setFeature, setInputValue, setIsOpen, setUrlParams]
   );
 
   const handleInputChange = useCallback(
@@ -72,9 +76,13 @@ export default function FeatureFilter() {
       setIsOpen(true);
       if (!e.target.value) {
         setFeature(null);
+        setUrlParams((prev) => {
+          prev.delete('feature');
+          return prev;
+        });
       }
     },
-    [setFeature]
+    [setFeature, setUrlParams]
   );
 
   const handleFocus = useCallback(() => {
@@ -96,7 +104,11 @@ export default function FeatureFilter() {
     setIsOpen(false);
     clickingItemRef.current = false;
     inputRef.current?.focus();
-  }, [setFeature, setInputValue, inputRef]);
+    setUrlParams((prev) => {
+      prev.delete('feature');
+      return prev;
+    });
+  }, [setFeature, setInputValue, inputRef, setUrlParams]);
 
   const renderRow = useCallback(
     ({ index, style }) => {

@@ -93,7 +93,7 @@ function FilterDataTable({
         setRowsLoading(true);
         let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
         const timestamp = Date.now();
-        // console.log('fetching query', paged, timestamp);
+        console.log('fetching query', paged, timestamp);
 
         apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
           const rowsWithIdx = rows.map((row, idx) => ({
@@ -249,12 +249,13 @@ function FilterDataTable({
   }, [dataset, clusterMap, distances, features, feature, sae_id]);
 
   const indicesToUse = useMemo(() => {
-    console.log('=== indicesToUse ===', filteredIndices, useDefaultIndices, defaultIndices);
     if (useDefaultIndices) {
       return defaultIndices;
     }
     return filteredIndices.filter((i) => !deletedIndices.includes(i));
   }, [filteredIndices, useDefaultIndices, defaultIndices, deletedIndices]);
+
+  console.log('=== indicesToUse ===', indicesToUse);
 
   useEffect(() => {
     hydrateIndices(indicesToUse);
