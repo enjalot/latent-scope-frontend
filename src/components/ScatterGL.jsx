@@ -111,6 +111,20 @@ function ScatterGL({
       pixelRatio: pixelRatio,
     });
 
+    const blendParams = isDarkMode
+      ? {
+          srcRGB: 'src alpha',
+          srcAlpha: 'src alpha',
+          dstRGB: 'one',
+          dstAlpha: 'one',
+        }
+      : {
+          srcRGB: 'one',
+          srcAlpha: 'one',
+          dstRGB: 'one minus src alpha',
+          dstAlpha: 'one minus src alpha',
+        };
+
     // Create draw command
     drawPointsRef.current = reglRef.current({
       vert: `
@@ -196,20 +210,12 @@ function ScatterGL({
         uScale: (context, props) => props.transform.k,
         uScreenSize: (context, props) => [props.width, props.height],
       },
+
       count: (context, props) => props.points.length,
       primitive: 'points',
       blend: {
         enable: true,
-        func: {
-          // srcRGB: 'src alpha', // dark mode
-          // srcAlpha: 'src alpha', // dark mode
-          // dstRGB: 'one', // dark mode
-          // dstAlpha: 'one', // dark mode
-          srcRGB: 'one',
-          srcAlpha: 'one',
-          dstRGB: 'one minus src alpha',
-          dstAlpha: 'one minus src alpha',
-        },
+        func: blendParams,
       },
       depth: {
         enable: false, // Explicitly disable depth testing
