@@ -47,7 +47,6 @@ export const apiService = {
             row.tile_index_64 = parseInt(row.tile_index_64);
             row.tile_index_128 = parseInt(row.tile_index_128);
           });
-          console.log('DATA', data);
           resolve(data);
         },
       });
@@ -79,7 +78,6 @@ export const apiService = {
     const scopeId = scope.id;
     // TODO: this should be a util function? converting the model to the HF name
     const modelId = scope.embedding?.model_id.replace('___', '/').split('-').slice(1).join('-');
-    console.log('MODEL ID', modelId);
     return fetch(
       `https://enjalot--latent-scope-api-app-nn${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&model=${modelId}&query=${query}`
     )

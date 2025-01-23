@@ -107,7 +107,7 @@ export default function FilterActions({ scatter }) {
 }
 
 // New component for Select filter
-function SelectFilter({ scatter }) {
+function SelectFilter() {
   const { selectedIndices, setSelectedIndices } = useFilter();
 
   return (
@@ -123,7 +123,6 @@ function SelectFilter({ scatter }) {
             className="deselect"
             onClick={() => {
               setSelectedIndices([]);
-              scatter?.select([]);
             }}
             icon="x"
             color="secondary"

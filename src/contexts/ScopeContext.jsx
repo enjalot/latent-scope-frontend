@@ -26,6 +26,7 @@ export function ScopeProvider({ children }) {
       }
       setScope(scope);
       setDataset(scope.dataset);
+      console.log('=== Scope ===', scope);
     });
   }, [userId, datasetId, scopeId]);
 

@@ -7,7 +7,6 @@ export default function useClusterFilter({ scopeRows, scope, scopeLoaded, urlPar
   const [loading, setLoading] = useState(false);
   // Initialize cluster from URL params
   useEffect(() => {
-    console.log('scopeLoaded', scopeLoaded, urlParams);
     if (scopeLoaded && urlParams.has('cluster')) {
       setActive(true);
       const clusterParam = parseInt(urlParams.get('cluster'));

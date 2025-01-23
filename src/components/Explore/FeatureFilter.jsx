@@ -29,7 +29,6 @@ export default function FeatureFilter() {
   };
 
   useEffect(() => {
-    console.log('FEATURE', feature);
     if (feature !== -1 && featureIndicesLoaded) {
       setInputValue(featureLabel(feature));
     }
