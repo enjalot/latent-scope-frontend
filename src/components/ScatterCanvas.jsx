@@ -137,7 +137,6 @@ function ScatterCanvas({
     // Update useEffect to rebuild quadtree when points change
     useEffect(() => {
         if (!points || !points.length) return;
-        console.log("update quadtree points", points.map(d => d[2]))
 
         quadtreeRef.current = quadtree()
             .x((d) => d[0])

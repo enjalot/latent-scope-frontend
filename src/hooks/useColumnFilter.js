@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../lib/apiService';
 
-const useColumnFilter = (userId, datasetId, scope, setColumnIndices) => {
+const useColumnFilter = (userId, datasetId, scope) => {
   const [columnFiltersActive, setColumnFiltersActive] = useState({});
+  const [columnIndices, setColumnIndices] = useState([]);
+  const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const dataset = useMemo(() => {
-    return scope?.dataset
+    return scope?.dataset;
   }, [scope]);
 
   const columnFilters = useMemo(() => {
@@ -21,6 +24,7 @@ const useColumnFilter = (userId, datasetId, scope, setColumnIndices) => {
 
   const columnQuery = useCallback(
     (filters) => {
+      setLoading(true);
       let query = [];
       Object.keys(filters).forEach((c) => {
         let f = filters[c];
@@ -32,21 +36,23 @@ const useColumnFilter = (userId, datasetId, scope, setColumnIndices) => {
           });
         }
       });
-      console.log('query', query);
-      apiService.columnFilter(userId, datasetId, scopeId, query).then((indices) => {
-        setColumnIndices(indices);
+      apiService.columnFilter(userId, datasetId, scope?.id, query).then((indices) => {
+        setColumnIndices(indices.map((d) => d.index));
+        setLoading(false);
       });
     },
     [userId, datasetId, scope]
   );
 
   useEffect(() => {
-    let active = Object.values(columnFiltersActive).filter((d) => !!d).length;
-    // console.log("active filters", active, columnFiltersActive)
-    if (active > 0) {
+    let activeFilters = Object.values(columnFiltersActive).filter((d) => !!d).length;
+    // console.log("active filters", activeFilters, columnFiltersActive)
+    if (activeFilters > 0) {
       columnQuery(columnFiltersActive);
-    } else if(setColumnIndices){
+      setActive(true);
+    } else if (setColumnIndices) {
       setColumnIndices([]);
+      setActive(false);
     }
   }, [columnFiltersActive, columnQuery, setColumnIndices]);
 
@@ -54,6 +60,10 @@ const useColumnFilter = (userId, datasetId, scope, setColumnIndices) => {
     columnFiltersActive,
     setColumnFiltersActive,
     columnFilters,
+    columnIndices,
+    setColumnIndices,
+    active,
+    loading,
   };
 };
 

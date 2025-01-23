@@ -1,3 +1,8 @@
+/*
+This scatter plot component was originally written using regl-scatterplot.
+Unfortunately regl-scatterplot doesn't work on mobile we we've implemented ScatterCanvas
+*/
+
 import { useEffect, useRef, useCallback } from 'react';
 import createScatterplot from 'regl-scatterplot';
 import { scaleSequential, scaleLinear, scaleLog } from 'd3-scale';

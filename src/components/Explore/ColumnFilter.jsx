@@ -2,13 +2,18 @@ import Select from 'react-select';
 import { Button } from 'react-element-forge';
 import styles from './ColumnFilter.module.scss';
 import { selectStyles } from './SelectStyles';
-const ColumnFilter = ({
-  columnFilters,
-  columnIndices,
-  columnFiltersActive,
-  setColumnFiltersActive,
-  setColumnIndices,
-}) => {
+import { useFilter } from '../../contexts/FilterContext';
+
+const ColumnFilter = () => {
+  const { columnFilter } = useFilter();
+  const {
+    columnFilters,
+    columnIndices,
+    columnFiltersActive,
+    setColumnFiltersActive,
+    setColumnIndices,
+  } = columnFilter;
+
   return columnFilters?.length ? (
     <div className={`${styles.container} ${columnIndices?.length ? styles.active : ''}`}>
       <div className={styles.filterCell}>
@@ -19,9 +24,7 @@ const ColumnFilter = ({
                 columnFiltersActive[column.column]
                   ? {
                       value: columnFiltersActive[column.column],
-                      label: `${columnFiltersActive[column.column]} (${
-                        column.counts[columnFiltersActive[column.column]]
-                      })`,
+                      label: `${columnFiltersActive[column.column]} (${column.counts[columnFiltersActive[column.column]]})`,
                     }
                   : null
               }

@@ -1,742 +1,378 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-const { asyncBufferFromUrl, parquetRead } = await import("hyparquet");
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import "./Explore.css";
-import useCurrentScope from "../hooks/useCurrentScope";
-import useNearestNeighborsSearch from "../hooks/useNearestNeighborsSearch";
-import useScopeData from "../hooks/useScopeData";
-import { saeAvailable } from "../lib/SAE";
-import { apiService } from "../lib/apiService";
+import './Explore.css';
+import { apiService } from '../lib/apiService';
 
-import FilterActions from "../components/Explore/FilterActions";
-import SubNav from "../components/SubNav";
-import LeftPane from "../components/Explore/LeftPane";
-import VisualizationPane from "../components/Explore/VisualizationPane";
-import FilterDataTable from "../components/FilterDataTable";
+import FilterActions from '../components/Explore/FilterActions';
+import SubNav from '../components/SubNav';
+import LeftPane from '../components/Explore/LeftPane';
+import VisualizationPane from '../components/Explore/VisualizationPane';
+import FilterDataTable from '../components/FilterDataTable';
 
-export const SEARCH = "search";
-export const CLUSTER = "filter";
-export const SELECT = "select";
-export const COLUMN = "column";
-export const FEATURE = "feature";
-export const PER_PAGE = 100;
+import { ScopeProvider } from '../contexts/ScopeContext';
+import { FilterProvider } from '../contexts/FilterContext';
+import { useScope } from '../contexts/ScopeContext';
+import { useFilter } from '../contexts/FilterContext';
 
-function parseParams(searchParams) {
-    let cluster = null;
-    let search = null;
-    let feature = null;
+// Add this custom hook near the top of the file
+const useDebounce = (callback, delay) => {
+  const timeoutRef = useRef(null);
 
-    if (searchParams.has("cluster")) {
-        cluster = parseInt(searchParams.get("cluster"));
-    }
+  return useCallback(
+    (...args) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
 
-    if (searchParams.has("search")) {
-        search = searchParams.get("search");
-    }
+      timeoutRef.current = setTimeout(() => {
+        callback(...args);
+      }, delay);
+    },
+    [callback, delay]
+  );
+};
 
-    if (searchParams.has("feature")) {
-        feature = parseInt(searchParams.get("feature"));
-    }
+// Create a new component that wraps the main content
+function ExploreContent() {
+  // Get scope-related state from ScopeContext
+  const {
+    userId,
+    datasetId,
+    dataset,
+    scope,
+    scopeLoaded,
+    scopeRows,
+    deletedIndices,
+    clusterMap,
+    clusterLabels,
+    features,
+    sae,
+  } = useScope();
 
-    return { cluster, search, feature };
-}
+  // Get filter-related state from FilterContext
+  const {
+    activeFilterTab,
+    filteredIndices,
+    defaultIndices,
+    featureFilter,
+    setSelectedIndices,
+    filterConstants,
+    setActiveFilterTab,
+    distances,
+    useDefaultIndices,
+    filterLoading,
+  } = useFilter();
 
-function Explore() {
-    const { user: userId, dataset: datasetId, scope: scopeId } = useParams();
-    const navigate = useNavigate();
+  // Keep visualization-specific state
+  const [scatter, setScatter] = useState({});
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [hovered, setHovered] = useState(null);
+  const [hoveredCluster, setHoveredCluster] = useState(null);
+  const [hoverAnnotations, setHoverAnnotations] = useState([]);
+  const [dataTableRows, setDataTableRows] = useState([]);
+  const [selectedAnnotations, setSelectedAnnotations] = useState([]);
+  const [page, setPage] = useState(0);
 
-    const [urlParams, setUrlParams] = useSearchParams();
+  // Hover text hydration with debouncing
+  const hydrateHoverText = useCallback(
+    (index, setter) => {
+      apiService.getHoverText(userId, datasetId, scope?.id, index).then((data) => {
+        setter(data);
+      });
+    },
+    [userId, datasetId, scope]
+  );
 
-    // ====================================================================================================
-    // Clusters
-    // ====================================================================================================
-    // indices of items in a chosen slide
-    const [cluster, setCluster] = useState(null);
-    const {
-        cluster: clusterParam,
-        search: searchParam,
-        feature: featureParam,
-    } = parseParams(urlParams);
+  const debouncedHydrateHoverText = useDebounce(hydrateHoverText, 5);
 
-    const [scopeLoaded, setScopeLoaded] = useState(false);
-
-    // fetch dataset and current scope metadata
-    const { dataset, scope, sae } = useCurrentScope(userId, datasetId, scopeId);
-
-    // fetch data for the current scope and populate data structures for scatterplot and clustering
-    const { fetchScopeRows, clusterMap, clusterLabels, scopeRows, deletedIndices } = useScopeData(
-        userId,
-        datasetId,
-        scope,
-        setScopeLoaded,
-        setCluster,
-        clusterParam
-    );
-
-    // TODO: the user should be able to highlight a feature
-    // when passed to the data table it will show that feature first?
-    const [feature, setFeature] = useState(-1);
-    const [features, setFeatures] = useState([]);
-    const [threshold, setThreshold] = useState(0.1);
-
-    useEffect(() => {
-        const asyncRead = async (meta) => {
-            console.log("META", meta);
-            if (!meta) return;
-            const buffer = await asyncBufferFromUrl(meta.url);
-            parquetRead({
-                file: buffer,
-                onComplete: (data) => {
-                    // let pts = []
-                    // console.log("DATA", data)
-                    let fts = data.map((f) => {
-                        // pts.push([f[2], f[3], parseInt(f[5])])
-                        return {
-                            feature: parseInt(f[0]),
-                            max_activation: f[1],
-                            label: f[6],
-                            order: f[7],
-                        };
-                    });
-                    // .filter(d => d.label.indexOf("linear") >= 0)
-                    // .sort((a,b) => a.order - b.order)
-                    console.log("FEATURES", fts);
-                    setFeatures(fts);
-                },
-            });
-        };
-        if (scope?.sae_id) {
-            // console.log("SAE ID", scope.sae_id, saeAvailable[scope.sae_id])
-            asyncRead(saeAvailable[scope.embedding?.model_id]);
-        }
-    }, [scope]);
-
-    // fectches a set of indexes from the server, and updates some state with the results
-    // used to render points in the table after a user clicks on a point in the scatterplot
-    const hydrateHoverText = useCallback(
-        (index, setter) => {
-            apiService.getHoverText(userId, datasetId, scopeId, index).then((data) => {
-                setter(data);
-            });
-        },
-        [userId, datasetId, scopeId]
-    );
-
-    // the indices to show in the table when no other filters are active.
-    const [defaultIndices, setDefaultIndices] = useState([]);
-
-    // the indices to show in the table when other filters are active.
-    const [filteredIndices, setFilteredIndices] = useState([]);
-
-    // ====================================================================================================
-    // Default rows logic.
-    // ====================================================================================================
-    // Contains state for the default rows that are shown in the table when the page loads.
-    // These are the rows that are shown when there are no filters active.
-    // ====================================================================================================
-    const [page, setPage] = useState(0);
-
-    // Update defaultIndices when scopeRows changes
-    useEffect(() => {
-        if (scopeRows?.length) {
-            const indexes = scopeRows
-                .filter((row) => !deletedIndices.includes(row.ls_index))
-                .map((row) => row.ls_index);
-            setDefaultIndices(indexes);
-            setFilteredIndices([]);
-        }
-    }, [scopeRows]);
-
-    // ====================================================================================================
-    // Scatterplot related logic
-    // ====================================================================================================
-    // this is a reference to the regl scatterplot instance
-    // so we can do stuff like clear selections without re-rendering
-    const [scatter, setScatter] = useState({});
-
-    // Hover via scatterplot or tables
-    // index of item being hovered over
-    const [hoveredIndex, setHoveredIndex] = useState(null);
-    const [hovered, setHovered] = useState(null);
-    useEffect(() => {
-        if (
-            hoveredIndex !== null &&
-            hoveredIndex !== undefined &&
-            !deletedIndices.includes(hoveredIndex)
-        ) {
-            hydrateHoverText(hoveredIndex, (text) => {
-                setHovered({
-                    text: text,
-                    index: hoveredIndex,
-                    cluster: clusterMap[hoveredIndex],
-                });
-            });
-        } else {
-            setHovered(null);
-        }
-    }, [hoveredIndex, setHovered, hydrateHoverText]);
-
-    const [hoveredCluster, setHoveredCluster] = useState(null);
-    useEffect(() => {
-        if (hoveredIndex) {
-            setHoveredCluster(clusterMap[hoveredIndex]);
-        } else {
-            setHoveredCluster(null);
-        }
-    }, [hoveredIndex, clusterMap, setHoveredCluster]);
-
-    const [hoverAnnotations, setHoverAnnotations] = useState([]);
-    useEffect(() => {
-        if (hoveredIndex !== null && hoveredIndex !== undefined) {
-            let sr = scopeRows[hoveredIndex];
-            setHoverAnnotations([[sr.x, sr.y]]);
-        } else {
-            setHoverAnnotations([]);
-        }
-    }, [hoveredIndex, scopeRows]);
-
-    // contains the rows that are currently being displayed in the data table
-    // this is used potentially color the points in the scatterplot when the filter is feature
-    const [dataTableRows, setDataTableRows] = useState([]);
-
-    // ====================================================================================================
-    // Filtering
-    // ====================================================================================================
-    // Selection via Scatterplot
-    // indices of items selected by the scatter plot
-    // indices of items in the current filter. default to cluster indices to start
-    const [activeFilterTab, setActiveFilterTab] = useState(CLUSTER);
-
-    const [selectedIndices, setSelectedIndices] = useState([]);
-    const [selectedAnnotations, setSelectedAnnotations] = useState([]);
-    useEffect(() => {
-        if (selectedIndices.length > 0) {
-            let annots = scopeRows.filter((d) => selectedIndices.includes(d.ls_index));
-            console.log("==== annots ==== ", annots);
-            setSelectedAnnotations(annots.map((d) => [d.x, d.y]));
-        } else {
-            setSelectedAnnotations([]);
-        }
-    }, [selectedIndices, scopeRows]);
-
-    const [columnFilterIndices, setColumnFilterIndices] = useState([]);
-
-    const toggleSearch = () => {
-        setActiveFilterTab(SEARCH);
-        setFilteredIndices(searchIndices);
-    };
-
-    const toggleColumn = () => {
-        setActiveFilterTab(COLUMN);
-        setFilteredIndices(columnFilterIndices);
-    };
-
-    const toggleFilter = () => {
-        setActiveFilterTab(CLUSTER);
-        setFilteredIndices(clusterIndices);
-    };
-
-    const toggleSelect = () => {
-        setActiveFilterTab(SELECT);
-        setFilteredIndices(selectedIndices);
-    };
-
-    const toggleFeature = () => {
-        setActiveFilterTab(FEATURE);
-        setFilteredIndices(featureIndices);
-    };
-
-    // ====================================================================================================
-    // NN Search
-    // ====================================================================================================
-    // the text that the user has entered into the nearest neighbor search input
-    const [searchText, setSearchText] = useState("");
-
-    useEffect(() => {
-        // set searchText if it was passed in the URL
-        if (searchParam) {
-            setSearchText(searchParam);
-            // if the cluster filter is not active, set the active filter tab to SEARCH
-            if (clusterParam === null) {
-                setActiveFilterTab(SEARCH);
-            }
-        }
-    }, [searchParam]);
-
-    // Update URL when search text changes
-    useEffect(() => {
-        setUrlParams((prev) => {
-            if (searchText) {
-                prev.set("search", searchText);
-            } else {
-                if (scopeLoaded && searchParam) {
-                    prev.delete("search");
-                }
-            }
-
-            if (feature && feature !== -1) {
-                prev.set("feature", feature);
-            } else {
-                if (scopeLoaded && featureParam) {
-                    prev.delete("feature");
-                }
-            }
-
-            return prev;
+  useEffect(() => {
+    if (
+      hoveredIndex !== null &&
+      hoveredIndex !== undefined &&
+      !deletedIndices.includes(hoveredIndex)
+    ) {
+      debouncedHydrateHoverText(hoveredIndex, (text) => {
+        setHovered({
+          text: text,
+          index: hoveredIndex,
+          cluster: clusterMap[hoveredIndex],
         });
-    }, [searchText, featureParam, feature, setUrlParams]);
+      });
+    } else {
+      setHovered(null);
+    }
+  }, [hoveredIndex, deletedIndices, clusterMap, debouncedHydrateHoverText]);
 
-    // the indices returned from similarity search
-    const {
-        searchIndices,
-        distances,
-        isLoading: searchLoading,
-        clearSearch,
-        setSearchIndices,
-    } = useNearestNeighborsSearch({
-        userId,
-        datasetId,
-        scope,
-        deletedIndices,
-        searchText,
-        setSearchText,
+  // Update hover annotations
+  useEffect(() => {
+    if (hoveredIndex !== null && hoveredIndex !== undefined) {
+      let sr = scopeRows[hoveredIndex];
+      setHoverAnnotations([[sr.x, sr.y]]);
+    } else {
+      setHoverAnnotations([]);
+    }
+  }, [hoveredIndex, scopeRows]);
+
+  // Handlers for responding to individual data points
+  const handleClicked = useCallback((index) => {
+    console.log('====clicked====', index);
+  }, []);
+
+  const handleHover = useCallback(
+    (index) => {
+      const nonDeletedIndex = deletedIndices.includes(index) ? null : index;
+      setHoveredIndex(nonDeletedIndex);
+      if (nonDeletedIndex >= 0) {
+        setHoveredCluster(clusterMap[nonDeletedIndex]);
+      } else {
+        setHoveredCluster(null);
+      }
+    },
+    [deletedIndices]
+  );
+
+  const handleSelected = useCallback(
+    (indices) => {
+      const nonDeletedIndices = indices.filter((index) => !deletedIndices.includes(index));
+      if (activeFilterTab === filterConstants.CLUSTER) {
+        let selected = scopeRows.filter((row) => nonDeletedIndices.includes(row.ls_index))?.[0];
+        if (selected) {
+          const selectedCluster = clusterLabels.find((d) => d.cluster === selected.cluster);
+          //   setCluster(selectedCluster);
+        }
+      } else {
+        setSelectedIndices(nonDeletedIndices);
+      }
+    },
+    [activeFilterTab, deletedIndices, scopeRows, clusterLabels, setSelectedIndices]
+  );
+
+  const containerRef = useRef(null);
+  const filtersContainerRef = useRef(null);
+
+  const [filtersHeight, setFiltersHeight] = useState(250);
+  const FILTERS_PADDING = 2;
+  const tableHeight = useMemo(
+    () => `calc(100% - ${filtersHeight + FILTERS_PADDING}px)`,
+    [filtersHeight]
+  );
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { height } = entry.contentRect;
+        setFiltersHeight(height);
+      }
     });
 
-    // const resetState = () => {
-    //     setFilteredIndices(defaultIndices);
-
-    //     // load search tab if searchParam is set
-    //     if (searchParam) {
-    //         setActiveFilterTab(SEARCH);
-    //     } else {
-    //         setActiveFilterTab(CLUSTER);
-    //     }
-
-    //     if (clusterParam && scopeLoaded) {
-    //         setCluster(clusterLabels.find((d) => d.cluster == clusterParam));
-    //     } else {
-    //         setCluster(null);
-    //     }
-
-    //     setClusterIndices([]);
-    //     setFeature(-1);
-    //     setFeatureIndices([]);
-    //     setFeatures([]);
-    //     setDataTableRows([]);
-    //     setHovered(null);
-    //     setHoveredIndex(null);
-    //     setHoveredCluster(null);
-    //     setHoverAnnotations([]);
-    //     setSelectedIndices([]);
-    //     setColumnFilterIndices([]);
-    //     setSearchIndices([]);
-    //     // setSae(null);
-    // };
-
-    useEffect(() => {
-        // fetch scope rows and reset state when scope changes
-        if (scope) {
-            fetchScopeRows();
-            // this is not need for now because we are only showing one scope at a time
-            // resetState();
-        }
-    }, [fetchScopeRows, scope]);
-
-    // Handlers for responding to individual data points
-    const handleClicked = useCallback(
-        (index) => {
-            console.log("====clicked====", index);
-            // if (scatter && scatter.zoomToPoints) {
-            //   scatter?.zoomToPoints([index], {
-            //     transition: true,
-            //     padding: 0.9,
-            //     transitionDuration: 1500,
-            //   });
-            // }
-        },
-        [scatter]
-    );
-    const handleHover = useCallback(
-        (index) => {
-            const nonDeletedIndex = deletedIndices.includes(index) ? null : index;
-            setHoveredIndex(nonDeletedIndex);
-        },
-        [setHoveredIndex]
-    );
-
-    // behavior for when a user selects point(s) in the scatterplot
-    // if the filter tab is CLUSTER, we should set the cluster to the cluster of the point
-    // otherwise we should select the point(s) and toggle the filter tab to SELECT
-    const handleSelected = useCallback(
-        (indices) => {
-            const nonDeletedIndices = indices.filter((index) => !deletedIndices.includes(index));
-            if (activeFilterTab === CLUSTER) {
-                let selected = scopeRows.filter((row) =>
-                    nonDeletedIndices.includes(row.ls_index)
-                )?.[0];
-                setCluster(clusterLabels.find((d) => d.cluster == selected?.cluster));
-            } else {
-                if (activeFilterTab !== SELECT) {
-                    setActiveFilterTab(SELECT);
-                }
-                setSelectedIndices(nonDeletedIndices);
-            }
-        },
-        [activeFilterTab, setSelectedIndices, deletedIndices]
-    );
-
-    const clearScope = useCallback(() => {
-        setCluster(null);
-    }, []);
-
-    // ==== CLUSTERS ====
-
-    const [clusterIndices, setClusterIndices] = useState([]);
-    useEffect(() => {
-        if (cluster && activeFilterTab === CLUSTER) {
-            const annots = scopeRows.filter((d) => d.cluster == cluster.cluster);
-            const indices = annots.map((d) => d.ls_index);
-            setClusterIndices(indices);
-
-            setUrlParams((prev) => {
-                prev.set("cluster", cluster.cluster);
-                return prev;
-            });
-        } else {
-            setClusterIndices([]);
-
-            // do not delete the cluster param if the scope has not been loaded yet
-            if (scopeLoaded && clusterParam && cluster === null) {
-                setUrlParams((prev) => {
-                    prev.delete("cluster");
-                    return prev;
-                });
-            }
-        }
-    }, [cluster, scopeRows, setClusterIndices, scopeLoaded]);
-
-    // ==== COLUMNS ====
-
-    useEffect(() => {
-        if (featureParam) {
-            setFeature(parseInt(featureParam));
-
-            // set the active filter tab to FEATURE
-            if (clusterParam === null && searchParam === null) {
-                setActiveFilterTab(FEATURE);
-            }
-        }
-    }, [featureParam]);
-
-    const [featureIndices, setFeatureIndices] = useState([]);
-    useEffect(() => {
-        if (feature >= 0 && activeFilterTab === FEATURE) {
-            console.log("==== feature ==== ", feature);
-            console.log("==== threshold ==== ", threshold);
-            apiService
-                .searchSaeFeature(userId, datasetId, scopeId, feature, threshold)
-                .then((data) => {
-                    console.log("==== feature indices ==== ", data);
-                    setFeatureIndices(data);
-                });
-        } else {
-            // The feature filter tab is active, but the feature is no longer set
-            // so we should clear the filtered indices
-            setFeatureIndices([]);
-        }
-    }, [userId, datasetId, scopeId, feature, threshold, setFeatureIndices]);
-
-    const handleScopeChange = useCallback(
-        (e) => {
-            clearScope();
-            navigate(`/datasets/${dataset?.id}/explore/${e.target.value}`);
-        },
-        [dataset, clearScope, navigate]
-    );
-
-    const containerRef = useRef(null);
-    const filtersContainerRef = useRef(null);
-
-    const [filtersHeight, setFiltersHeight] = useState(250);
-    const FILTERS_PADDING = 2;
-    const tableHeight = useMemo(
-        () => `calc(100% - ${filtersHeight + FILTERS_PADDING}px)`,
-        [filtersHeight]
-    );
-
-    useEffect(() => {
-        const resizeObserver = new ResizeObserver((entries) => {
-            for (let entry of entries) {
-                const { height } = entry.contentRect;
-                setFiltersHeight(height);
-            }
-        });
-
-        let node = filtersContainerRef?.current;
+    let node = filtersContainerRef?.current;
+    if (node) {
+      resizeObserver.observe(node);
+    } else {
+      setTimeout(() => {
+        node = filtersContainerRef?.current;
         if (node) {
-            resizeObserver.observe(node);
+          resizeObserver.observe(node);
         } else {
-            setTimeout(() => {
-                node = filtersContainerRef?.current;
-                if (node) {
-                    resizeObserver.observe(node);
-                } else {
-                    setFiltersHeight(0);
-                }
-            }, 100);
+          setFiltersHeight(0);
         }
-
-        return () => {
-            if (node) {
-                resizeObserver.unobserve(node);
-            }
-        };
-    }, []);
-
-    // ====================================================================================================
-    // Fullscreen related logic
-    // ====================================================================================================
-    const [size, setSize] = useState([500, 500]);
-    const visualizationContainerRef = useRef(null);
-
-    function updateSize() {
-        if (visualizationContainerRef.current) {
-            const vizRect = visualizationContainerRef.current.getBoundingClientRect();
-            setSize([vizRect.width, vizRect.height]);
-        }
+      }, 100);
     }
 
-    // initial size
-    useEffect(() => {
-        const observer = new MutationObserver((mutations, obs) => {
-            updateSize();
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-        });
-
-        return () => observer.disconnect();
-    }, []);
-
-    // let's fill the container and update the width and height if window resizes
-    useEffect(() => {
-        window.addEventListener("resize", updateSize);
-        updateSize();
-        return () => window.removeEventListener("resize", updateSize);
-    }, [visualizationContainerRef, containerRef]);
-
-    const [width, height] = size;
-
-    // ====================================================================================================
-    // set the filtered indices based on the active filter tab
-    // ====================================================================================================
-    useEffect(() => {
-        if (activeFilterTab === COLUMN) {
-            setFilteredIndices(columnFilterIndices);
-        } else if (activeFilterTab === FEATURE) {
-            setFilteredIndices(featureIndices);
-        } else if (activeFilterTab === CLUSTER) {
-            setFilteredIndices(clusterIndices);
-        } else if (activeFilterTab === SELECT) {
-            setFilteredIndices(selectedIndices);
-        } else if (activeFilterTab === SEARCH) {
-            setFilteredIndices(searchIndices);
-        }
-    }, [
-        activeFilterTab,
-        columnFilterIndices,
-        featureIndices,
-        clusterIndices,
-        selectedIndices,
-        searchIndices,
-    ]);
-
-    // ====================================================================================================
-    // Draggable State
-    // ====================================================================================================
-    const [gridTemplate, setGridTemplate] = useState("50% 50%");
-
-    const startDragging = (e) => {
-        e.preventDefault();
-        document.addEventListener("mousemove", onDrag);
-        document.addEventListener("mouseup", stopDragging);
+    return () => {
+      if (node) {
+        resizeObserver.unobserve(node);
+      }
     };
+  }, []);
 
-    const onDrag = (e) => {
-        if (containerRef.current) {
-            const containerRect = containerRef.current.getBoundingClientRect();
-            const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-            const newTemplate = `${Math.min(Math.max(percentage, 20), 80)}% 1fr`;
-            setGridTemplate(newTemplate);
-            updateSize();
-        }
-    };
+  // ====================================================================================================
+  // Fullscreen related logic
+  // ====================================================================================================
+  const [size, setSize] = useState([500, 500]);
+  const visualizationContainerRef = useRef(null);
 
-    const stopDragging = () => {
-        document.removeEventListener("mousemove", onDrag);
-        document.removeEventListener("mouseup", stopDragging);
-    };
+  function updateSize() {
+    if (visualizationContainerRef.current) {
+      const vizRect = visualizationContainerRef.current.getBoundingClientRect();
+      setSize([vizRect.width, vizRect.height]);
+    }
+  }
 
-    // Add this CSS-in-JS style object near the top of the component
-    const styles = {
-        dragHandle: {
-            position: "absolute",
-            right: -15,
-            top: 0,
-            bottom: 0,
-            width: 30,
-            cursor: "ew-resize",
-            backgroundColor: "transparent",
-            transition: "background-color 0.2s",
-            "&:hover": {
-                backgroundColor: "#e0e0e0",
-            },
-            zIndex: 10,
-        },
-    };
+  // initial size
+  useEffect(() => {
+    const observer = new MutationObserver((mutations, obs) => {
+      updateSize();
+    });
 
-    const handleFeatureClick = useCallback(
-        (featIdx, activation) => {
-            setActiveFilterTab(FEATURE);
-            setFeature(featIdx);
-            // TODO: for setting the threshold the FeatureFilter component would need to have threshold passed in
-            // setThreshold(activation);
-        },
-        [setActiveFilterTab, setFeature, setThreshold]
-    );
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
 
-    if (!dataset)
-        return (
-            <>
-                <SubNav user={userId} dataset={dataset} scope={scope} />
-                <div>Loading...</div>
-            </>
-        );
+    return () => observer.disconnect();
+  }, []);
 
+  // let's fill the container and update the width and height if window resizes
+  useEffect(() => {
+    window.addEventListener('resize', updateSize);
+    updateSize();
+    return () => window.removeEventListener('resize', updateSize);
+  }, [visualizationContainerRef, containerRef]);
+
+  const [width, height] = size;
+
+  // ====================================================================================================
+  // Draggable State
+  // ====================================================================================================
+  const [gridTemplate, setGridTemplate] = useState('50% 50%');
+
+  const startDragging = (e) => {
+    e.preventDefault();
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDragging);
+  };
+
+  const onDrag = (e) => {
+    if (containerRef.current) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      const newTemplate = `${Math.min(Math.max(percentage, 20), 80)}% 1fr`;
+      setGridTemplate(newTemplate);
+      updateSize();
+    }
+  };
+
+  const stopDragging = () => {
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', stopDragging);
+  };
+
+  // Add this CSS-in-JS style object near the top of the component
+  const styles = {
+    dragHandle: {
+      position: 'absolute',
+      right: -15,
+      top: 0,
+      bottom: 0,
+      width: 30,
+      cursor: 'ew-resize',
+      backgroundColor: 'transparent',
+      transition: 'background-color 0.2s',
+      '&:hover': {
+        backgroundColor: '#e0e0e0',
+      },
+      zIndex: 10,
+    },
+  };
+
+  const handleFeatureClick = useCallback(
+    (featIdx, activation) => {
+      setActiveFilterTab(filterConstants.FEATURE);
+      featureFilter.setFeature(featIdx);
+    },
+    [setActiveFilterTab, featureFilter.setFeature]
+  );
+
+  if (!dataset)
     return (
-        <>
-            <SubNav user={userId} dataset={dataset} scope={scope} />
-            <div style={{ display: "flex", gap: "4px", height: "100%" }}>
-                <LeftPane dataset={dataset} scope={scope} deletedIndices={deletedIndices} />
-                {(!scopeLoaded || searchLoading) && (
-                    <div className="loading-overlay">
-                        <div className="loading-container">
-                            <div className="loading-spinner"></div>
-                            <div>Loading</div>
-                        </div>
-                    </div>
-                )}
-                <div
-                    ref={containerRef}
-                    className="full-screen-explore-container"
-                    style={{ gridTemplateColumns: gridTemplate }}
-                >
-                    <div className="filter-table-container" style={{ position: "relative" }}>
-                        <div style={styles.dragHandle} onMouseDown={startDragging} />
-                        <div ref={filtersContainerRef}>
-                            <FilterActions
-                                clusterLabels={clusterLabels}
-                                cluster={cluster}
-                                setCluster={setCluster}
-                                clusterIndices={clusterIndices}
-                                columnFilterIndices={columnFilterIndices}
-                                setColumnFilterIndices={setColumnFilterIndices}
-                                searchIndices={searchIndices}
-                                searchLoading={searchLoading}
-                                setSearchText={setSearchText}
-                                clearSearch={clearSearch}
-                                selectedIndices={selectedIndices}
-                                setSelectedIndices={setSelectedIndices}
-                                scatter={scatter}
-                                activeFilterTab={activeFilterTab}
-                                toggleSearch={toggleSearch}
-                                toggleColumn={toggleColumn}
-                                toggleFilter={toggleFilter}
-                                toggleSelect={toggleSelect}
-                                toggleFeature={toggleFeature}
-                                dataset={dataset}
-                                datasetId={datasetId}
-                                scope={scope}
-                                features={features}
-                                feature={feature}
-                                setFeature={setFeature}
-                                featureIndices={featureIndices}
-                                setFeatureIndices={setFeatureIndices}
-                                setThreshold={setThreshold}
-                                searchText={searchText}
-                            />
-                        </div>
-                        <div
-                            style={{
-                                height: tableHeight,
-                                overflowY: "auto",
-                                display: "flex",
-                            }}
-                        >
-                            {/* FilterDataTable renders defaultIndices if filteredIndices is empty */}
-                            <FilterDataTable
-                                userId={userId}
-                                dataset={dataset}
-                                scope={scope}
-                                filteredIndices={filteredIndices}
-                                defaultIndices={defaultIndices}
-                                deletedIndices={deletedIndices}
-                                distances={activeFilterTab === SEARCH ? distances : []}
-                                clusterMap={clusterMap}
-                                clusterLabels={clusterLabels}
-                                onDataTableRows={setDataTableRows}
-                                sae_id={sae?.id}
-                                feature={feature}
-                                features={features}
-                                onHover={handleHover}
-                                onClick={handleClicked}
-                                page={page}
-                                setPage={setPage}
-                                handleFeatureClick={handleFeatureClick}
-                            />
-                        </div>
-                    </div>
-                    <div
-                        ref={visualizationContainerRef}
-                        className="visualization-pane-container"
-                        onMouseLeave={() => {
-                            setHoveredIndex(null);
-                            setHovered(null);
-                        }}
-                    >
-                        {scopeRows?.length ? (
-                            <VisualizationPane
-                                scopeRows={scopeRows}
-                                clusterLabels={clusterLabels}
-                                hoveredIndex={hoveredIndex}
-                                hoverAnnotations={hoverAnnotations}
-                                intersectedIndices={filteredIndices}
-                                selectedAnnotations={selectedAnnotations}
-                                hoveredCluster={hoveredCluster}
-                                slide={cluster}
-                                scope={scope}
-                                containerRef={containerRef}
-                                onScatter={setScatter}
-                                onSelect={handleSelected}
-                                onHover={handleHover}
-                                hovered={hovered}
-                                dataset={dataset}
-                                deletedIndices={deletedIndices}
-                                width={width}
-                                height={height}
-                                activeFilterTab={activeFilterTab}
-                                dataTableRows={dataTableRows}
-                                feature={feature}
-                            />
-                        ) : null}
-                    </div>
-                </div>
-            </div>
-        </>
+      <>
+        <SubNav user={userId} dataset={dataset} scope={scope} />
+        <div>Loading...</div>
+      </>
     );
+
+  return (
+    <>
+      <SubNav user={userId} dataset={dataset} scope={scope} />
+      <div style={{ display: 'flex', gap: '4px', height: '100%' }}>
+        <LeftPane dataset={dataset} scope={scope} deletedIndices={deletedIndices} />
+        <div
+          ref={containerRef}
+          className="full-screen-explore-container"
+          style={{ gridTemplateColumns: gridTemplate }}
+        >
+          <div className="filter-table-container" style={{ position: 'relative' }}>
+            <div style={styles.dragHandle} onMouseDown={startDragging} />
+            <div ref={filtersContainerRef}>
+              <FilterActions
+                clusterLabels={clusterLabels}
+                scatter={scatter}
+                scope={scope}
+                dataset={dataset}
+              />
+            </div>
+            <div
+              style={{
+                height: tableHeight,
+                overflowY: 'auto',
+                display: 'flex',
+              }}
+            >
+              <FilterDataTable
+                userId={userId}
+                dataset={dataset}
+                scope={scope}
+                filteredIndices={filteredIndices}
+                defaultIndices={defaultIndices}
+                deletedIndices={deletedIndices}
+                distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
+                clusterMap={clusterMap}
+                clusterLabels={clusterLabels}
+                onDataTableRows={setDataTableRows}
+                sae_id={sae?.id}
+                feature={featureFilter.feature}
+                features={features}
+                onHover={handleHover}
+                onClick={handleClicked}
+                page={page}
+                setPage={setPage}
+                handleFeatureClick={handleFeatureClick}
+                useDefaultIndices={useDefaultIndices}
+                filterLoading={filterLoading}
+              />
+            </div>
+          </div>
+          <div
+            ref={visualizationContainerRef}
+            className="visualization-pane-container"
+            onMouseLeave={() => {
+              setHoveredIndex(null);
+              setHovered(null);
+            }}
+          >
+            {scopeRows?.length ? (
+              <VisualizationPane
+                width={width}
+                height={height}
+                onScatter={setScatter}
+                hovered={hovered}
+                hoveredIndex={hoveredIndex}
+                onHover={handleHover}
+                onSelect={handleSelected}
+                hoverAnnotations={hoverAnnotations}
+                selectedAnnotations={selectedAnnotations}
+                hoveredCluster={hoveredCluster}
+                dataTableRows={dataTableRows}
+              />
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Make the main Explore component just handle the providers
+function Explore() {
+  return (
+    <ScopeProvider>
+      <FilterProvider>
+        <ExploreContent />
+      </FilterProvider>
+    </ScopeProvider>
+  );
 }
 
 export default Explore;

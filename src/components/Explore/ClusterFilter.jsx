@@ -1,8 +1,12 @@
 import React from 'react';
 import Select from 'react-select';
 import { selectStyles } from './SelectStyles';
+import { useFilter } from '../../contexts/FilterContext';
 
-export default function ClusterFilter({ clusterLabels, cluster, clusterIndices, setCluster }) {
+export default function ClusterFilter({ clusterLabels }) {
+  const { clusterFilter, setUrlParams } = useFilter();
+  const { cluster, setCluster, clusterIndices } = clusterFilter;
+
   const selectOptions = clusterLabels?.map((cl) => ({
     value: cl.cluster,
     label: `${cl.cluster}: ${cl.label} (${cl.count})`,
@@ -11,10 +15,20 @@ export default function ClusterFilter({ clusterLabels, cluster, clusterIndices, 
   const handleClusterChange = (selectedOption) => {
     if (!selectedOption) {
       setCluster(null);
+      setUrlParams((prev) => {
+        prev.delete('cluster');
+        return prev;
+      });
       return;
     }
     const cl = clusterLabels.find((cluster) => cluster.cluster === selectedOption.value);
-    if (cl) setCluster(cl);
+    if (cl) {
+      setCluster(cl);
+      setUrlParams((prev) => {
+        prev.set('cluster', cl.cluster);
+        return prev;
+      });
+    }
   };
 
   return (

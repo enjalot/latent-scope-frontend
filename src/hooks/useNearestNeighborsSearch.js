@@ -5,29 +5,30 @@ export default function useNearestNeighborsSearch({
   userId,
   datasetId,
   scope,
-  // onSearchEmbedding,
   deletedIndices,
-  searchText,
-  setSearchText,
+  urlParams,
+  scopeLoaded,
 }) {
+  const [searchText, setSearchText] = useState('');
   const [searchIndices, setSearchIndices] = useState([]);
   const [distances, setDistances] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const search = useCallback(
     async (query) => {
-      setIsLoading(true);
+      setLoading(true);
       apiService.searchNearestNeighbors(userId, datasetId, scope, query).then((data) => {
         const inds = data.indices.filter((d) => {
-          return !deletedIndices.includes(d)
-        })
+          return !deletedIndices.includes(d);
+        });
         setDistances(data.distances);
         const limit = 20;
         // TODO: make the # of results configurable
         setSearchIndices(inds.slice(0, limit));
-        setIsLoading(false)
+        setLoading(false);
         // onSearchEmbedding?.(data.search_embedding[0]);
-      })
+      });
     },
     [datasetId, scope]
   );
@@ -36,21 +37,35 @@ export default function useNearestNeighborsSearch({
     setSearchText('');
     setSearchIndices([]);
     setDistances([]);
+    setActive(false);
   }, []);
 
   // Trigger search when searchText changes
   useEffect(() => {
     if (searchText) {
       search(searchText);
+      setActive(true);
+    } else {
+      setActive(false);
     }
   }, [searchText, search]);
 
+  // Initialize search from URL params
+  useEffect(() => {
+    if (scopeLoaded && urlParams.has('search')) {
+      const searchParam = urlParams.get('search');
+      setSearchText(searchParam);
+    }
+  }, [scopeLoaded, urlParams]);
+
   return {
+    searchText,
+    setSearchText,
     setSearchIndices,
     searchIndices,
     distances,
-    isLoading,
-    search,
     clearSearch,
+    active,
+    loading,
   };
 }
