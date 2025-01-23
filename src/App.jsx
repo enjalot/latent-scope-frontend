@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ReactGA from 'react-ga4';
 import Home from './pages/Home';
 import FullScreenExplore from './pages/FullScreenExplore';
 import Nav from './components/Nav';
@@ -9,6 +10,9 @@ import './latentscope--brand-theme.scss';
 
 const env = import.meta.env;
 console.log('ENV', env);
+
+// Initialize GA4 with your measurement ID
+ReactGA.initialize('G-MZZYR36WFH'); // Replace with your GA4 measurement ID
 
 function App() {
   return (

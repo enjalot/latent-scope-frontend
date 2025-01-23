@@ -1,30 +1,23 @@
-.home {
+.container {
   padding: 12px 12px;
   overflow-y: scroll;
   height: 100%;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
-.home .new {
+.new {
   display: flex;
   flex-direction: row;
   gap: 12px;
 }
 
-.home .section {
+.section {
   margin: 12px 24px;
 }
 
-.home .new-dataset form {
-  display: flex;
-  flex-direction: column;
-  max-width: 420px;
-  gap: 10px;
-  /* margin: 0 36px; */
-  padding: 24px;
-  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.15);
-}
 
-.home label[for="upload-button"] {
+.uploadButton {
   display: inline-block;
   padding: 10px;
   border: 2px dashed #ccc;
@@ -32,7 +25,7 @@
   cursor: pointer;
 }
 
-.home .hf-downloader {
+.hfDownloader {
   display: flex;
   flex-direction: column;
   max-width: 640px;
@@ -42,49 +35,74 @@
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.15);
 }
 
+.scopes {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
-.home .dataset {
+.scope {
   padding: 12px;
   margin: 12px 0;
   border-radius: 5px;
-  /* background-color: #f9f9f9; */
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: row;
+  max-width: 420px;
+  height: 192px;
 }
-.home .scope-links {
+
+.scopeDescription {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  margin-left: 12px;
+  justify-content: space-between;
+}
+
+.scopeLabel {
+  font-weight: bold;
+  font-size: 1.5em;
+}
+
+.scopeLinks {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
 }
-.home .scope-link {
+
+.scopeLink {
   padding: 12px;
   margin-top: 12px;
   margin-right: 12px;
   border-radius: 5px;
   background-color: #f9f9f9;
 }
-.home .scope-link img {
+.dataUrl {
+  font-size: 0.8em;
+}
+
+.scopeLink img {
   width: 240px;
   margin: 6px 0;
 }
-.home .scope-description {
-  display: inline-block;
-  max-width: 240px;
-}
+
+
 
 @media (prefers-color-scheme: dark) {
-  .home label[for="upload-button"] {
+  .uploadButton {
     background-color: #555;
   }
-  .home .scope-link {
+  .scopeLink {
     background-color: #444;
   }
 }
 
-.home .name-taken-warning {
+.nameTakenWarning {
   color: black;
   background-color: lightpink;
   padding: 6px;
   border-radius: 5px;
   border: 1px solid coral;
 }
-
