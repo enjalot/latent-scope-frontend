@@ -12,7 +12,7 @@ import {
   mapPointSizeRange,
   mapSelectionKey,
 } from '../lib/colors';
-
+import { useColorMode } from '../hooks/useColorMode';
 import styles from './Scatter.module.css';
 
 import PropTypes from 'prop-types';
@@ -73,6 +73,8 @@ function ScatterGL({
   featureIsSelected,
   ignoreNotSelected = true,
 }) {
+  const { isDark: isDarkMode } = useColorMode();
+
   const canvasRef = useRef(null);
   const reglRef = useRef(null);
   const drawPointsRef = useRef(null);
@@ -241,8 +243,7 @@ function ScatterGL({
     if (!reglRef.current || !drawPointsRef.current) return;
 
     reglRef.current.clear({
-      // color: [0.01, 0.01, 0.01, 1], // dark mode
-      color: [0.98, 0.98, 0.98, 1],
+      color: isDarkMode ? [0.067, 0.067, 0.067, 1] : [0.98, 0.98, 0.98, 1],
       depth: 1,
     });
 
@@ -257,7 +258,7 @@ function ScatterGL({
       width,
       height,
     });
-  }, [points, transform, pointScale, featureIsSelected, width, height]);
+  }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
 
   // Update useEffect to rebuild quadtree when points change
   useEffect(() => {
