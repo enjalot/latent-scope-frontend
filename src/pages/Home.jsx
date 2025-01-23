@@ -27,7 +27,7 @@ function Home() {
     {
       id: 'enjalot/ls-fineweb-edu-100k/scopes-001',
       label: 'Fineweb Edu 100k',
-      description: '100,000 sample Fineweb Edu',
+      description: '100,000 sample of Fineweb Edu',
       dataUrl: 'https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1',
     },
     {
@@ -97,7 +97,6 @@ function Home() {
                 <Link to={`/scope/${scope.id}`}>
                   <img
                     src={`https://storage.googleapis.com/fun-data/latent-scope/demos/${scope.id}.png`}
-                    height={192}
                     alt="Explore"
                   />
                 </Link>
@@ -118,6 +117,28 @@ function Home() {
             </div>
           ))}
         </div>
+      </div>
+      <div className={`${styles.section}`}>
+        <h2>Technical notes</h2>
+        <p>
+          These demos were prepared using the Latent Scope tool on an M2 Mac. After scopes were
+          created locally they are converted to{' '}
+          <a href="https://lancedb.com/">LanceDB and uploaded</a>. The API powering the nearest
+          neighbor search is hosted on <a href="https://modal.com">Modal</a>, embedding queries via
+          Sentence Transformers and querying the LanceDB vector search.
+        </p>
+        <p>
+          The frontend code for these demos lives in{' '}
+          <a href="https://github.com/enjalot/latent-scope-frontend">latent-scope-frontend</a>. The
+          backend is powered by a simple set of endpoints on Modal in{' '}
+          <a href="https://github.com/enjalot/latent-scope-modal">latent-scope-modal</a>.
+        </p>
+      </div>
+      <div className={styles.section}>
+        <p>
+          Latent Scope is brought to you by <a href="https://latentui.com">Latent Interfaces</a>, an
+          applied research lab for advanced data visualization.
+        </p>
       </div>
     </div>
   );

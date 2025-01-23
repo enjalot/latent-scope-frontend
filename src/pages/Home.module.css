@@ -1,9 +1,10 @@
 .container {
   padding: 12px 12px;
-  overflow-y: scroll;
   height: 100%;
   max-width: 960px;
   margin: 0 auto;
+  overflow-y: scroll;
+  height: 100%;
 }
 
 .new {
@@ -14,6 +15,7 @@
 
 .section {
   margin: 12px 24px;
+  padding: 12px 0;
 }
 
 
@@ -40,6 +42,8 @@
   flex-direction: row;
   flex-wrap: wrap;
   gap: 12px;
+  /* max-height: 1024px; */
+  /* overflow-y: scroll; */
 }
 
 .scope {
@@ -71,6 +75,18 @@
   flex-direction: row;
   flex-wrap: wrap;
 }
+.scopeImage img {
+  height: 192px;
+}
+@media (max-width: 480px) {
+  .scopeLabel {
+    font-size: 1.2em;
+  }
+  .scopeImage img {
+    height: 128px;
+  }
+}
+
 
 .scopeLink {
   padding: 12px;
