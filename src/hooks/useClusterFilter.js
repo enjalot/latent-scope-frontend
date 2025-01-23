@@ -4,7 +4,7 @@ export default function useClusterFilter({ scopeRows, scope, scopeLoaded, urlPar
   const [cluster, setCluster] = useState(null);
   const [clusterIndices, setClusterIndices] = useState([]);
   const [active, setActive] = useState(false); // true if a cluster filter is active
-
+  const [loading, setLoading] = useState(false);
   // Initialize cluster from URL params
   useEffect(() => {
     console.log('scopeLoaded', scopeLoaded, urlParams);
@@ -21,10 +21,12 @@ export default function useClusterFilter({ scopeRows, scope, scopeLoaded, urlPar
   // Update cluster indices when cluster changes
   useEffect(() => {
     if (cluster) {
+      setLoading(true);
       const annots = scopeRows.filter((d) => d.cluster === cluster.cluster);
       const indices = annots.map((d) => d.ls_index);
       setClusterIndices(indices);
       setActive(true);
+      setLoading(false);
     } else {
       setClusterIndices([]);
       setActive(false);
@@ -37,5 +39,6 @@ export default function useClusterFilter({ scopeRows, scope, scopeLoaded, urlPar
     clusterIndices,
     setClusterIndices,
     active,
+    loading,
   };
 }

@@ -7,7 +7,7 @@ export default function NearestNeighbor() {
   const { searchFilter, setUrlParams } = useFilter();
   const {
     searchIndices,
-    searchLoading,
+    loading,
     setSearchText,
     clearSearch,
     searchText: defaultValue,
@@ -45,7 +45,7 @@ export default function NearestNeighbor() {
           placeholder="Filter by nearest neighbors to search query..."
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !searchLoading) {
+            if (e.key === 'Enter' && !loading) {
               setSearchText(e.target.value);
               setUrlParams((prev) => {
                 prev.set('search', e.target.value);
@@ -58,12 +58,12 @@ export default function NearestNeighbor() {
           <Button
             color="secondary"
             className={styles.searchButton}
-            disabled={searchLoading}
+            disabled={loading}
             onClick={(e) => {
               e.preventDefault();
               searchIndices.length ? handleClear() : handleSubmit(e);
             }}
-            icon={searchLoading ? 'pie-chart' : searchIndices.length ? 'x' : 'search'}
+            icon={loading ? 'pie-chart' : searchIndices.length ? 'x' : 'search'}
           />
         </div>
       </div>

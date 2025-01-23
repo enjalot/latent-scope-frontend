@@ -70,6 +70,7 @@ function FilterDataTable({
   page,
   setPage,
   useDefaultIndices = false,
+  filterLoading = false,
 }) {
   const [rows, setRows] = useState([]);
   const [defaultRows, setDefaultRows] = useState([]);
@@ -92,8 +93,6 @@ function FilterDataTable({
       if (dataset && scope && indices.length) {
         setRowsLoading(true);
         let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
-        const timestamp = Date.now();
-        console.log('fetching query', paged, timestamp);
 
         if (paged.length) {
           apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
@@ -282,7 +281,7 @@ function FilterDataTable({
       className={`filter-data-table ${rowsLoading ? 'loading' : ''}`}
       // style={{ visibility: indices.length ? 'visible' : 'hidden' }}
     >
-      {rowsLoading ? (
+      {rowsLoading || filterLoading ? (
         <div className="loading-overlay">
           <div className="loading-container">
             <div className="loading-spinner"></div>

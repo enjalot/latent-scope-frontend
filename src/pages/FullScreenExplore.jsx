@@ -61,6 +61,7 @@ function ExploreContent() {
     setActiveFilterTab,
     distances,
     useDefaultIndices,
+    filterLoading,
   } = useFilter();
 
   // Keep visualization-specific state
@@ -329,6 +330,7 @@ function ExploreContent() {
                 setPage={setPage}
                 handleFeatureClick={handleFeatureClick}
                 useDefaultIndices={useDefaultIndices}
+                filterLoading={filterLoading}
               />
             </div>
           </div>

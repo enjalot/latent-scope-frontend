@@ -6,6 +6,8 @@ export default function useFeatureFilter({ userId, datasetId, scope, urlParams, 
   const [threshold, setThreshold] = useState(0.1);
   const [featureIndices, setFeatureIndices] = useState([]);
   const [featureIndicesLoaded, setFeatureIndicesLoaded] = useState(false);
+  const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Handle URL initialization
   useEffect(() => {
@@ -20,6 +22,9 @@ export default function useFeatureFilter({ userId, datasetId, scope, urlParams, 
       const maxActivation = scope?.sae?.max_activations[feature] || 0;
       let t = maxActivation < 0.2 ? maxActivation / 2 : 0.1;
       setThreshold(t);
+      setActive(true);
+    } else {
+      setActive(false);
     }
   }, [feature, scope, setThreshold]);
 
@@ -27,12 +32,15 @@ export default function useFeatureFilter({ userId, datasetId, scope, urlParams, 
   useEffect(() => {
     if (feature >= 0) {
       setFeatureIndicesLoaded(false);
+      setLoading(true);
       apiService.searchSaeFeature(userId, datasetId, scope?.id, feature, threshold).then((data) => {
         setFeatureIndices(data);
         setFeatureIndicesLoaded(true);
+        setLoading(false);
       });
     } else {
       setFeatureIndices([]);
+      setLoading(false);
     }
   }, [userId, datasetId, scope, feature, threshold, setFeatureIndices, scopeLoaded]);
 
@@ -44,5 +52,7 @@ export default function useFeatureFilter({ userId, datasetId, scope, urlParams, 
     featureIndices,
     setFeatureIndices,
     featureIndicesLoaded,
+    active,
+    loading,
   };
 }

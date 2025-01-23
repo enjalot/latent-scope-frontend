@@ -113,7 +113,7 @@ export function FilterProvider({ children }) {
     if (activeFilterTab === CLUSTER) {
       return urlParams.get('cluster') === null && clusterFilter.cluster === null;
     } else if (activeFilterTab === FEATURE) {
-      return urlParams.get('feature') === null && featureFilter.feature === null;
+      return urlParams.get('feature') === null && !featureFilter.active;
     } else if (activeFilterTab === SEARCH) {
       return urlParams.get('search') === null && searchFilter.searchText === '';
     } else if (activeFilterTab === SELECT) {
@@ -132,6 +132,19 @@ export function FilterProvider({ children }) {
     selectedIndices,
     columnFilter.columnIndices,
   ]);
+
+  const filterLoading = useMemo(() => {
+    if (activeFilterTab === CLUSTER) {
+      return clusterFilter.loading;
+    } else if (activeFilterTab === FEATURE) {
+      return featureFilter.loading;
+    } else if (activeFilterTab === SEARCH) {
+      return searchFilter.loading;
+    } else if (activeFilterTab === COLUMN) {
+      return columnFilter.loading;
+    }
+    return false;
+  }, [featureFilter.loading, searchFilter.loading, columnFilter.loading, clusterFilter.loading]);
 
   const value = {
     activeFilterTab,
@@ -165,6 +178,8 @@ export function FilterProvider({ children }) {
     // setColumnFiltersActive,
     // columnFilters,
     // columnIndices,
+
+    filterLoading,
 
     toggleSearch,
     toggleFilter,
