@@ -29,7 +29,8 @@
     border-bottom: 2px solid transparent;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 12px;
+
 }
 
 .scopeTitle {

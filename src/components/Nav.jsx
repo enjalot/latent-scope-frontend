@@ -14,6 +14,7 @@ const Nav = () => {
           </li>
           <li className="settings">
             {/* TODO: github link */}
+            <a href="https://github.com/enjalot/latent-scope">Github</a>
           </li>
         </ul>
       </nav>
