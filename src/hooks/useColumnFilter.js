@@ -19,7 +19,7 @@ const useColumnFilter = (userId, datasetId, scope) => {
         categories: dataset.column_metadata[column].categories,
         counts: dataset.column_metadata[column].counts,
       }))
-      .filter((d) => d.counts);
+      .filter((d) => d.counts && Object.keys(d.counts).length > 1);
   }, [dataset]);
 
   const columnQuery = useCallback(

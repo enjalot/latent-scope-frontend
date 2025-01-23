@@ -94,7 +94,7 @@ export default function FilterActions({ scatter }) {
             onClick={toggleFeature}
             className={`${styles.actionsButton} ${activeFilterTab === filterConstants.FEATURE ? styles.active : styles.notActive}`}
             size="small"
-            icon="search"
+            icon="compass"
             text={`Feature (${featureFilter?.featureIndices?.length})`}
             color="secondary"
             title="Feature"

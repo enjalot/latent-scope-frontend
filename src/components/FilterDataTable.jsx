@@ -254,6 +254,15 @@ function FilterDataTable({
           // use the row index to get the distance
           return <span>{parseFloat(1 - distances[row.idx]).toFixed(4)}</span>;
         }
+        if (typeof row[col] === 'string') {
+          if (row[col].startsWith('http')) {
+            return (
+              <a href={row[col]} target="_blank" rel="noopener noreferrer">
+                {row[col]}
+              </a>
+            );
+          }
+        }
 
         return <span title={row[col]}>{row[col]}</span>;
       };
