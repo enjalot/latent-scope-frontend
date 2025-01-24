@@ -270,16 +270,18 @@ function ScatterGL({
   useEffect(() => {
     if (!points || !points.length) return;
 
+    // if ignoreNotSelected is true, we only want to add points that are selected as a result of the
+    // filter to the quadtree. if it is false, we want to add all points to the quadtree.
+    const filteredPoints = points.filter(
+      (d) =>
+        d[2] !== mapSelectionKey.hidden &&
+        (ignoreNotSelected ? d[2] === mapSelectionKey.selected : true)
+    );
+
     quadtreeRef.current = quadtree()
       .x((d) => d[0])
       .y((d) => d[1])
-      .addAll(
-        points.filter(
-          (d) =>
-            d[2] !== mapSelectionKey.hidden &&
-            (ignoreNotSelected ? d[2] !== mapSelectionKey.notSelected : true)
-        )
-      );
+      .addAll(filteredPoints);
   }, [points, ignoreNotSelected]);
 
   // Replace the existing handleMouseMove with this updated version
