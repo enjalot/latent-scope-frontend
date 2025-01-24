@@ -197,7 +197,6 @@ function ExploreContent() {
   function updateSize() {
     if (visualizationContainerRef.current) {
       const vizRect = visualizationContainerRef.current.getBoundingClientRect();
-      console.log('==== updateSize ==== ', vizRect.width, vizRect.height);
       setSize([vizRect.width, vizRect.height]);
     }
   }
