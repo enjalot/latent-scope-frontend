@@ -276,6 +276,19 @@ function ExploreContent() {
     [setActiveFilterTab, featureFilter.setFeature]
   );
 
+  // Add this hook at the component level
+  const SMALL_SCREEN_WIDTH = 1024;
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= SMALL_SCREEN_WIDTH);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth <= SMALL_SCREEN_WIDTH);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (!dataset)
     return (
       <>
@@ -288,7 +301,7 @@ function ExploreContent() {
     <>
       <SubNav user={userId} dataset={dataset} scope={scope} />
       <div className="page-container">
-        {!isMobileDevice() && (
+        {!isSmallScreen && (
           <LeftPane dataset={dataset} scope={scope} deletedIndices={deletedIndices} />
         )}
         <div
