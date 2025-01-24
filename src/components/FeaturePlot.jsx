@@ -65,10 +65,12 @@ function FeaturePlot({
       ctx.moveTo(x, height - padding.bottom);
       ctx.lineTo(x, padding.top);
 
+      const featureColor = '#d9a778';
+
       // Set line style based on hover/feature state
       if (hoveredIdx !== null) {
         if (idx === hoveredIdx) {
-          ctx.strokeStyle = '#b87333';
+          ctx.strokeStyle = featureColor;
           ctx.lineWidth = 2;
           ctx.globalAlpha = 0.8;
         } else {
@@ -77,11 +79,11 @@ function FeaturePlot({
           ctx.globalAlpha = 0.25;
         }
       } else if (feature === -1) {
-        ctx.strokeStyle = '#b87333';
+        ctx.strokeStyle = featureColor;
         ctx.lineWidth = 2;
         ctx.globalAlpha = 0.8;
       } else if (feat_idx === feature) {
-        ctx.strokeStyle = '#b87333';
+        ctx.strokeStyle = featureColor;
         ctx.lineWidth = 2;
         ctx.globalAlpha = 0.8;
       } else {
