@@ -78,7 +78,6 @@ function ScatterGL({
   const canvasRef = useRef(null);
   const reglRef = useRef(null);
   const drawPointsRef = useRef(null);
-  const transformRef = useRef(zoomIdentity);
   const xScaleRef = useRef(scaleLinear().domain([-1, 1]).range([0, width]));
   const yScaleRef = useRef(scaleLinear().domain([-1, 1]).range([height, 0]));
   const quadtreeRef = useRef(null);
@@ -223,7 +222,7 @@ function ScatterGL({
     });
 
     const zoomBehavior = zoom()
-      .scaleExtent([0.1, 10])
+      .scaleExtent([0.1, 12])
       .on('zoom', (event) => {
         setTransform(event.transform);
         const newXScale = event.transform.rescaleX(xScaleRef.current);
@@ -234,7 +233,17 @@ function ScatterGL({
         }
       });
 
-    select(canvas).call(zoomBehavior);
+    const zoomSelection = select(canvas).call(zoomBehavior);
+
+    const zoomOutFactor = 0.8; // zoom out to 80% of original size
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const initialTransform = zoomIdentity
+      .translate(centerX, centerY)
+      .scale(zoomOutFactor)
+      .translate(-centerX, -centerY);
+
+    zoomSelection.call(zoomBehavior.transform, initialTransform);
 
     return () => {
       select(canvas).on('.zoom', null);
