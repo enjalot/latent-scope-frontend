@@ -309,7 +309,7 @@ function ExploreContent() {
           className="full-screen-explore-container"
           style={{ gridTemplateColumns: gridTemplate }}
         >
-          <div className="filter-table-container" style={{ position: 'relative' }}>
+          {/* <div className="filter-table-container" style={{ position: 'relative' }}>
             <div style={styles.dragHandle} onMouseDown={startDragging} />
             <div ref={filtersContainerRef}>
               <FilterActions
@@ -349,7 +349,7 @@ function ExploreContent() {
                 filterLoading={filterLoading}
               />
             </div>
-          </div>
+          </div> */}
           <div
             ref={visualizationContainerRef}
             className="visualization-pane-container"
