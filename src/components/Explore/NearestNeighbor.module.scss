@@ -14,7 +14,23 @@
 
 .searchInput {
   flex-grow: 1;
+  background-color: var(--neutrals-color-neutral-0);
+  color: var(--text-color-text-main);
+  border-color: var(--borders-color-border-1);
+
+  &::placeholder {
+    color: var(--text-color-text-subtle);
+  }
+
+  &:hover {
+    border-color: var(--borders-color-border-2);
+  }
+
+  &:focus {
+    border-color: var(--interactions---primary-color-interaction-primary);
+  }
 }
+
 .searchButtonContainer {
   padding-top: 6px;
 }

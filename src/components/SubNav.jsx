@@ -14,15 +14,13 @@ function SubNav({ user, dataset, scope }) {
     );
   }
   const scopeId = useMemo(
-    () => `${user}/${dataset?.id}/${scope?.id}`,
+    () => (user && dataset?.id && scope?.id ? `${user}/${dataset.id}/${scope.id}` : null),
     [user, dataset?.id, scope?.id]
   );
-  const scopeDetail = useMemo(() => scopes.find((s) => s.id === scopeId), [scopeId]);
-  useEffect(() => {
-    console.log('scopeId', scopeId);
-    console.log('scopeDetail', scopeDetail);
-    console.log('scopes', scopes);
-  }, [scopeDetail, scopeId]);
+  const scopeDetail = useMemo(
+    () => (scopeId ? scopes.find((s) => s.id === scopeId) : null),
+    [scopeId]
+  );
 
   return (
     <div className={styles.subHeaderContainer}>

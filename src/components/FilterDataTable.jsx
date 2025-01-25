@@ -9,7 +9,7 @@ import FeaturePlot from './FeaturePlot';
 
 import { apiService } from '../lib/apiService';
 
-import './FilterDataTable.css';
+import styles from './FilterDataTable.module.css';
 
 FilterDataTable.propTypes = {
   height: PropTypes.string,
@@ -155,7 +155,7 @@ function FilterDataTable({
         key: col,
         name: col,
         resizable: true,
-        className: 'filter-data-table-row',
+        className: styles.filterDataTableRow,
       };
 
       // dropping tag support for now.
@@ -207,7 +207,7 @@ function FilterDataTable({
         return {
           ...baseCol,
           width: 500,
-          renderHeaderCell: () => <div className="text-column">{dataset.text_column}</div>,
+          renderHeaderCell: () => <div className={styles.textColumn}>{dataset.text_column}</div>,
           renderCell: ({ row }) => {
             return <span title={row[col]}>{row[col]}</span>;
           },
@@ -221,11 +221,11 @@ function FilterDataTable({
           ...baseCol,
           width: baseWidth,
           renderHeaderCell: () => (
-            <div className="feature-column-header" style={{ position: 'relative' }}>
+            <div className={styles.featureColumnHeader} style={{ position: 'relative' }}>
               <span>{ls_features_column}</span>
               <span
                 data-tooltip-id="feature-column-info-tooltip"
-                className="feature-column-info-tooltip-icon"
+                className={styles.featureColumnInfoTooltipIcon}
               >
                 🤔
               </span>
@@ -287,24 +287,24 @@ function FilterDataTable({
 
   return (
     <div
-      className={`filter-data-table ${rowsLoading ? 'loading' : ''}`}
+      className={`${styles.filterDataTable} ${rowsLoading ? styles.loading : ''}`}
       // style={{ visibility: indices.length ? 'visible' : 'hidden' }}
     >
       {rowsLoading || filterLoading ? (
-        <div className="loading-overlay">
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
+        <div className={styles.loadingOverlay}>
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingSpinner}></div>
             <div>Loading</div>
           </div>
         </div>
       ) : (
-        <div className="filter-table-scrollable-body table-body" style={{ overflowY: 'auto' }}>
+        <div className={`${styles.filterTableScrollableBody} ${styles.tableBody}`}>
           <Tooltip
             id="feature-tooltip"
             place="bottom"
             effect="solid"
             content={featureTooltipContent?.content || ''}
-            className="feature-tooltip"
+            className={styles.featureTooltip}
             float={true}
             isOpen={!!featureTooltipContent}
             // float={true}
@@ -334,11 +334,12 @@ function FilterDataTable({
             rowHeight={sae_id ? 50 : 35}
             style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
             renderers={{ renderRow: renderRowWithHover }}
+            className={styles.dataGrid}
           />
 
           <Tooltip
             id="feature-column-info-tooltip"
-            className="feature-column-info-tooltip"
+            className={styles.featureColumnInfoTooltip}
             place="top"
             effect="solid"
             clickable={true}
@@ -364,7 +365,7 @@ function FilterDataTable({
         </div>
       )}
       {showNavigation && (
-        <div className="filter-data-table-page-controls">
+        <div className={styles.filterDataTablePageControls}>
           <button onClick={() => setPage(0)} disabled={page === 0}>
             First
           </button>

@@ -1,19 +1,25 @@
 export const selectStyles = {
-  control: (styles) => ({
-    ...styles,
+  control: (baseStyles, state) => ({
+    ...baseStyles,
     backgroundColor: 'var(--neutrals-color-neutral-0)',
-    borderColor: 'var(--borders-color-border-1)',
+    borderColor: state.isFocused
+      ? 'var(--interactions---primary-color-interaction-primary)'
+      : 'var(--borders-color-border-1)',
     '&:hover': {
-      borderColor: 'var(--borders-color-border-2)',
+      borderColor: 'var(--interactions---primary-color-interaction-primary-hover)',
     },
+    boxShadow: state.isFocused
+      ? '0 0 0 1px var(--interactions---primary-color-interaction-primary)'
+      : 'none',
   }),
-  menu: (styles) => ({
-    ...styles,
+  menu: (baseStyles) => ({
+    ...baseStyles,
     backgroundColor: 'var(--neutrals-color-neutral-0)',
     border: '1px solid var(--borders-color-border-1)',
+    boxShadow: '0 2px 12px 0 rgba(0, 0, 0, 0.05)',
   }),
-  option: (styles, { isFocused, isSelected }) => ({
-    ...styles,
+  option: (baseStyles, { isFocused, isSelected }) => ({
+    ...baseStyles,
     backgroundColor: isSelected
       ? 'var(--interactions---primary-color-interaction-primary)'
       : isFocused
@@ -24,16 +30,34 @@ export const selectStyles = {
       backgroundColor: 'var(--interactions---primary-color-interaction-primary-active)',
     },
   }),
-  singleValue: (styles) => ({
-    ...styles,
+  singleValue: (baseStyles) => ({
+    ...baseStyles,
     color: 'var(--text-color-text-main)',
   }),
-  input: (styles) => ({
-    ...styles,
+  input: (baseStyles) => ({
+    ...baseStyles,
     color: 'var(--text-color-text-main)',
   }),
-  placeholder: (styles) => ({
-    ...styles,
+  placeholder: (baseStyles) => ({
+    ...baseStyles,
     color: 'var(--text-color-text-subtle)',
+  }),
+  indicatorSeparator: (baseStyles) => ({
+    ...baseStyles,
+    backgroundColor: 'var(--borders-color-border-1)',
+  }),
+  dropdownIndicator: (baseStyles) => ({
+    ...baseStyles,
+    color: 'var(--text-color-text-subtle)',
+    '&:hover': {
+      color: 'var(--text-color-text-main)',
+    },
+  }),
+  clearIndicator: (baseStyles) => ({
+    ...baseStyles,
+    color: 'var(--text-color-text-subtle)',
+    '&:hover': {
+      color: 'var(--text-color-text-main)',
+    },
   }),
 };

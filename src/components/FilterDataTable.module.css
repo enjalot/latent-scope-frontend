@@ -1,4 +1,4 @@
-.filter-data-table {
+.filterDataTable {
   width: calc(100% - 2px);
   display: flex;
   flex-direction: column;
@@ -11,7 +11,7 @@
 }
 
 @media screen and (max-width: 1024px) {
-  .filter-data-table {
+  .filterDataTable {
     padding-top: .5rem;
   }
 }
@@ -22,13 +22,11 @@
   100% { opacity: 0.25; }
 }
 
-.filter-data-table.loading {
+.loading {
   animation: loadingFade 1.5s ease-in-out infinite;
 }
 
-
-
-.filter-data-table-page-controls {
+.filterDataTablePageControls {
   margin-top: 0px;
   display: flex;
   justify-content: center;
@@ -39,75 +37,78 @@
   padding: 4px 0px;
 }
 
-.filter-data-table table {
+.table {
   border-spacing: 0;
 }
-.filter-data-table th {
+
+.tableHeader {
   text-align: left;
   padding: 0 6px;
   border-right: 1px solid #ccc;
 }
-.filter-data-table td {
+
+.tableCell {
   text-align: left;
   padding: 3px 6px;
   border-bottom: 1px solid #eee;
   border-right: 1px solid #eee;
 }
 
-.filter-data-table .ls-cluster select {
+.lsClusterSelect {
   max-width: 200px;
 }
-.filter-data-table .tags {
+
+.tags {
   display: flex;
   flex-direction: row;
   gap: 2px;
 }
 
-.filter-data-table-scrollable-body:hover {
+.filterTableScrollableBody:hover {
   overflow-y: auto;
 }
 
-
-.filter-data-table .tag-active {
+.tagActive {
   background-color: #fff;
   border: 1px solid gray;
 }
 
-.filter-data-table .tag-inactive {
+.tagInactive {
   background-color: #eee;
   filter: grayscale(100%);
   opacity: 0.5;
 }
 
-.filter-data-table .text-column {
+.textColumn {
   background-color: var(--neutrals-color-neutral-2);
   font-weight: bold;
   text-align: center;
 }
 
 @media (prefers-color-scheme: dark) {
-  .filter-data-table .tag-active {
+  .tagActive {
     background-color: #111;
     border: 1px solid gray;
   }
-  .filter-data-table .tag-inactive {
+  .tagInactive {
     background-color: #333;
   }
-  .filter-data-table .text-column {
-    color: rgb(17, 17, 17);
+  .textColumn {
+    background-color: #333;
+    color: #fff;
   }
 }
 
 /* React-Data-Grid */
-.rdg-row {
+.rdgRow {
   cursor: pointer;
 }
 
-.rdg-row:hover {
+.rdgRow:hover {
   background-color: var(--interactions---secondary-color-interaction-secondary-hover);
 }
 
-.rdg-cell {
+.rdgCell {
   border-inline-end: 0 !important;
   border-block-end: 0.5px solid #ededed !important;
 }
@@ -119,59 +120,62 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .rdg-row:hover {
+  .rdgRow:hover {
      background-color: #555;
   }
 }
 
-.feature-cell {
+.featureCell {
   padding: 8px;
 }
-.feature-plot-container canvas {
+
+.featurePlotContainer canvas {
   cursor: pointer;
 }
-.feature-modal-item-filter-button {
+
+.featureModalItemFilterButton {
   transform: scale(0.6);
 }
 
-.feature-cell:hover {
+.featureCell:hover {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.feature-cell.expanded {
+.featureCellExpanded {
   background-color: #f5f5f5;
   border-radius: 4px;
   padding: 8px;
   height: 100%;
   overflow-y: auto;
 }
-.minimize-btn {
+
+.minimizeBtn {
   margin-bottom: 8px;
   padding: 2px 8px;
   font-size: 12px;
 }
 
-.feature-modal-content {
+.featureModalContent {
   padding: 20px;
   max-height: 80vh;
   overflow-y: auto;
 }
 
-.feature-cell-button {
+.featureCellButton {
   padding: 2px;
   color: var(--neutrals-color-neutral-3) !important;
 }
 
-.feature-modal-item-filter-link:hover {
+.featureModalItemFilterLink:hover {
   color: var(--interactions---primary-color-interaction-primary) !important;
 }
 
-.feature-cell-button-container {
+.featureCellButtonContainer {
   display: flex;
   justify-content: center;
 }
 
-.feature-modal {
+.featureModal {
   padding: 0px;
   width: 800px !important;
 
@@ -180,26 +184,26 @@
   }
 }
 
-.feature-modal-close {
+.featureModalClose {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
 }
 
-.feature-modal-text {
+.featureModalText {
   font-weight: bold;
   font-size: 1.25rem;
 }
 
-.feature-modal-item-filter-link {
+.featureModalItemFilterLink {
   /* font-size: 14px; */
   /* color: var(--neutrals-color-neutral-3); */
   margin: 0px 4px;
   cursor: pointer;
 }
 
-.feature-modal-item {
+.featureModalItem {
   margin-bottom: 4px;
   position: relative;
   /* cursor: pointer; */
@@ -210,7 +214,7 @@
   height: 24px;
 }
 
-.feature-modal-item-background {
+.featureModalItemBackground {
   position: absolute;
   z-index: 0;
   height: 100%;
@@ -222,7 +226,7 @@
   color: var(--interactions---primary-color-interaction-primary-active);
 } */
 
-.feature-label {
+.featureLabel {
   height: 100%;
   display: flex;
   align-items: center;
@@ -233,7 +237,7 @@
   padding-left: 4px;
 }
 
-.feature-modal-item-filter-text {
+.featureModalItemFilterText {
   font-size: 14px;
   color: var(--neutrals-color-neutral-3);
   margin-left: 4px;
@@ -241,22 +245,22 @@
   text-decoration: underline;
 }
 
-.feature-modal-item-filter-link {
+.featureModalItemFilterLink {
   cursor: pointer;
   text-decoration: underline;
   text-decoration-color: var(--neutrals-color-neutral-3);
 }
 
-.feature-modal-item-filter-link:hover {
+.featureModalItemFilterLink:hover {
   text-decoration-color: var(--interactions---primary-color-interaction-primary);
 }
 
-.feature-modal-item:hover .feature-modal-item-filter-text {
+.featureModalItem:hover .featureModalItemFilterText {
   display: inline;
   cursor: pointer;
 }
 
-.feature-tooltip {
+.featureTooltip {
   /* background-color: white !important; */
   background-color: var(--interactions---primary-color-interaction-primary) !important;
   color: var(--neutrals-color-neutral-0) !important;
@@ -277,8 +281,7 @@
   overflow: visible !important;
 } */
 
-
-.feature-column-info-tooltip {
+.featureColumnInfoTooltip {
   background-color: #D3965E !important;
   padding: 10px !important;
   border-radius: 5px !important;
@@ -293,10 +296,10 @@
   /* top: -50px !important; */
 }
 
-.feature-column-info-tooltip-icon:hover {
+.featureColumnInfoTooltipIcon:hover {
   cursor: pointer;
 }
 
-.feature-column-info-tooltip-icon {
+.featureColumnInfoTooltipIcon {
   margin-left: 4px;
 }

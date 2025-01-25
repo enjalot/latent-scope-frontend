@@ -25,7 +25,7 @@ export default function FeatureFilter() {
 
   const featureLabel = (featIdx) => {
     const featureObj = features.find((f) => f.feature === featIdx);
-    return `(${featIdx}) ${featureObj.label}`;
+    return `(${featIdx}) ${featureObj?.label}`;
   };
 
   useEffect(() => {
