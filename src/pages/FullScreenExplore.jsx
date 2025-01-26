@@ -10,7 +10,7 @@ import SubNav from '../components/SubNav';
 import LeftPane from '../components/Explore/LeftPane';
 import VisualizationPane from '../components/Explore/VisualizationPane';
 import FilterDataTable from '../components/FilterDataTable';
-
+import MobileFilterDataTable from '../components/MobileFilterDataTable';
 import { ScopeProvider } from '../contexts/ScopeContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { useScope } from '../contexts/ScopeContext';
@@ -309,16 +309,17 @@ function ExploreContent() {
           className="full-screen-explore-container"
           style={{ gridTemplateColumns: gridTemplate }}
         >
+          <div ref={filtersContainerRef} className="filter-actions-container">
+            <FilterActions
+              clusterLabels={clusterLabels}
+              scatter={scatter}
+              scope={scope}
+              dataset={dataset}
+            />
+          </div>
           {/* <div className="filter-table-container" style={{ position: 'relative' }}>
             <div style={styles.dragHandle} onMouseDown={startDragging} />
-            <div ref={filtersContainerRef}>
-              <FilterActions
-                clusterLabels={clusterLabels}
-                scatter={scatter}
-                scope={scope}
-                dataset={dataset}
-              />
-            </div>
+           
             <div
               style={{
                 height: tableHeight,
@@ -371,8 +372,34 @@ function ExploreContent() {
                 selectedAnnotations={selectedAnnotations}
                 hoveredCluster={hoveredCluster}
                 dataTableRows={dataTableRows}
+                defaultIndices={defaultIndices}
               />
             ) : null}
+          </div>
+
+          <div className="mobile-filter-data-container">
+            <MobileFilterDataTable
+              userId={userId}
+              dataset={dataset}
+              scope={scope}
+              filteredIndices={filteredIndices}
+              defaultIndices={defaultIndices}
+              deletedIndices={deletedIndices}
+              distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
+              clusterMap={clusterMap}
+              clusterLabels={clusterLabels}
+              onDataTableRows={setDataTableRows}
+              sae_id={sae?.id}
+              feature={featureFilter.feature}
+              features={features}
+              onHover={handleHover}
+              onClick={handleClicked}
+              page={page}
+              setPage={setPage}
+              handleFeatureClick={handleFeatureClick}
+              useDefaultIndices={useDefaultIndices}
+              filterLoading={filterLoading}
+            />
           </div>
         </div>
       </div>

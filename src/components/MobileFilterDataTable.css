@@ -1,0 +1,136 @@
+.mobile-filter-data-table {
+  position: relative;
+  width: 100%;
+  min-height: 100px;
+  max-height: 800px;
+  overflow: hidden;
+  transition: height 0.1s ease-out;
+  background: white;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  cursor: grab;
+  z-index: 10;
+  background: white;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.drag-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 8px;
+  gap: 4px;
+  cursor: grab;
+}
+
+.drag-pill {
+  width: 36px;
+  height: 4px;
+  background-color: #e0e0e0;
+  border-radius: 2px;
+}
+
+.mobile-filter-data-table.dragging .drag-handle {
+  cursor: grabbing;
+}
+
+.mobile-filter-data-table.dragging .drag-pill {
+  background-color: #bdbdbd;
+}
+
+/* Adjust the existing filter-data-table class */
+.filter-data-table {
+  height: calc(100% - 24px); /* Subtract drag handle height */
+  margin-top: 24px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* For smooth iOS scrolling */
+}
+
+/* Optional: Add a subtle animation when dragging */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.mobile-filter-data-table.dragging .drag-pill {
+  animation: pulse 1s ease-in-out infinite;
+} 
+
+.data-row {
+    margin-bottom: 12px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  .row-text {
+    font-size: 16px;
+    max-height: 24px;
+    overflow-y: hidden;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .row-cluster {
+    font-size: 12px;
+  }
+  
+  p.text-preview {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin: 0px;
+    /* font-size: 12px; */
+  }
+
+  .text-preview {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: none;
+  }
+
+  @media screen and (max-width: 1024px) {
+    .row-text {
+      font-size: 12px;
+    }
+
+    .row-cluster {
+      font-size: 10px;
+    }
+  }
+
+  .rows-container {
+    padding: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .drag-handle {
+      background: #111;
+    }
+  }
+
+  .drag-indicator button {
+    font-size: 12px;
+  }
+
+  /* .drag-handle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  } */
