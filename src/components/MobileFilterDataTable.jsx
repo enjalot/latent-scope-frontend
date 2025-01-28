@@ -78,7 +78,7 @@ function MobileFilterDataTable({
     deletedIndices,
   });
 
-  const DEFAULT_HEIGHT = 200;
+  const DEFAULT_HEIGHT = 100;
 
   const [rows, setRows] = useState([]);
   const [defaultRows, setDefaultRows] = useState([]);
@@ -114,10 +114,6 @@ function MobileFilterDataTable({
       if (dataset && scope && indices.length) {
         setRowsLoading(true);
         let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
-
-        console.log({
-          paged,
-        });
 
         if (paged.length) {
           apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
@@ -196,9 +192,6 @@ function MobileFilterDataTable({
       ref={containerRef}
       className={`mobile-filter-data-table ${isDragging ? 'dragging' : ''}`}
       style={{ height: containerHeight }}
-      // onTouchStart={handleTouchStart}
-      // onTouchMove={handleTouchMove}
-      // onTouchEnd={handleTouchEnd}
     >
       {/* Drag handle at the top */}
       <div
@@ -206,8 +199,6 @@ function MobileFilterDataTable({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-
-        // onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="drag-indicator">
           <button onClick={() => setPage(0)} disabled={page === 0}>

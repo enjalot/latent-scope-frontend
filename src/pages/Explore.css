@@ -425,17 +425,6 @@
   border: 2px solid black;
 }
 
-.mobile-filter-data-container {
-  overflow-y: auto;
-  margin: 8px;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  height: 20%;
-  /* max-height: 200px; */
-}
 
 /* .new-tag {
   margin: 6px 0;

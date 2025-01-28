@@ -1,7 +1,7 @@
 .mobile-filter-data-table {
-  position: relative;
-  width: 100%;
-  min-height: 200px;
+  /* position: relative; */
+  /* width: 100%; */
+  min-height: 100px;
   max-height: 800px;
   overflow: hidden;
   transition: height 0.1s ease-out;
@@ -9,8 +9,14 @@
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  overflow-y: auto;
+  margin: 8px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 }
 
 .drag-handle {
@@ -90,6 +96,7 @@
   
   .row-cluster {
     font-size: 12px;
+    color: #888;
   }
   
   p.text-preview {

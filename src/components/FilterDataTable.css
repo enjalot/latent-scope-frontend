@@ -301,27 +301,3 @@
   margin-left: 4px;
 }
 
-.data-row {
-  margin-bottom: 12px;
-}
-
-.row-text {
-  font-size: 16px;
-  max-height: 24px;
-  overflow-y: hidden;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.row-cluster {
-  font-size: 12px;
-}
-
-p.text-preview {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  margin: 0px;
-  /* font-size: 12px; */
-}
