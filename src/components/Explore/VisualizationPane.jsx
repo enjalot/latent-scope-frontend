@@ -45,7 +45,6 @@ function VisualizationPane({
   selectedAnnotations,
   hoveredCluster,
   dataTableRows,
-  defaultIndices,
 }) {
   const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
 
@@ -104,36 +103,29 @@ function VisualizationPane({
     return lookup;
   }, [featureIsSelected, dataTableRows, featureFilter.feature, max_activations]);
 
-  console.log('==== defaultIndices ==== ', defaultIndices.slice(0, 1000));
-
   const drawingPoints = useMemo(() => {
     return scopeRows.map((p, i) => {
-      if (defaultIndices.slice(0, 1000)?.includes(i)) {
-        return [p.x, p.y, mapSelectionKey.selected, 1.0];
-      } else {
+      if (featureIsSelected) {
+        if (filteredIndices?.includes(i)) {
+          const activation = featureActivationMap.get(p.ls_index);
+          return activation !== undefined
+            ? [p.x, p.y, mapSelectionKey.selected, activation]
+            : [p.x, p.y, mapSelectionKey.notSelected, 0.0];
+        }
         return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
       }
-      // if (featureIsSelected) {
-      //   if (filteredIndices?.includes(i)) {
-      //     const activation = featureActivationMap.get(p.ls_index);
-      //     return activation !== undefined
-      //       ? [p.x, p.y, mapSelectionKey.selected, activation]
-      //       : [p.x, p.y, mapSelectionKey.notSelected, 0.0];
-      //   }
-      //   return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
-      // }
 
-      // if (p.deleted) {
-      //   return [-10, -10, mapSelectionKey.hidden, 0.0];
-      //   //   } else if (hoveredIndex === i) {
-      //   //     return [p.x, p.y, mapSelectionKey.hovered, 0.0];
-      // } else if (filteredIndices?.includes(i)) {
-      //   return [p.x, p.y, mapSelectionKey.selected, 0.0];
-      // } else if (filteredIndices?.length) {
-      //   return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
-      // } else {
-      //   return [p.x, p.y, mapSelectionKey.normal, 0.0];
-      // }
+      if (p.deleted) {
+        return [-10, -10, mapSelectionKey.hidden, 0.0];
+        //   } else if (hoveredIndex === i) {
+        //     return [p.x, p.y, mapSelectionKey.hovered, 0.0];
+      } else if (filteredIndices?.includes(i)) {
+        return [p.x, p.y, mapSelectionKey.selected, 0.0];
+      } else if (filteredIndices?.length) {
+        return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
+      } else {
+        return [p.x, p.y, mapSelectionKey.normal, 0.0];
+      }
     });
   }, [scopeRows, filteredIndices, featureActivationMap, featureIsSelected]);
 
@@ -245,6 +237,7 @@ function VisualizationPane({
   const pointOpacityRange = useMemo(() => {
     return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
   }, [vizConfig.pointOpacity]);
+
 
   return (
     // <div style={{ width, height }} ref={umapRef}>

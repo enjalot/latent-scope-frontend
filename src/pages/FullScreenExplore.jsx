@@ -297,115 +297,135 @@ function ExploreContent() {
       </>
     );
 
+  const visualizationPane = (
+    <div
+      ref={visualizationContainerRef}
+      className="visualization-pane-container"
+      onMouseLeave={() => {
+        setHoveredIndex(null);
+        setHovered(null);
+      }}
+    >
+      {scopeRows?.length ? (
+        <VisualizationPane
+          width={width}
+          height={height}
+          onScatter={setScatter}
+          hovered={hovered}
+          hoveredIndex={hoveredIndex}
+          onHover={handleHover}
+          onSelect={handleSelected}
+          hoverAnnotations={hoverAnnotations}
+          selectedAnnotations={selectedAnnotations}
+          hoveredCluster={hoveredCluster}
+          dataTableRows={dataTableRows}
+          defaultIndices={defaultIndices}
+        />
+      ) : null}
+    </div>
+  );
+
+  const dataTable = isSmallScreen ? (
+    <MobileFilterDataTable
+      userId={userId}
+      dataset={dataset}
+      scope={scope}
+      filteredIndices={filteredIndices}
+      defaultIndices={defaultIndices}
+      deletedIndices={deletedIndices}
+      distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
+      clusterMap={clusterMap}
+      clusterLabels={clusterLabels}
+      onDataTableRows={setDataTableRows}
+      sae_id={sae?.id}
+      feature={featureFilter.feature}
+      features={features}
+      onHover={handleHover}
+      onClick={handleClicked}
+      page={page}
+      setPage={setPage}
+      handleFeatureClick={handleFeatureClick}
+      useDefaultIndices={useDefaultIndices}
+      filterLoading={filterLoading}
+    />
+  ) : (
+    <FilterDataTable
+      userId={userId}
+      dataset={dataset}
+      scope={scope}
+      filteredIndices={filteredIndices}
+      defaultIndices={defaultIndices}
+      deletedIndices={deletedIndices}
+      distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
+      clusterMap={clusterMap}
+      clusterLabels={clusterLabels}
+      onDataTableRows={setDataTableRows}
+      sae_id={sae?.id}
+      feature={featureFilter.feature}
+      features={features}
+      onHover={handleHover}
+      onClick={handleClicked}
+      page={page}
+      setPage={setPage}
+      handleFeatureClick={handleFeatureClick}
+      useDefaultIndices={useDefaultIndices}
+      filterLoading={filterLoading}
+    />
+  );
+
+  const mobileView = (
+    <div ref={containerRef} className="full-screen-explore-container">
+      <div ref={filtersContainerRef} className="filter-actions-container">
+        <FilterActions
+          clusterLabels={clusterLabels}
+          scatter={scatter}
+          scope={scope}
+          dataset={dataset}
+        />
+      </div>
+      {visualizationPane}
+      <div className="mobile-filter-data-container">{dataTable}</div>
+    </div>
+  );
+
+  const desktopView = (
+    <div
+      ref={containerRef}
+      className="full-screen-explore-container"
+      style={{ gridTemplateColumns: gridTemplate }}
+    >
+      <div className="filter-table-container" style={{ position: 'relative' }}>
+        <div style={styles.dragHandle} onMouseDown={startDragging} />
+        <div ref={filtersContainerRef}>
+          <FilterActions
+            clusterLabels={clusterLabels}
+            scatter={scatter}
+            scope={scope}
+            dataset={dataset}
+          />
+        </div>
+        <div
+          style={{
+            height: tableHeight,
+            overflowY: 'auto',
+            display: 'flex',
+          }}
+        >
+          {dataTable}
+        </div>
+      </div>
+      {visualizationPane}
+    </div>
+  );
+
   return (
     <>
       <SubNav user={userId} dataset={dataset} scope={scope} />
-      <div className="page-container">
-        {!isSmallScreen && (
-          <LeftPane dataset={dataset} scope={scope} deletedIndices={deletedIndices} />
-        )}
-        <div
-          ref={containerRef}
-          className="full-screen-explore-container"
-          style={{ gridTemplateColumns: gridTemplate }}
-        >
-          <div ref={filtersContainerRef} className="filter-actions-container">
-            <FilterActions
-              clusterLabels={clusterLabels}
-              scatter={scatter}
-              scope={scope}
-              dataset={dataset}
-            />
-          </div>
-          {/* <div className="filter-table-container" style={{ position: 'relative' }}>
-            <div style={styles.dragHandle} onMouseDown={startDragging} />
-           
-            <div
-              style={{
-                height: tableHeight,
-                overflowY: 'auto',
-                display: 'flex',
-              }}
-            >
-              <FilterDataTable
-                userId={userId}
-                dataset={dataset}
-                scope={scope}
-                filteredIndices={filteredIndices}
-                defaultIndices={defaultIndices}
-                deletedIndices={deletedIndices}
-                distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
-                clusterMap={clusterMap}
-                clusterLabels={clusterLabels}
-                onDataTableRows={setDataTableRows}
-                sae_id={sae?.id}
-                feature={featureFilter.feature}
-                features={features}
-                onHover={handleHover}
-                onClick={handleClicked}
-                page={page}
-                setPage={setPage}
-                handleFeatureClick={handleFeatureClick}
-                useDefaultIndices={useDefaultIndices}
-                filterLoading={filterLoading}
-              />
-            </div>
-          </div> */}
-          <div
-            ref={visualizationContainerRef}
-            className="visualization-pane-container"
-            onMouseLeave={() => {
-              setHoveredIndex(null);
-              setHovered(null);
-            }}
-          >
-            {scopeRows?.length ? (
-              <VisualizationPane
-                width={width}
-                height={height}
-                onScatter={setScatter}
-                hovered={hovered}
-                hoveredIndex={hoveredIndex}
-                onHover={handleHover}
-                onSelect={handleSelected}
-                hoverAnnotations={hoverAnnotations}
-                selectedAnnotations={selectedAnnotations}
-                hoveredCluster={hoveredCluster}
-                dataTableRows={dataTableRows}
-                defaultIndices={defaultIndices}
-              />
-            ) : null}
-          </div>
-
-          <div className="mobile-filter-data-container">
-            <MobileFilterDataTable
-              userId={userId}
-              dataset={dataset}
-              scope={scope}
-              filteredIndices={filteredIndices}
-              defaultIndices={defaultIndices}
-              deletedIndices={deletedIndices}
-              distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
-              clusterMap={clusterMap}
-              clusterLabels={clusterLabels}
-              onDataTableRows={setDataTableRows}
-              sae_id={sae?.id}
-              feature={featureFilter.feature}
-              features={features}
-              onHover={handleHover}
-              onClick={handleClicked}
-              page={page}
-              setPage={setPage}
-              handleFeatureClick={handleFeatureClick}
-              useDefaultIndices={useDefaultIndices}
-              filterLoading={filterLoading}
-            />
-          </div>
-        </div>
-      </div>
+      <div className="page-container">{isSmallScreen ? mobileView : desktopView}</div>
     </>
   );
 }
+
 
 // Make the main Explore component just handle the providers
 function Explore() {
