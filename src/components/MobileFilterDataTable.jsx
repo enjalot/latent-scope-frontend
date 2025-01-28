@@ -78,7 +78,7 @@ function MobileFilterDataTable({
     deletedIndices,
   });
 
-  const DEFAULT_HEIGHT = 100;
+  const DEFAULT_HEIGHT = 200;
 
   const [rows, setRows] = useState([]);
   const [defaultRows, setDefaultRows] = useState([]);
