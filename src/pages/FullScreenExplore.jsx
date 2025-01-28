@@ -376,12 +376,7 @@ function ExploreContent() {
   const mobileView = (
     <div ref={containerRef} className="full-screen-explore-container">
       <div ref={filtersContainerRef} className="filter-actions-container">
-        <FilterActions
-          clusterLabels={clusterLabels}
-          scatter={scatter}
-          scope={scope}
-          dataset={dataset}
-        />
+        <FilterActions scatter={scatter} isSmallScreen={isSmallScreen} />
       </div>
       {visualizationPane}
       {dataTable}

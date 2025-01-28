@@ -8,7 +8,9 @@ import FeatureFilter from './FeatureFilter';
 import { useFilter } from '../../contexts/FilterContext';
 import { useScope } from '../../contexts/ScopeContext';
 import MobileClusterFilter from './MobileClusterFilter';
-export default function FilterActions({ scatter }) {
+import MobileFeatureFilter from './MobileFeatureFilter';
+
+export default function FilterActions({ scatter, isSmallScreen = false }) {
   const {
     activeFilterTab,
     toggleSearch,
@@ -26,17 +28,27 @@ export default function FilterActions({ scatter }) {
 
   const { scope, features, clusterLabels } = useScope();
 
+  if (isSmallScreen) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.actionsRow}>
+          <MobileClusterFilter clusterLabels={clusterLabels} />
+          <MobileFeatureFilter scope={scope} />
+        </div>
+      </div>
+    );
+  }
   let filterComponent = null;
   switch (activeFilterTab) {
     case filterConstants.CLUSTER:
       filterComponent = <ClusterFilter clusterLabels={clusterLabels} />;
-      // filterComponent = <MobileClusterFilter clusterLabels={clusterLabels} />;
       break;
     case filterConstants.COLUMN:
       filterComponent = <ColumnFilter />;
       break;
     case filterConstants.FEATURE:
       filterComponent = <FeatureFilter scope={scope} />;
+      filterComponent = <MobileFeatureFilter scope={scope} />;
       break;
     case filterConstants.SELECT:
       filterComponent = <SelectFilter scatter={scatter} />;
