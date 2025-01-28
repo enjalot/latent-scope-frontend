@@ -7,6 +7,7 @@ import NearestNeighbor from './NearestNeighbor';
 import FeatureFilter from './FeatureFilter';
 import { useFilter } from '../../contexts/FilterContext';
 import { useScope } from '../../contexts/ScopeContext';
+import MobileClusterFilter from './MobileClusterFilter';
 export default function FilterActions({ scatter }) {
   const {
     activeFilterTab,
@@ -29,6 +30,7 @@ export default function FilterActions({ scatter }) {
   switch (activeFilterTab) {
     case filterConstants.CLUSTER:
       filterComponent = <ClusterFilter clusterLabels={clusterLabels} />;
+      // filterComponent = <MobileClusterFilter clusterLabels={clusterLabels} />;
       break;
     case filterConstants.COLUMN:
       filterComponent = <ColumnFilter />;
