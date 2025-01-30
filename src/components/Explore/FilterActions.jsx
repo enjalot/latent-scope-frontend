@@ -32,6 +32,7 @@ export default function FilterActions({ scatter, isSmallScreen = false }) {
     return (
       <div className={styles.container}>
         <div className={styles.actionsRow}>
+          <NearestNeighbor />
           <MobileClusterFilter clusterLabels={clusterLabels} />
           <MobileFeatureFilter scope={scope} />
         </div>
@@ -48,7 +49,7 @@ export default function FilterActions({ scatter, isSmallScreen = false }) {
       break;
     case filterConstants.FEATURE:
       filterComponent = <FeatureFilter scope={scope} />;
-      filterComponent = <MobileFeatureFilter scope={scope} />;
+      // filterComponent = <MobileFeatureFilter scope={scope} />;
       break;
     case filterConstants.SELECT:
       filterComponent = <SelectFilter scatter={scatter} />;

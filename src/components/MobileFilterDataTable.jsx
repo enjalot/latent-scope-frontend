@@ -4,7 +4,7 @@ import { apiService } from '../lib/apiService';
 // import './FilterDataTable.css';
 import './MobileFilterDataTable.css';
 
-const DataRow = memo(({ dataset, row, isHighlighted, onHover, onClick, clusterMap }) => {
+const DataRow = memo(({ dataset, row, isHighlighted, onHover, onClick, clusterMap, index }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // debugger;
@@ -15,6 +15,9 @@ const DataRow = memo(({ dataset, row, isHighlighted, onHover, onClick, clusterMa
       onMouseEnter={() => onHover(row.ls_index)}
       onMouseLeave={() => onHover(null)}
     >
+      <div className="row-index">
+        <div className="index-circle">{index + 1}</div>
+      </div>
       <div className="row-preview">
         <div className="row-text">
           <p className="text-preview">{row[dataset.text_column]}</p>
@@ -54,7 +57,6 @@ function MobileFilterDataTable({
   scope,
   userId,
   filteredIndices = [],
-  defaultIndices = [],
   distances = [],
   clusterMap = {},
   onDataTableRows,
@@ -70,18 +72,10 @@ function MobileFilterDataTable({
   filterLoading = false,
   onClick,
 }) {
-  console.log({
-    filteredIndices,
-    defaultIndices,
-    useDefaultIndices,
-    page,
-    deletedIndices,
-  });
-
   const DEFAULT_HEIGHT = 100;
 
   const [rows, setRows] = useState([]);
-  const [defaultRows, setDefaultRows] = useState([]);
+  // const [defaultRows, setDefaultRows] = useState([]);
   const rowsPerPage = 100;
   const [pageCount, setPageCount] = useState(0);
   const [rowsLoading, setRowsLoading] = useState(false);
@@ -93,9 +87,8 @@ function MobileFilterDataTable({
 
   // Calculate page count - moved outside of useEffect
   const calculatePageCount = useCallback(() => {
-    const inds = useDefaultIndices ? defaultIndices.length : filteredIndices.length;
-    return Math.ceil(inds / rowsPerPage);
-  }, [filteredIndices.length, defaultIndices.length, useDefaultIndices]);
+    return Math.ceil(filteredIndices.length / rowsPerPage);
+  }, [filteredIndices.length]);
 
   // Update page count
   useEffect(() => {
@@ -147,20 +140,20 @@ function MobileFilterDataTable({
     [dataset, page, sae_id, setRowsLoading]
   );
 
-  useEffect(() => {
-    hydrateIndices(defaultIndices, setDefaultRows);
-  }, [defaultIndices, hydrateIndices]);
+  // useEffect(() => {
+  //   hydrateIndices(defaultIndices, setDefaultRows);
+  // }, [defaultIndices, hydrateIndices]);
 
   useEffect(() => {
-    if (!useDefaultIndices) {
-      const filteredWithoutDeleted = filteredIndices.filter((i) => !deletedIndices.includes(i));
-      hydrateIndices(filteredWithoutDeleted, setRows);
-    }
-  }, [filteredIndices, deletedIndices, page, useDefaultIndices, hydrateIndices]);
+    // if (!useDefaultIndices) {
+    const filteredWithoutDeleted = filteredIndices.filter((i) => !deletedIndices.includes(i));
+    hydrateIndices(filteredWithoutDeleted, setRows);
+    // }
+  }, [filteredIndices, deletedIndices, page, hydrateIndices]);
 
   const displayRows = useMemo(() => {
-    return useDefaultIndices ? defaultRows : rows;
-  }, [useDefaultIndices, defaultRows, rows]);
+    return rows;
+  }, [rows]);
 
   // Handle touch start
   const handleTouchStart = (e) => {
@@ -185,7 +178,9 @@ function MobileFilterDataTable({
     setIsDragging(false);
   };
 
-  console.log('isDragging', isDragging, containerHeight);
+  if (filteredIndices.length === 0) {
+    return null;
+  }
 
   return (
     <div
@@ -230,9 +225,10 @@ function MobileFilterDataTable({
           </div>
         ) : (
           <div className="rows-container">
-            {displayRows.map((row) => (
+            {displayRows.map((row, index) => (
               <DataRow
                 key={row.ls_index}
+                index={index}
                 row={row}
                 isHighlighted={false}
                 onHover={onHover}

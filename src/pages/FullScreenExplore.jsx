@@ -331,7 +331,7 @@ function ExploreContent() {
       dataset={dataset}
       scope={scope}
       filteredIndices={filteredIndices}
-      defaultIndices={defaultIndices}
+      // defaultIndices={defaultIndices}
       deletedIndices={deletedIndices}
       distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
       clusterMap={clusterMap}
@@ -376,7 +376,7 @@ function ExploreContent() {
   const mobileView = (
     <div ref={containerRef} className="full-screen-explore-container">
       <div ref={filtersContainerRef} className="filter-actions-container">
-        <FilterActions scatter={scatter} isSmallScreen={isSmallScreen} />
+        <FilterActions scatter={scatter} dataset={dataset} isSmallScreen={isSmallScreen} />
       </div>
       {visualizationPane}
       {dataTable}

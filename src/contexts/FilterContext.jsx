@@ -60,7 +60,7 @@ export function FilterProvider({ children }) {
       const indexes = scopeRows
         .filter((row) => !deletedIndices.includes(row.ls_index))
         .map((row) => row.ls_index);
-      setDefaultIndices(indexes);
+      // setDefaultIndices();
       setFilteredIndices([]);
     }
   }, [scopeRows, deletedIndices]);

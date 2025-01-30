@@ -4,7 +4,7 @@ import { selectStyles } from './SelectStyles';
 import { useFilter } from '../../contexts/FilterContext';
 
 export default function ClusterFilter({ clusterLabels }) {
-  const { clusterFilter, setUrlParams } = useFilter();
+  const { setActiveFilterTab, clusterFilter, setUrlParams, filterConstants } = useFilter();
   const { cluster, setCluster, clusterIndices } = clusterFilter;
 
   const selectOptions = clusterLabels?.map((cl) => ({
@@ -23,6 +23,7 @@ export default function ClusterFilter({ clusterLabels }) {
     }
     const cl = clusterLabels.find((cluster) => cluster.cluster === selectedOption.value);
     if (cl) {
+      setActiveFilterTab(filterConstants.CLUSTER);
       setCluster(cl);
       setUrlParams((prev) => {
         prev.set('cluster', cl.cluster);

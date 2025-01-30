@@ -5,6 +5,7 @@ import { zoom, zoomIdentity } from 'd3-zoom';
 import { rgb } from 'd3-color';
 import { quadtree } from 'd3-quadtree';
 import REGL from 'regl';
+import { useFilter } from '../contexts/FilterContext';
 import {
   mapSelectionColorsLight,
   mapSelectionColorsDark,
@@ -18,7 +19,7 @@ import styles from './Scatter.module.css';
 import PropTypes from 'prop-types';
 import { reSplitAlphaNumeric } from '@tanstack/react-table';
 ScatterGL.propTypes = {
-  points: PropTypes.array.isRequired, // an array of [x,y] points
+  drawingPoints: PropTypes.array.isRequired, // an array of [x,y] points
   width: PropTypes.number.isRequired,
   pointScale: PropTypes.number,
   quadtreeRadius: PropTypes.number,
@@ -83,7 +84,7 @@ const getDataCenter = (width, height, transform, xScale, yScale) => {
 };
 
 function ScatterGL({
-  // points,
+  drawingPoints,
   width,
   height,
   pointScale = 1,
@@ -94,9 +95,6 @@ function ScatterGL({
   featureIsSelected,
   ignoreNotSelected = true,
   scopeRows,
-  filteredIndices,
-  featureActivationMap,
-  points,
 }) {
   const { isDark: isDarkMode } = useColorMode();
 
@@ -106,6 +104,8 @@ function ScatterGL({
   const xScaleRef = useRef(scaleLinear().domain([-1, 1]).range([0, width]));
   const yScaleRef = useRef(scaleLinear().domain([-1, 1]).range([height, 0]));
   const quadtreeRef = useRef(null);
+  const [transform, setTransform] = useState(zoomIdentity);
+  const [dataCenter, setDataCenter] = useState(null);
 
   // make xScaleRef and yScaleRef update when width and height change
   useEffect(() => {
@@ -113,7 +113,19 @@ function ScatterGL({
     yScaleRef.current = scaleLinear().domain([-1, 1]).range([height, 0]);
   }, [width, height]);
 
-  const [transform, setTransform] = useState(zoomIdentity);
+  // Set initial data center
+  useEffect(() => {
+    if (!dataCenter) {
+      const initial = getDataCenter(
+        width,
+        height,
+        zoomIdentity,
+        xScaleRef.current,
+        yScaleRef.current
+      );
+      setDataCenter(initial);
+    }
+  }, [width, height]);
 
   // Setup regl and shaders
   useEffect(() => {
@@ -246,10 +258,27 @@ function ScatterGL({
       },
     });
 
+    // Update zoom behavior
     const zoomBehavior = zoom()
       .scaleExtent([0.1, 12])
       .on('zoom', (event) => {
         setTransform(event.transform);
+
+        // Only update center on pan
+        if (
+          event.sourceEvent &&
+          (event.sourceEvent.type === 'mousemove' || event.sourceEvent.type === 'touchmove')
+        ) {
+          const newCenter = getDataCenter(
+            width,
+            height,
+            event.transform,
+            xScaleRef.current,
+            yScaleRef.current
+          );
+          setDataCenter(newCenter);
+        }
+
         const newXScale = event.transform.rescaleX(xScaleRef.current);
         const newYScale = event.transform.rescaleY(yScaleRef.current);
 
@@ -260,7 +289,7 @@ function ScatterGL({
 
     const zoomSelection = select(canvas).call(zoomBehavior);
 
-    const zoomOutFactor = 0.8; // zoom out to 80% of original size
+    const zoomOutFactor = 0.8;
     const centerX = width / 2;
     const centerY = height / 2;
     const initialTransform = zoomIdentity
@@ -281,7 +310,7 @@ function ScatterGL({
   // Replace the existing handleMouseMove with this updated version
   const findNearestPoint = useCallback(
     (x, y) => {
-      if (!points || !quadtreeRef.current) return -1;
+      if (!drawingPoints || !quadtreeRef.current) return -1;
 
       // const transform = transformRef.current;
       // Convert screen coordinates back to data space
@@ -318,7 +347,7 @@ function ScatterGL({
       }
       return -1;
     },
-    [points, width, transform, quadtreeRadius]
+    [drawingPoints, width, transform, quadtreeRadius]
   );
 
   const findNClosestPointsIndex = (centerX, centerY, n) => {
@@ -370,31 +399,28 @@ function ScatterGL({
       .addAll(scopeRows.map((p, i) => [p.x, p.y, i]));
   }, [scopeRows]);
 
-  // Then use it in drawingPoints calculation
-  const drawingPoints = useMemo(() => {
-    // Reset if no quadtree
-    if (!quadtreeRef.current) {
-      return scopeRows.map((p) => [p.x, p.y, mapSelectionKey.notSelected, 0.0]);
-    }
+  // Update drawingPoints to use dataCenter
+  // const drawingPoints = useMemo(() => {
+  //   if (!quadtreeRef.current || !dataCenter) {
+  //     return scopeRows.map((p) => [p.x, p.y, mapSelectionKey.notSelected, 0.0]);
+  //   }
 
-    const center = getDataCenter(width, height, transform, xScaleRef.current, yScaleRef.current);
-    const closestPoints = findNClosestPointsIndex(center.x, center.y, 50);
-    console.log({ center, closestPoints });
+  //   // const closestPoints = findNClosestPointsIndex(dataCenter.x, dataCenter.y, 50);
+  //   // setFilteredIndices(closestPoints);
 
-    return scopeRows.map((p, i) => {
-      if (closestPoints.find((cp) => cp === i)) {
-        return [p.x, p.y, mapSelectionKey.selected, 0.0];
-      } else {
-        return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
-      }
-    });
-  }, [scopeRows, width, height, transform, quadtreeRef.current]);
-
-  console.log({ drawingPoints });
+  //   return scopeRows.map((p, i) => {
+  //     return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
+  //     // if (closestPoints.find((cp) => cp === i)) {
+  //     //   return [p.x, p.y, mapSelectionKey.selected, 0.0];
+  //     // } else {
+  //     //   return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
+  //     // }
+  //   });
+  // }, [scopeRows, dataCenter, quadtreeRef.current]);
 
   const handleMouseMove = useCallback(
     (event) => {
-      if (!points || !onHover) return;
+      if (!drawingPoints || !onHover) return;
 
       const rect = canvasRef.current.getBoundingClientRect();
       const x = event.clientX - rect.left;
@@ -403,13 +429,13 @@ function ScatterGL({
       const nearestPoint = findNearestPoint(x, y);
       onHover(nearestPoint === -1 ? null : nearestPoint);
     },
-    [points, onHover, findNearestPoint]
+    [drawingPoints, onHover, findNearestPoint]
   );
 
   // Add click handler
   const handleClick = useCallback(
     (event) => {
-      if (!points || !onSelect) return;
+      if (!drawingPoints || !onSelect) return;
 
       const rect = canvasRef.current.getBoundingClientRect();
       const x = event.clientX - rect.left;
@@ -420,7 +446,7 @@ function ScatterGL({
         onSelect([nearestPoint]);
       }
     },
-    [points, onSelect, findNearestPoint]
+    [drawingPoints, onSelect, findNearestPoint]
   );
 
   // Draw points when they change
@@ -443,7 +469,7 @@ function ScatterGL({
       width,
       height,
     });
-  }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
+  }, [drawingPoints, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
 
   return (
     <canvas

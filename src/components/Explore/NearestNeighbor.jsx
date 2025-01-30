@@ -4,7 +4,7 @@ import styles from './NearestNeighbor.module.scss';
 import { useFilter } from '../../contexts/FilterContext';
 
 export default function NearestNeighbor() {
-  const { searchFilter, setUrlParams } = useFilter();
+  const { setActiveFilterTab, searchFilter, setUrlParams, filterConstants } = useFilter();
   const {
     searchIndices,
     loading,
@@ -21,6 +21,7 @@ export default function NearestNeighbor() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSearchText(inputValue);
+    setActiveFilterTab(filterConstants.SEARCH);
     setUrlParams((prev) => {
       prev.set('search', inputValue);
       return prev;
@@ -67,9 +68,9 @@ export default function NearestNeighbor() {
           />
         </div>
       </div>
-      <div className={`${styles.count}`}>
+      {/* <div className={`${styles.count}`}>
         {searchIndices.length ? <span>{searchIndices.length} rows</span> : null}
-      </div>
+      </div> */}
     </div>
   );
 }
