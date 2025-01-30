@@ -103,32 +103,6 @@ function VisualizationPane({
     return lookup;
   }, [featureIsSelected, dataTableRows, featureFilter.feature, max_activations]);
 
-  const drawingPoints = useMemo(() => {
-    return scopeRows.map((p, i) => {
-      if (featureIsSelected) {
-        if (filteredIndices?.includes(i)) {
-          const activation = featureActivationMap.get(p.ls_index);
-          return activation !== undefined
-            ? [p.x, p.y, mapSelectionKey.selected, activation]
-            : [p.x, p.y, mapSelectionKey.notSelected, 0.0];
-        }
-        return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
-      }
-
-      if (p.deleted) {
-        return [-10, -10, mapSelectionKey.hidden, 0.0];
-        //   } else if (hoveredIndex === i) {
-        //     return [p.x, p.y, mapSelectionKey.hovered, 0.0];
-      } else if (filteredIndices?.includes(i)) {
-        return [p.x, p.y, mapSelectionKey.selected, 0.0];
-      } else if (filteredIndices?.length) {
-        return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
-      } else {
-        return [p.x, p.y, mapSelectionKey.normal, 0.0];
-      }
-    });
-  }, [scopeRows, filteredIndices, featureActivationMap, featureIsSelected]);
-
   const points = useMemo(() => {
     return scopeRows
       .filter((p) => !p.deleted)
@@ -237,8 +211,6 @@ function VisualizationPane({
   const pointOpacityRange = useMemo(() => {
     return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
   }, [vizConfig.pointOpacity]);
-
-
   return (
     // <div style={{ width, height }} ref={umapRef}>
     <div ref={umapRef} style={{ width: '100%', height: '100%' }}>
@@ -267,7 +239,7 @@ function VisualizationPane({
       <div className={styles.scatters + ' ' + (isFullScreen ? styles.fullScreen : '')}>
         {scope && (
           <Scatter
-            points={drawingPoints}
+            points={points}
             width={width}
             height={height}
             onView={handleView}
@@ -278,6 +250,9 @@ function VisualizationPane({
               activeFilterTab === filterConstants.SEARCH ||
               activeFilterTab === filterConstants.FEATURE
             }
+            scopeRows={scopeRows}
+            filteredIndices={filteredIndices}
+            featureActivationMap={featureActivationMap}
           />
         )}
         {/* show all the hulls */}

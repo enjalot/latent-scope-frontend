@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { select } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
 import { zoom, zoomIdentity } from 'd3-zoom';
@@ -61,8 +61,29 @@ const calculateDynamicPointScale = (pointCount, width, height) => {
   return size;
 };
 
+// Add this helper function
+const screenToDataCoordinates = (screenX, screenY, transform, xScale, yScale) => {
+  // First apply inverse zoom transform to get back to untransformed screen coordinates
+  const untransformedX = transform.invertX(screenX);
+  const untransformedY = transform.invertY(screenY);
+
+  // Then use scales to convert to data coordinates
+  const dataX = xScale.invert(untransformedX);
+  const dataY = yScale.invert(untransformedY);
+
+  return { x: dataX, y: dataY };
+};
+
+// Then we can get center like this:
+const getDataCenter = (width, height, transform, xScale, yScale) => {
+  const screenCenterX = width / 2;
+  const screenCenterY = height / 2;
+
+  return screenToDataCoordinates(screenCenterX, screenCenterY, transform, xScale, yScale);
+};
+
 function ScatterGL({
-  points,
+  // points,
   width,
   height,
   pointScale = 1,
@@ -72,6 +93,10 @@ function ScatterGL({
   onHover,
   featureIsSelected,
   ignoreNotSelected = true,
+  scopeRows,
+  filteredIndices,
+  featureActivationMap,
+  points,
 }) {
   const { isDark: isDarkMode } = useColorMode();
 
@@ -253,46 +278,6 @@ function ScatterGL({
     };
   }, [width, height]);
 
-  // Draw points when they change
-  useEffect(() => {
-    if (!reglRef.current || !drawPointsRef.current) return;
-
-    reglRef.current.clear({
-      color: isDarkMode ? [0.067, 0.067, 0.067, 1] : [0.98, 0.98, 0.98, 1],
-      depth: 1,
-    });
-
-    const pointsToRender = points;
-    const dynamicScale = calculateDynamicPointScale(pointsToRender.length, width, height);
-
-    drawPointsRef.current({
-      points: pointsToRender,
-      pointScale: dynamicScale * pointScale,
-      featureIsSelected,
-      transform,
-      width,
-      height,
-    });
-  }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
-
-  // Update useEffect to rebuild quadtree when points change
-  useEffect(() => {
-    if (!points || !points.length) return;
-
-    // if ignoreNotSelected is true, we only want to add points that are selected as a result of the
-    // filter to the quadtree. if it is false, we want to add all points to the quadtree.
-    const filteredPoints = points.filter(
-      (d) =>
-        d[2] !== mapSelectionKey.hidden &&
-        (ignoreNotSelected ? d[2] === mapSelectionKey.selected : true)
-    );
-
-    quadtreeRef.current = quadtree()
-      .x((d) => d[0])
-      .y((d) => d[1])
-      .addAll(filteredPoints);
-  }, [points, ignoreNotSelected]);
-
   // Replace the existing handleMouseMove with this updated version
   const findNearestPoint = useCallback(
     (x, y) => {
@@ -336,6 +321,77 @@ function ScatterGL({
     [points, width, transform, quadtreeRadius]
   );
 
+  const findNClosestPointsIndex = (centerX, centerY, n) => {
+    const points = [];
+    let searchRadius = 0.1;
+
+    while (points.length < n) {
+      points.length = 0;
+      quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
+        if (!node.length) {
+          // node.data is now [x, y, index]
+          const [x, y, originalIndex] = node.data;
+          const dx = x - centerX;
+          const dy = y - centerY;
+          if (dx * dx + dy * dy < searchRadius * searchRadius) {
+            points.push({
+              point: [x, y],
+              index: originalIndex, // This is the index into scopeRows!
+            });
+          }
+        }
+        return (
+          x1 > centerX + searchRadius ||
+          x2 < centerX - searchRadius ||
+          y1 > centerY + searchRadius ||
+          y2 < centerY - searchRadius
+        );
+      });
+      searchRadius *= 2;
+    }
+    // Sort by distance and take first N
+    return points
+      .sort((a, b) => {
+        const dA = Math.pow(a.point[0] - centerX, 2) + Math.pow(a.point[1] - centerY, 2);
+        const dB = Math.pow(b.point[0] - centerX, 2) + Math.pow(b.point[1] - centerY, 2);
+        return dA - dB;
+      })
+      .slice(0, n)
+      .map((p) => p.index); // Just return the indices
+  };
+
+  // First create quadtree from points
+  useEffect(() => {
+    if (!scopeRows?.length) return;
+
+    quadtreeRef.current = quadtree()
+      .x((d) => d[0])
+      .y((d) => d[1])
+      .addAll(scopeRows.map((p, i) => [p.x, p.y, i]));
+  }, [scopeRows]);
+
+  // Then use it in drawingPoints calculation
+  const drawingPoints = useMemo(() => {
+    // Reset if no quadtree
+    if (!quadtreeRef.current) {
+      return scopeRows.map((p) => [p.x, p.y, mapSelectionKey.notSelected, 0.0]);
+    }
+
+    const center = getDataCenter(width, height, transform, xScaleRef.current, yScaleRef.current);
+    const closestPoints = findNClosestPointsIndex(center.x, center.y, 50);
+    console.log({ center, closestPoints });
+
+    return scopeRows.map((p, i) => {
+      if (closestPoints.find((cp) => cp === i)) {
+        return [p.x, p.y, mapSelectionKey.selected, 0.0];
+      } else {
+        return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
+      }
+    });
+  }, [scopeRows, width, height, transform, quadtreeRef.current]);
+
+  console.log({ drawingPoints });
+
   const handleMouseMove = useCallback(
     (event) => {
       if (!points || !onHover) return;
@@ -366,6 +422,28 @@ function ScatterGL({
     },
     [points, onSelect, findNearestPoint]
   );
+
+  // Draw points when they change
+  useEffect(() => {
+    if (!reglRef.current || !drawPointsRef.current) return;
+
+    reglRef.current.clear({
+      color: isDarkMode ? [0.067, 0.067, 0.067, 1] : [0.98, 0.98, 0.98, 1],
+      depth: 1,
+    });
+
+    const pointsToRender = drawingPoints;
+    const dynamicScale = calculateDynamicPointScale(pointsToRender.length, width, height);
+
+    drawPointsRef.current({
+      points: pointsToRender,
+      pointScale: dynamicScale * pointScale,
+      featureIsSelected,
+      transform,
+      width,
+      height,
+    });
+  }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
 
   return (
     <canvas
