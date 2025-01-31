@@ -4,7 +4,7 @@ import styles from './MobileClusterFilter.module.scss';
 
 export default function MobileClusterFilter({ clusterLabels }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { clusterFilter, setUrlParams } = useFilter();
+  const { clusterFilter, setUrlParams, setActiveFilterTab, filterConstants } = useFilter();
   const { cluster, setCluster, clusterIndices } = clusterFilter;
 
   const handleClear = () => {
@@ -51,6 +51,7 @@ export default function MobileClusterFilter({ clusterLabels }) {
                     handleClear();
                   } else {
                     setCluster(cl);
+                    setActiveFilterTab(filterConstants.CLUSTER);
                     setUrlParams((prev) => {
                       prev.set('cluster', cl.cluster);
                       return prev;

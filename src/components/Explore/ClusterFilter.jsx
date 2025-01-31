@@ -23,7 +23,6 @@ export default function ClusterFilter({ clusterLabels }) {
     }
     const cl = clusterLabels.find((cluster) => cluster.cluster === selectedOption.value);
     if (cl) {
-      debugger;
       setActiveFilterTab(filterConstants.CLUSTER);
       setCluster(cl);
       setUrlParams((prev) => {
