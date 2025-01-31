@@ -7,7 +7,7 @@ import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
 import useClusterFilter from '../hooks/useClusterFilter';
 import useFeatureFilter from '../hooks/useFeatureFilter';
 export const SEARCH = 'search';
-export const CLUSTER = 'filter';
+export const CLUSTER = 'cluster';
 export const SELECT = 'select';
 export const COLUMN = 'column';
 export const FEATURE = 'feature';
@@ -145,6 +145,8 @@ export function FilterProvider({ children }) {
     }
     return false;
   }, [featureFilter.loading, searchFilter.loading, columnFilter.loading, clusterFilter.loading]);
+
+  console.log({ filteredIndices, selectedIndices, activeFilterTab });
 
   const value = {
     activeFilterTab,

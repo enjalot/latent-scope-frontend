@@ -15,13 +15,14 @@ export default function NearestNeighbor() {
   const [inputValue, setInputValue] = useState(defaultValue);
 
   useEffect(() => {
+    // setActiveFilterTab(filterConstants.SEARCH);
     setInputValue(defaultValue);
   }, [defaultValue]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSearchText(inputValue);
     setActiveFilterTab(filterConstants.SEARCH);
+    setSearchText(inputValue);
     setUrlParams((prev) => {
       prev.set('search', inputValue);
       return prev;
@@ -47,6 +48,7 @@ export default function NearestNeighbor() {
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !loading) {
+              setActiveFilterTab(filterConstants.SEARCH);
               setSearchText(e.target.value);
               setUrlParams((prev) => {
                 prev.set('search', e.target.value);

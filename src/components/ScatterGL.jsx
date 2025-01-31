@@ -343,7 +343,7 @@ function ScatterGL({
       });
 
       if (nearest && Math.sqrt(minDistance) <= radius) {
-        return points.findIndex((p) => p[0] === nearest[0] && p[1] === nearest[1]);
+        return drawingPoints.findIndex((p) => p[0] === nearest[0] && p[1] === nearest[1]);
       }
       return -1;
     },

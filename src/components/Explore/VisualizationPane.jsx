@@ -18,7 +18,7 @@ import { mapSelectionOpacity, mapPointSizeRange, mapSelectionKey } from '../../l
 import styles from './VisualizationPane.module.scss';
 import ConfigurationPanel from './ConfigurationPanel';
 import { Icon, Button } from 'react-element-forge';
-
+import PointLabel from '../PointLabel';
 // VisualizationPane.propTypes = {
 //   hoverAnnotations: PropTypes.array.isRequired,
 //   hoveredCluster: PropTypes.object,
@@ -48,14 +48,8 @@ function VisualizationPane({
 }) {
   const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
 
-  const {
-    activeFilterTab,
-    filteredIndices,
-    selectedIndices,
-    filterConstants,
-    featureFilter,
-    clusterFilter,
-  } = useFilter();
+  const { activeFilterTab, filteredIndices, filterConstants, featureFilter, clusterFilter } =
+    useFilter();
 
   const { sae: { max_activations = [] } = {} } = scope || {};
 
@@ -136,6 +130,16 @@ function VisualizationPane({
         return [p.x, p.y];
       });
   }, [scopeRows]);
+
+  // the x,y coordinates of the filtered points, maintained in the order
+  // they appear in filteredIndices. this is used to draw the point labels
+  const filteredPoints = useMemo(() => {
+    return filteredIndices.map((index, i) => {
+      return { ...scopeRows.find((p) => p.ls_index === index), index: i };
+    });
+  }, [filteredIndices, scopeRows]);
+
+  // const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   // const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   // useEffect(() => {
@@ -364,6 +368,15 @@ function VisualizationPane({
             height={height}
             fill="gray"
             // stroke="black"
+          />
+        )}{' '}
+        {activeFilterTab === filterConstants.SEARCH && (
+          <PointLabel
+            selectedPoints={filteredPoints}
+            xDomain={xDomain}
+            yDomain={yDomain}
+            width={width}
+            height={height}
           />
         )}
       </div>
