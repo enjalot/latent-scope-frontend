@@ -421,7 +421,6 @@ function ExploreContent() {
   );
 }
 
-
 // Make the main Explore component just handle the providers
 function Explore() {
   return (

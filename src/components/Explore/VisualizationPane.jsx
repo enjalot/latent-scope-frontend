@@ -7,6 +7,7 @@ import Scatter from '../ScatterGL';
 import AnnotationPlot from '../AnnotationPlot';
 import HullPlot from '../HullPlot';
 import TilePlot from '../TilePlot';
+import MobileHUD from '../MobileHUD';
 import { Tooltip } from 'react-tooltip';
 import { processHulls } from '../../utils';
 // import { useColorMode } from '../../hooks/useColorMode';
@@ -379,6 +380,7 @@ function VisualizationPane({
             height={height}
           />
         )}
+        <MobileHUD xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
       </div>
 
       {/* Hover information display */}
