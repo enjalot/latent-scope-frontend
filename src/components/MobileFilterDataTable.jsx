@@ -76,7 +76,7 @@ function MobileFilterDataTable({
 
   const [rows, setRows] = useState([]);
   // const [defaultRows, setDefaultRows] = useState([]);
-  const rowsPerPage = 100;
+  const rowsPerPage = 10;
   const [pageCount, setPageCount] = useState(0);
   const [rowsLoading, setRowsLoading] = useState(false);
   const [containerHeight, setContainerHeight] = useState(DEFAULT_HEIGHT); // Default height

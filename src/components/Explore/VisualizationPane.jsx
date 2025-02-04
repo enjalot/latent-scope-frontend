@@ -57,6 +57,9 @@ function VisualizationPane({
   // only show the hull if we are filtering by cluster
   const showHull = activeFilterTab === filterConstants.CLUSTER;
 
+  // TODO: calculate this based on the center of the screen (inverted from the xDomain and yDomain)
+  const [centeredCluster, setCenteredCluster] = useState(null);
+
   const [xDomain, setXDomain] = useState([-1, 1]);
   const [yDomain, setYDomain] = useState([-1, 1]);
   const handleView = useCallback(
