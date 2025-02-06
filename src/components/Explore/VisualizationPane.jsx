@@ -8,6 +8,7 @@ import AnnotationPlot from '../AnnotationPlot';
 import HullPlot from '../HullPlot';
 import TilePlot from '../TilePlot';
 import { Tooltip } from 'react-tooltip';
+import CrossHair from '../Crosshair';
 import { processHulls } from '../../utils';
 // import { useColorMode } from '../../hooks/useColorMode';
 
@@ -238,7 +239,6 @@ function VisualizationPane({
     return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
   }, [vizConfig.pointOpacity]);
 
-
   return (
     // <div style={{ width, height }} ref={umapRef}>
     <div ref={umapRef} style={{ width: '100%', height: '100%' }}>
@@ -367,6 +367,7 @@ function VisualizationPane({
             // stroke="black"
           />
         )}
+        <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
       </div>
 
       {/* Hover information display */}
