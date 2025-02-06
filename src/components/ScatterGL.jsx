@@ -172,9 +172,6 @@ function ScatterGL({
         yScaleRef.current
       );
       setDataCenter(initial);
-
-      // setHoveredCluster(initialCluster);
-      // setHoveredIndex(initialCluster[0]);
     }
   }, [width, height]);
 
