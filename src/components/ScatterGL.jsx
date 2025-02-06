@@ -12,8 +12,11 @@ import {
   mapPointSizeRange,
   mapSelectionKey,
 } from '../lib/colors';
+import { useFilter } from '../contexts/FilterContext';
 import { useColorMode } from '../hooks/useColorMode';
 import styles from './Scatter.module.css';
+import useDebounce from '../hooks/useDebounce';
+import { useScope } from '../contexts/ScopeContext';
 
 import PropTypes from 'prop-types';
 import { reSplitAlphaNumeric } from '@tanstack/react-table';
@@ -61,6 +64,27 @@ const calculateDynamicPointScale = (pointCount, width, height) => {
   return size;
 };
 
+// Converts a screen coordinate (e.g. width / 2, height / 2) to data coordinates
+const screenToDataCoordinates = (screenX, screenY, transform, xScale, yScale) => {
+  // First apply inverse zoom transform to get back to untransformed screen coordinates
+  const untransformedX = transform.invertX(screenX);
+  const untransformedY = transform.invertY(screenY);
+
+  // Then use scales to convert to data coordinates
+  const dataX = xScale.invert(untransformedX);
+  const dataY = yScale.invert(untransformedY);
+
+  return { x: dataX, y: dataY };
+};
+
+// Get the center coordinates of the screen in data coordinate space
+const getCenterCoordinates = (width, height, transform, xScale, yScale) => {
+  const screenCenterX = width / 2;
+  const screenCenterY = height / 2;
+
+  return screenToDataCoordinates(screenCenterX, screenCenterY, transform, xScale, yScale);
+};
+
 function ScatterGL({
   points,
   width,
@@ -74,6 +98,11 @@ function ScatterGL({
   ignoreNotSelected = true,
 }) {
   const { isDark: isDarkMode } = useColorMode();
+  const { setFilteredIndices } = useFilter();
+  const { clusterMap } = useScope();
+
+  // debounce the filtered indices update
+  const debouncedSetFilteredIndices = useDebounce(setFilteredIndices, 50);
 
   const canvasRef = useRef(null);
   const reglRef = useRef(null);
@@ -81,6 +110,32 @@ function ScatterGL({
   const xScaleRef = useRef(scaleLinear().domain([-1, 1]).range([0, width]));
   const yScaleRef = useRef(scaleLinear().domain([-1, 1]).range([height, 0]));
   const quadtreeRef = useRef(null);
+
+  const TOP_N_POINTS = 10;
+
+  // Set initial data center
+  useEffect(() => {
+    if (quadtreeRef.current) {
+      const center = getCenterCoordinates(
+        width,
+        height,
+        transform,
+        xScaleRef.current,
+        yScaleRef.current
+      );
+      const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
+      setFilteredIndices(closest);
+      // const closest = findNearestPointData(center.x, center.y);
+      // setFilteredIndices(closest);
+      // if (closest !== -1 && useDefaultIndices) {
+      //   setHoveredIndex(closest);
+      //   const cluster = clusterMap[closest];
+      //   if (cluster) {
+      //     setHoveredCluster(cluster);
+      //   }
+      // }
+    }
+  }, [width, height]);
 
   // make xScaleRef and yScaleRef update when width and height change
   useEffect(() => {
@@ -228,6 +283,11 @@ function ScatterGL({
         const newXScale = event.transform.rescaleX(xScaleRef.current);
         const newYScale = event.transform.rescaleY(yScaleRef.current);
 
+        // update data center and find nearest point on hover
+        if (event.sourceEvent) {
+          setFilteredIndicesBasedOnCenter(event.transform);
+        }
+
         if (onView) {
           onView(newXScale.domain(), newYScale.domain());
         }
@@ -336,6 +396,40 @@ function ScatterGL({
     [points, width, transform, quadtreeRadius]
   );
 
+  // Find the n closest points to the given data coordinates (dataX, dataY)
+  const findNClosestPoints = (dataX, dataY, n) => {
+    const closestPoints = [];
+
+    // Search radius in data coordinates
+    const radius =
+      ((quadtreeRadius / transform.k) *
+        (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
+      width;
+
+    quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
+      if (!node.length) {
+        const dx = node.data[0] - dataX;
+        const dy = node.data[1] - dataY;
+        const distance = dx * dx + dy * dy;
+
+        if (closestPoints.length < n) {
+          closestPoints.push({ point: node.data, distance });
+          closestPoints.sort((a, b) => a.distance - b.distance);
+        } else if (distance < closestPoints[closestPoints.length - 1].distance) {
+          closestPoints[closestPoints.length - 1] = { point: node.data, distance };
+          closestPoints.sort((a, b) => a.distance - b.distance);
+        }
+      }
+      return (
+        x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius
+      );
+    });
+
+    return closestPoints.map(({ point }) =>
+      points.findIndex((p) => p[0] === point[0] && p[1] === point[1])
+    );
+  };
+
   const handleMouseMove = useCallback(
     (event) => {
       if (!points || !onHover) return;
@@ -366,6 +460,34 @@ function ScatterGL({
     },
     [points, onSelect, findNearestPoint]
   );
+
+  const setFilteredIndicesBasedOnCenter = (transform) => {
+    const newCenter = getCenterCoordinates(
+      width,
+      height,
+      transform,
+      xScaleRef.current,
+      yScaleRef.current
+    );
+    const closest = findNClosestPoints(newCenter.x, newCenter.y, TOP_N_POINTS);
+    debouncedSetFilteredIndices(closest);
+
+    // if (useDefaultIndices) {
+    //   const closest = findNearestPoint(newCenter.x, newCenter.y);
+    //   if (closest !== -1) {
+    //     setHoveredIndex(closest);
+    //     const cluster = clusterMap[closest];
+    //     if (cluster) {
+    //       setHoveredCluster(cluster);
+    //     }
+
+    //     if (isSmallScreen) {
+    //       debouncedSetFilteredIndices([closest]);
+    //     } else {
+    //     }
+    //   }
+    // }
+  };
 
   return (
     <canvas

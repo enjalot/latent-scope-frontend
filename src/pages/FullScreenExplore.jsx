@@ -15,24 +15,7 @@ import { ScopeProvider } from '../contexts/ScopeContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { useScope } from '../contexts/ScopeContext';
 import { useFilter } from '../contexts/FilterContext';
-
-// Add this custom hook near the top of the file
-const useDebounce = (callback, delay) => {
-  const timeoutRef = useRef(null);
-
-  return useCallback(
-    (...args) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      timeoutRef.current = setTimeout(() => {
-        callback(...args);
-      }, delay);
-    },
-    [callback, delay]
-  );
-};
+import useDebounce from '../hooks/useDebounce';
 
 // Create a new component that wraps the main content
 function ExploreContent() {
@@ -55,13 +38,11 @@ function ExploreContent() {
   const {
     activeFilterTab,
     filteredIndices,
-    defaultIndices,
     featureFilter,
     setSelectedIndices,
     filterConstants,
     setActiveFilterTab,
     distances,
-    useDefaultIndices,
     filterLoading,
   } = useFilter();
 
@@ -321,7 +302,6 @@ function ExploreContent() {
                 dataset={dataset}
                 scope={scope}
                 filteredIndices={filteredIndices}
-                defaultIndices={defaultIndices}
                 deletedIndices={deletedIndices}
                 distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
                 clusterMap={clusterMap}
@@ -335,7 +315,6 @@ function ExploreContent() {
                 page={page}
                 setPage={setPage}
                 handleFeatureClick={handleFeatureClick}
-                useDefaultIndices={useDefaultIndices}
                 filterLoading={filterLoading}
               />
             </div>

@@ -21,7 +21,6 @@ export function FilterProvider({ children }) {
 
   const [activeFilterTab, setActiveFilterTab] = useState(CLUSTER);
   const [filteredIndices, setFilteredIndices] = useState([]);
-  const [defaultIndices, setDefaultIndices] = useState([]);
   const [selectedIndices, setSelectedIndices] = useState([]);
 
   const clusterFilter = useClusterFilter({
@@ -55,46 +54,45 @@ export function FilterProvider({ children }) {
   const toggleFeature = () => setActiveFilterTab((prev) => (prev === FEATURE ? null : FEATURE));
 
   // Update defaultIndices when scopeRows changes
-  useEffect(() => {
-    if (scopeRows?.length) {
-      const indexes = scopeRows
-        .filter((row) => !deletedIndices.includes(row.ls_index))
-        .map((row) => row.ls_index);
-      setDefaultIndices(indexes);
-      setFilteredIndices([]);
-    }
-  }, [scopeRows, deletedIndices]);
+  // useEffect(() => {
+  //   if (scopeRows?.length) {
+  //     // const indexes = scopeRows
+  //     //   .filter((row) => !deletedIndices.includes(row.ls_index))
+  //     //   .map((row) => row.ls_index);
+  //     // setDefaultIndices(indexes);
+  //     // setFilteredIndices([]);
+  //   }
+  // }, [scopeRows, deletedIndices]);
 
-  // Update filtered indices based on active filter
-  useEffect(() => {
-    switch (activeFilterTab) {
-      case CLUSTER:
-        setFilteredIndices(clusterFilter.clusterIndices);
-        break;
-      case SEARCH:
-        setFilteredIndices(searchFilter.searchIndices);
-        break;
-      case SELECT:
-        setFilteredIndices(selectedIndices);
-        break;
-      case COLUMN:
-        setFilteredIndices(columnFilter.columnIndices);
-        break;
-      case FEATURE:
-        setFilteredIndices(featureFilter.featureIndices);
-        break;
-      default:
-        setFilteredIndices(defaultIndices);
-    }
-  }, [
-    activeFilterTab,
-    clusterFilter.clusterIndices,
-    searchFilter.searchIndices,
-    selectedIndices,
-    columnFilter.columnIndices,
-    featureFilter.featureIndices,
-    defaultIndices,
-  ]);
+  // // Update filtered indices based on active filter
+  // useEffect(() => {
+  //   switch (activeFilterTab) {
+  //     case CLUSTER:
+  //       setFilteredIndices(clusterFilter.clusterIndices);
+  //       break;
+  //     case SEARCH:
+  //       setFilteredIndices(searchFilter.searchIndices);
+  //       break;
+  //     case SELECT:
+  //       setFilteredIndices(selectedIndices);
+  //       break;
+  //     case COLUMN:
+  //       setFilteredIndices(columnFilter.columnIndices);
+  //       break;
+  //     case FEATURE:
+  //       setFilteredIndices(featureFilter.featureIndices);
+  //       break;
+  //     default:
+  //       setFilteredIndices([]);
+  //   }
+  // }, [
+  //   activeFilterTab,
+  //   clusterFilter.clusterIndices,
+  //   searchFilter.searchIndices,
+  //   selectedIndices,
+  //   columnFilter.columnIndices,
+  //   featureFilter.featureIndices,
+  // ]);
 
   // Update active tab based on URL params, but only on first load.
   // We only do this on first load to prevent us from switching tabs unintentionally when the URL params are removed
@@ -108,30 +106,6 @@ export function FilterProvider({ children }) {
       setActiveFilterTab(SEARCH);
     }
   }, []);
-
-  const useDefaultIndices = useMemo(() => {
-    if (activeFilterTab === CLUSTER) {
-      return urlParams.get('cluster') === null && clusterFilter.cluster === null;
-    } else if (activeFilterTab === FEATURE) {
-      return urlParams.get('feature') === null && !featureFilter.active;
-    } else if (activeFilterTab === SEARCH) {
-      return urlParams.get('search') === null && searchFilter.searchText === '';
-    } else if (activeFilterTab === SELECT) {
-      return urlParams.get('select') === null && selectedIndices.length === 0;
-    } else if (activeFilterTab === COLUMN) {
-      return urlParams.get('column') === null && columnFilter.columnIndices.length === 0;
-    }
-
-    return false;
-  }, [
-    activeFilterTab,
-    urlParams,
-    clusterFilter.clusterIndices,
-    featureFilter.featureIndices,
-    searchFilter.searchIndices,
-    selectedIndices,
-    columnFilter.columnIndices,
-  ]);
 
   const filterLoading = useMemo(() => {
     if (activeFilterTab === CLUSTER) {
@@ -151,8 +125,6 @@ export function FilterProvider({ children }) {
     setActiveFilterTab,
     filteredIndices,
     setFilteredIndices,
-    defaultIndices,
-    setDefaultIndices,
     selectedIndices,
     setSelectedIndices,
 
@@ -193,7 +165,6 @@ export function FilterProvider({ children }) {
       COLUMN,
       FEATURE,
     },
-    useDefaultIndices,
     setUrlParams,
   };
 

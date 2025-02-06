@@ -17,7 +17,6 @@ FilterDataTable.propTypes = {
   userId: PropTypes.string.isRequired,
   scope: PropTypes.object,
   filteredIndices: PropTypes.array.isRequired,
-  defaultIndices: PropTypes.array.isRequired,
   distances: PropTypes.array,
   clusterMap: PropTypes.object,
   // clusterLabels: PropTypes.array,
@@ -57,7 +56,6 @@ function FilterDataTable({
   scope,
   userId,
   filteredIndices = [],
-  defaultIndices = [],
   distances = [],
   clusterMap = {},
   onDataTableRows,
@@ -69,7 +67,6 @@ function FilterDataTable({
   deletedIndices = [],
   page,
   setPage,
-  useDefaultIndices = false,
   filterLoading = false,
 }) {
   const [rows, setRows] = useState([]);
@@ -79,7 +76,7 @@ function FilterDataTable({
   const rowsPerPage = 100;
   const [pageCount, setPageCount] = useState(0);
   useEffect(() => {
-    let inds = filteredIndices.length ? filteredIndices.length : defaultIndices.length;
+    let inds = filteredIndices.length;
     const count = Math.ceil(inds / rowsPerPage);
     setPageCount(count);
   }, [filteredIndices]);
@@ -120,19 +117,9 @@ function FilterDataTable({
   );
 
   useEffect(() => {
-    hydrateIndices(defaultIndices, setDefaultRows);
-  }, [defaultIndices, page, hydrateIndices]);
-
-  useEffect(() => {
-    if (!useDefaultIndices) {
-      const filteredWithoutDeleted = filteredIndices.filter((i) => !deletedIndices.includes(i));
-      hydrateIndices(filteredWithoutDeleted, setRows);
-    }
-  }, [filteredIndices, deletedIndices, page, hydrateIndices, useDefaultIndices]);
-
-  const displayRows = useMemo(() => {
-    return useDefaultIndices ? defaultRows : rows;
-  }, [useDefaultIndices, defaultRows, rows]);
+    const filteredWithoutDeleted = filteredIndices.filter((i) => !deletedIndices.includes(i));
+    hydrateIndices(filteredWithoutDeleted, setRows);
+  }, [filteredIndices, deletedIndices, page, hydrateIndices]);
 
   const formattedColumns = useMemo(() => {
     const ls_features_column = 'ls_features';
@@ -322,7 +309,7 @@ function FilterDataTable({
             }}
           />
           <DataGrid
-            rows={displayRows}
+            rows={rows}
             columns={formattedColumns}
             rowClass={(row, index) => {
               if (row.ls_index === 0) {
@@ -330,7 +317,7 @@ function FilterDataTable({
               }
               return '';
             }}
-            rowGetter={(i) => displayRows[i]}
+            rowGetter={(i) => rows[i]}
             rowHeight={sae_id ? 50 : 35}
             style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
             renderers={{ renderRow: renderRowWithHover }}
