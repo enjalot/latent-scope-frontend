@@ -127,7 +127,7 @@ function ScatterGL({
 
   // how do i make sure that this is always the most recent value?
 
-  const TOP_N_POINTS = 50;
+  const TOP_N_POINTS = 7;
 
   const { useDefaultIndices } = useFilter();
 
@@ -527,7 +527,6 @@ function ScatterGL({
     });
   }, [drawingPoints, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
 
-  // Define the new method
   const hoverCenterPoint = (transform) => {
     const newCenter = getDataCenter(width, height, transform, xScaleRef.current, yScaleRef.current);
     setDataCenter(newCenter);

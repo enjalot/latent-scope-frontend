@@ -394,15 +394,15 @@ function VisualizationPane({
             // stroke="black"
           />
         )}{' '}
-        {activeFilterTab === filterConstants.SEARCH && (
-          <PointLabel
-            selectedPoints={filteredPoints}
-            xDomain={xDomain}
-            yDomain={yDomain}
-            width={width}
-            height={height}
-          />
-        )}
+        {/* {activeFilterTab === filterConstants.SEARCH && ( */}
+        <PointLabel
+          selectedPoints={filteredPoints}
+          xDomain={xDomain}
+          yDomain={yDomain}
+          width={width}
+          height={height}
+        />
+        {/* )} */}
         <MobileHUD xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
       </div>
 
