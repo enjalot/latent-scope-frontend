@@ -119,12 +119,15 @@ function ScatterGL({
   setHoveredIndex,
   setHovered,
   setFilteredIndices,
+  isSmallScreen,
 }) {
   const { isDark: isDarkMode } = useColorMode();
 
   const { clusterMap } = useScope();
 
   // how do i make sure that this is always the most recent value?
+
+  const TOP_N_POINTS = 50;
 
   const { useDefaultIndices } = useFilter();
 
@@ -151,15 +154,21 @@ function ScatterGL({
   useEffect(() => {
     if (quadtreeRef.current) {
       const center = getDataCenter(width, height, transform, xScaleRef.current, yScaleRef.current);
-
       const closest = findNearestPointData(center.x, center.y);
+      setFilteredIndices(closest);
       if (closest !== -1 && useDefaultIndices) {
         setHoveredIndex(closest);
         const cluster = clusterMap[closest];
         if (cluster) {
           setHoveredCluster(cluster);
         }
+      }
+
+      if (isSmallScreen) {
         setFilteredIndices([closest]);
+      } else {
+        const closest = findNClosestPointsData(center.x, center.y, TOP_N_POINTS);
+        setFilteredIndices(closest);
       }
     }
 
@@ -403,6 +412,39 @@ function ScatterGL({
     return -1;
   };
 
+  const findNClosestPointsData = (dataX, dataY, n) => {
+    const closestPoints = [];
+
+    // Search radius in data coordinates
+    const radius =
+      ((quadtreeRadius / transform.k) *
+        (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
+      width;
+
+    quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
+      if (!node.length) {
+        const dx = node.data[0] - dataX;
+        const dy = node.data[1] - dataY;
+        const distance = dx * dx + dy * dy;
+
+        if (closestPoints.length < n) {
+          closestPoints.push({ point: node.data, distance });
+          closestPoints.sort((a, b) => a.distance - b.distance);
+        } else if (distance < closestPoints[closestPoints.length - 1].distance) {
+          closestPoints[closestPoints.length - 1] = { point: node.data, distance };
+          closestPoints.sort((a, b) => a.distance - b.distance);
+        }
+      }
+      return (
+        x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius
+      );
+    });
+
+    return closestPoints.map(({ point }) =>
+      drawingPoints.findIndex((p) => p[0] === point[0] && p[1] === point[1])
+    );
+  };
+
   // First create quadtree from points
   useEffect(() => {
     if (!scopeRows?.length) return;
@@ -499,7 +541,12 @@ function ScatterGL({
           setHoveredCluster(cluster);
         }
 
-        debouncedSetFilteredIndices([closest]);
+        if (isSmallScreen) {
+          debouncedSetFilteredIndices([closest]);
+        } else {
+          const closest = findNClosestPointsData(newCenter.x, newCenter.y, TOP_N_POINTS);
+          debouncedSetFilteredIndices(closest);
+        }
       }
     }
   };

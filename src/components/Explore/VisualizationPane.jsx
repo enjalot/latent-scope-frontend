@@ -304,6 +304,7 @@ function VisualizationPane({
             setHoveredIndex={setHoveredIndex}
             setHovered={setHovered}
             setFilteredIndices={setFilteredIndices}
+            isSmallScreen={isSmallScreen}
           />
         )}
         {/* show all the hulls */}
