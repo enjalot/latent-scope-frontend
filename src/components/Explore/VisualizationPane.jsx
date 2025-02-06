@@ -46,11 +46,20 @@ function VisualizationPane({
   selectedAnnotations,
   hoveredCluster,
   dataTableRows,
+  setHoveredCluster,
+  setHoveredIndex,
+  setHovered,
 }) {
   const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
 
-  const { activeFilterTab, filteredIndices, filterConstants, featureFilter, clusterFilter } =
-    useFilter();
+  const {
+    activeFilterTab,
+    filteredIndices,
+    filterConstants,
+    featureFilter,
+    clusterFilter,
+    setFilteredIndices,
+  } = useFilter();
 
   const { sae: { max_activations = [] } = {} } = scope || {};
 
@@ -59,6 +68,9 @@ function VisualizationPane({
 
   // TODO: calculate this based on the center of the screen (inverted from the xDomain and yDomain)
   const [centeredCluster, setCenteredCluster] = useState(null);
+
+  // The center of the screen in data coordinates
+  const [dataCenter, setDataCenter] = useState({ x: 0, y: 0 });
 
   const [xDomain, setXDomain] = useState([-1, 1]);
   const [yDomain, setYDomain] = useState([-1, 1]);
@@ -285,6 +297,12 @@ function VisualizationPane({
               activeFilterTab === filterConstants.FEATURE
             }
             scopeRows={scopeRows}
+            dataCenter={dataCenter}
+            setDataCenter={setDataCenter}
+            setHoveredCluster={setHoveredCluster}
+            setHoveredIndex={setHoveredIndex}
+            setHovered={setHovered}
+            setFilteredIndices={setFilteredIndices}
           />
         )}
         {/* show all the hulls */}
@@ -387,7 +405,7 @@ function VisualizationPane({
       </div>
 
       {/* Hover information display */}
-      {hovered && (
+      {/* {hovered && (
         <div
           data-tooltip-id="featureTooltip"
           style={{
@@ -428,7 +446,7 @@ function VisualizationPane({
             <p className="tooltip-text">{hovered.text}</p>
           </div>
         </Tooltip>
-      )}
+      )} */}
 
       {/* {!isMobileDevice() && (
               <div className="hovered-point">

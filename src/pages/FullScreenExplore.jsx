@@ -101,7 +101,7 @@ function ExploreContent() {
         });
       });
     } else {
-      setHovered(null);
+      // setHovered(null);
     }
   }, [hoveredIndex, deletedIndices, clusterMap, debouncedHydrateHoverText]);
 
@@ -127,7 +127,7 @@ function ExploreContent() {
       if (nonDeletedIndex >= 0) {
         setHoveredCluster(clusterMap[nonDeletedIndex]);
       } else {
-        setHoveredCluster(null);
+        // setHoveredCluster(null);
       }
     },
     [deletedIndices]
@@ -301,10 +301,10 @@ function ExploreContent() {
     <div
       ref={visualizationContainerRef}
       className="visualization-pane-container"
-      onMouseLeave={() => {
-        setHoveredIndex(null);
-        setHovered(null);
-      }}
+      // onMouseLeave={() => {
+      //   setHoveredIndex(null);
+      //   setHovered(null);
+      // }}
     >
       {scopeRows?.length ? (
         <VisualizationPane
@@ -320,6 +320,9 @@ function ExploreContent() {
           hoveredCluster={hoveredCluster}
           dataTableRows={dataTableRows}
           defaultIndices={defaultIndices}
+          setHoveredCluster={setHoveredCluster}
+          setHoveredIndex={setHoveredIndex}
+          setHovered={setHovered}
         />
       ) : null}
     </div>

@@ -14,8 +14,8 @@ import {
   mapSelectionKey,
 } from '../lib/colors';
 import { useColorMode } from '../hooks/useColorMode';
+import { useScope } from '../contexts/ScopeContext';
 import styles from './Scatter.module.css';
-
 import PropTypes from 'prop-types';
 import { reSplitAlphaNumeric } from '@tanstack/react-table';
 ScatterGL.propTypes = {
@@ -28,6 +28,24 @@ ScatterGL.propTypes = {
   onView: PropTypes.func,
   onSelect: PropTypes.func,
   onHover: PropTypes.func,
+};
+
+// Add this custom hook near the top of the file
+const useDebounce = (callback, delay) => {
+  const timeoutRef = useRef(null);
+
+  return useCallback(
+    (...args) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        callback(...args);
+      }, delay);
+    },
+    [callback, delay]
+  );
 };
 
 const calculatePointColor = (valueA) => {
@@ -62,7 +80,7 @@ const calculateDynamicPointScale = (pointCount, width, height) => {
   return size;
 };
 
-// Add this helper function
+// Converts a screen coordinate (e.g. width / 2, height / 2) to data coordinates
 const screenToDataCoordinates = (screenX, screenY, transform, xScale, yScale) => {
   // First apply inverse zoom transform to get back to untransformed screen coordinates
   const untransformedX = transform.invertX(screenX);
@@ -95,8 +113,22 @@ function ScatterGL({
   featureIsSelected,
   ignoreNotSelected = true,
   scopeRows,
+  setDataCenter,
+  dataCenter,
+  setHoveredCluster,
+  setHoveredIndex,
+  setHovered,
+  setFilteredIndices,
 }) {
   const { isDark: isDarkMode } = useColorMode();
+
+  const { clusterMap } = useScope();
+
+  // how do i make sure that this is always the most recent value?
+
+  const { useDefaultIndices } = useFilter();
+
+  // how do i make sure that this is always the most recent value?
 
   const canvasRef = useRef(null);
   const reglRef = useRef(null);
@@ -105,7 +137,9 @@ function ScatterGL({
   const yScaleRef = useRef(scaleLinear().domain([-1, 1]).range([height, 0]));
   const quadtreeRef = useRef(null);
   const [transform, setTransform] = useState(zoomIdentity);
-  const [dataCenter, setDataCenter] = useState(null);
+
+  // debounce the filtered indices update
+  const debouncedSetFilteredIndices = useDebounce(setFilteredIndices, 100);
 
   // make xScaleRef and yScaleRef update when width and height change
   useEffect(() => {
@@ -115,6 +149,26 @@ function ScatterGL({
 
   // Set initial data center
   useEffect(() => {
+    if (quadtreeRef.current) {
+      const center = getDataCenter(
+        width,
+        height,
+        zoomIdentity,
+        xScaleRef.current,
+        yScaleRef.current
+      );
+
+      const closest = findNearestPointData(center.x, center.y);
+      if (closest !== -1 && useDefaultIndices) {
+        setHoveredIndex(closest);
+        const cluster = clusterMap[closest];
+        if (cluster) {
+          setHoveredCluster(cluster);
+        }
+        setFilteredIndices([closest]);
+      }
+    }
+
     if (!dataCenter) {
       const initial = getDataCenter(
         width,
@@ -124,6 +178,9 @@ function ScatterGL({
         yScaleRef.current
       );
       setDataCenter(initial);
+
+      // setHoveredCluster(initialCluster);
+      // setHoveredIndex(initialCluster[0]);
     }
   }, [width, height]);
 
@@ -264,11 +321,8 @@ function ScatterGL({
       .on('zoom', (event) => {
         setTransform(event.transform);
 
-        // Only update center on pan
-        if (
-          event.sourceEvent &&
-          (event.sourceEvent.type === 'mousemove' || event.sourceEvent.type === 'touchmove')
-        ) {
+        // update data center and find nearest point on hover
+        if (event.sourceEvent) {
           const newCenter = getDataCenter(
             width,
             height,
@@ -277,6 +331,20 @@ function ScatterGL({
             yScaleRef.current
           );
           setDataCenter(newCenter);
+
+          // if we are using default indices, find the nearest point and set the hovered index
+          if (useDefaultIndices) {
+            const closest = findNearestPointData(newCenter.x, newCenter.y);
+            if (closest !== -1) {
+              setHoveredIndex(closest);
+              const cluster = clusterMap[closest];
+              if (cluster) {
+                setHoveredCluster(cluster);
+              }
+
+              debouncedSetFilteredIndices([closest]);
+            }
+          }
         }
 
         const newXScale = event.transform.rescaleX(xScaleRef.current);
@@ -305,7 +373,33 @@ function ScatterGL({
         reglRef.current.destroy();
       }
     };
-  }, [width, height]);
+  }, [width, height, useDefaultIndices]);
+
+  useEffect(() => {
+    if (!quadtreeRef.current) return;
+
+    if (useDefaultIndices) {
+      const center = getDataCenter(
+        width,
+        height,
+        zoomIdentity,
+        xScaleRef.current,
+        yScaleRef.current
+      );
+      const closest = findNearestPointData(center.x, center.y);
+      if (closest !== -1) {
+        setHoveredIndex(closest);
+        const cluster = clusterMap[closest];
+        if (cluster) {
+          setHoveredCluster(cluster);
+        }
+      }
+      debouncedSetFilteredIndices([closest]);
+    } else {
+      setHoveredIndex(null);
+      setHoveredCluster(null);
+    }
+  }, [useDefaultIndices]);
 
   // Replace the existing handleMouseMove with this updated version
   const findNearestPoint = useCallback(
@@ -317,76 +411,41 @@ function ScatterGL({
       const dataX = xScaleRef.current.invert(transform.invertX(x));
       const dataY = yScaleRef.current.invert(transform.invertY(y));
 
-      let nearest = null;
-      let minDistance = Infinity;
-
-      // Search radius in data coordinates
-      const radius =
-        ((quadtreeRadius / transform.k) *
-          (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
-        width;
-
-      quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
-        if (!node.length) {
-          const dx = node.data[0] - dataX;
-          const dy = node.data[1] - dataY;
-          const distance = dx * dx + dy * dy;
-
-          if (distance < minDistance) {
-            minDistance = distance;
-            nearest = node.data;
-          }
-        }
-        return (
-          x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius
-        );
-      });
-
-      if (nearest && Math.sqrt(minDistance) <= radius) {
-        return drawingPoints.findIndex((p) => p[0] === nearest[0] && p[1] === nearest[1]);
-      }
-      return -1;
+      return findNearestPointData(dataX, dataY);
     },
     [drawingPoints, width, transform, quadtreeRadius]
   );
 
-  const findNClosestPointsIndex = (centerX, centerY, n) => {
-    const points = [];
-    let searchRadius = 0.1;
+  const findNearestPointData = (dataX, dataY) => {
+    let nearest = null;
+    let minDistance = Infinity;
 
-    while (points.length < n) {
-      points.length = 0;
-      quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
-        if (!node.length) {
-          // node.data is now [x, y, index]
-          const [x, y, originalIndex] = node.data;
-          const dx = x - centerX;
-          const dy = y - centerY;
-          if (dx * dx + dy * dy < searchRadius * searchRadius) {
-            points.push({
-              point: [x, y],
-              index: originalIndex, // This is the index into scopeRows!
-            });
-          }
+    // Search radius in data coordinates
+    const radius =
+      ((quadtreeRadius / transform.k) *
+        (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
+      width;
+
+    quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
+      if (!node.length) {
+        const dx = node.data[0] - dataX;
+        const dy = node.data[1] - dataY;
+        const distance = dx * dx + dy * dy;
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearest = node.data;
         }
-        return (
-          x1 > centerX + searchRadius ||
-          x2 < centerX - searchRadius ||
-          y1 > centerY + searchRadius ||
-          y2 < centerY - searchRadius
-        );
-      });
-      searchRadius *= 2;
+      }
+      return (
+        x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius
+      );
+    });
+
+    if (nearest && Math.sqrt(minDistance) <= radius) {
+      return drawingPoints.findIndex((p) => p[0] === nearest[0] && p[1] === nearest[1]);
     }
-    // Sort by distance and take first N
-    return points
-      .sort((a, b) => {
-        const dA = Math.pow(a.point[0] - centerX, 2) + Math.pow(a.point[1] - centerY, 2);
-        const dB = Math.pow(b.point[0] - centerX, 2) + Math.pow(b.point[1] - centerY, 2);
-        return dA - dB;
-      })
-      .slice(0, n)
-      .map((p) => p.index); // Just return the indices
+    return -1;
   };
 
   // First create quadtree from points
@@ -427,7 +486,7 @@ function ScatterGL({
       const y = event.clientY - rect.top;
 
       const nearestPoint = findNearestPoint(x, y);
-      onHover(nearestPoint === -1 ? null : nearestPoint);
+      // onHover(nearestPoint === -1 ? null : nearestPoint);
     },
     [drawingPoints, onHover, findNearestPoint]
   );
@@ -477,7 +536,7 @@ function ScatterGL({
       style={{ width, height }}
       className={styles.scatter}
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => onHover && onHover(null)}
+      // onMouseLeave={() => onHover && onHover(null)}
       onClick={handleClick}
     />
   );

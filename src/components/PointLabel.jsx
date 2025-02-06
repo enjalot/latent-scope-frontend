@@ -81,7 +81,7 @@ function PointLabel({
       .merge(labelSel)
       .attr('x', (d) => {
         const coord = pointToSvgCoordinate(d, xDomain, yDomain, width, height);
-        return coord.x + 12.5;
+        return coord.x + 17.5;
       })
       .attr('y', (d) => {
         const coord = pointToSvgCoordinate(d, xDomain, yDomain, width, height);

@@ -110,6 +110,15 @@ export function FilterProvider({ children }) {
   }, []);
 
   const useDefaultIndices = useMemo(() => {
+    console.log({
+      activeFilterTab,
+      urlParams,
+      clusterFilter,
+      featureFilter,
+      searchFilter,
+      selectedIndices,
+      columnFilter,
+    });
     if (activeFilterTab === CLUSTER) {
       return urlParams.get('cluster') === null && clusterFilter.cluster === null;
     } else if (activeFilterTab === FEATURE) {
@@ -122,15 +131,16 @@ export function FilterProvider({ children }) {
       return urlParams.get('column') === null && columnFilter.columnIndices.length === 0;
     }
 
+    console.log('false');
     return false;
   }, [
     activeFilterTab,
     urlParams,
-    clusterFilter.clusterIndices,
-    featureFilter.featureIndices,
-    searchFilter.searchIndices,
+    clusterFilter.cluster,
+    featureFilter,
+    searchFilter,
     selectedIndices,
-    columnFilter.columnIndices,
+    columnFilter,
   ]);
 
   const filterLoading = useMemo(() => {
