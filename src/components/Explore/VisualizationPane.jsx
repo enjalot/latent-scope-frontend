@@ -49,6 +49,7 @@ function VisualizationPane({
   setHoveredCluster,
   setHoveredIndex,
   setHovered,
+  isSmallScreen,
 }) {
   const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
 
@@ -405,7 +406,7 @@ function VisualizationPane({
       </div>
 
       {/* Hover information display */}
-      {/* {hovered && (
+      {!isSmallScreen && hovered && (
         <div
           data-tooltip-id="featureTooltip"
           style={{
@@ -446,7 +447,7 @@ function VisualizationPane({
             <p className="tooltip-text">{hovered.text}</p>
           </div>
         </Tooltip>
-      )} */}
+      )}
 
       {/* {!isMobileDevice() && (
               <div className="hovered-point">

@@ -119,19 +119,20 @@ function FilterDataTable({
     [dataset, page, sae_id, setRowsLoading]
   );
 
-  useEffect(() => {
-    hydrateIndices(defaultIndices, setDefaultRows);
-  }, [defaultIndices, page, hydrateIndices]);
+  // useEffect(() => {
+  //   hydrateIndices(defaultIndices, setDefaultRows);
+  // }, [defaultIndices, page, hydrateIndices]);
 
   useEffect(() => {
-    if (!useDefaultIndices) {
-      const filteredWithoutDeleted = filteredIndices.filter((i) => !deletedIndices.includes(i));
-      hydrateIndices(filteredWithoutDeleted, setRows);
-    }
+    // if (!useDefaultIndices) {
+    const filteredWithoutDeleted = filteredIndices.filter((i) => !deletedIndices.includes(i));
+    hydrateIndices(filteredWithoutDeleted, setRows);
+    // }
   }, [filteredIndices, deletedIndices, page, hydrateIndices, useDefaultIndices]);
 
   const displayRows = useMemo(() => {
-    return useDefaultIndices ? defaultRows : rows;
+    // return useDefaultIndices ? defaultRows : rows;
+    return rows;
   }, [useDefaultIndices, defaultRows, rows]);
 
   const formattedColumns = useMemo(() => {

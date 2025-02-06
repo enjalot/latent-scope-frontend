@@ -323,6 +323,7 @@ function ExploreContent() {
           setHoveredCluster={setHoveredCluster}
           setHoveredIndex={setHoveredIndex}
           setHovered={setHovered}
+          isSmallScreen={isSmallScreen}
         />
       ) : null}
     </div>

@@ -150,13 +150,7 @@ function ScatterGL({
   // Set initial data center
   useEffect(() => {
     if (quadtreeRef.current) {
-      const center = getDataCenter(
-        width,
-        height,
-        zoomIdentity,
-        xScaleRef.current,
-        yScaleRef.current
-      );
+      const center = getDataCenter(width, height, transform, xScaleRef.current, yScaleRef.current);
 
       const closest = findNearestPointData(center.x, center.y);
       if (closest !== -1 && useDefaultIndices) {
@@ -323,28 +317,7 @@ function ScatterGL({
 
         // update data center and find nearest point on hover
         if (event.sourceEvent) {
-          const newCenter = getDataCenter(
-            width,
-            height,
-            event.transform,
-            xScaleRef.current,
-            yScaleRef.current
-          );
-          setDataCenter(newCenter);
-
-          // if we are using default indices, find the nearest point and set the hovered index
-          if (useDefaultIndices) {
-            const closest = findNearestPointData(newCenter.x, newCenter.y);
-            if (closest !== -1) {
-              setHoveredIndex(closest);
-              const cluster = clusterMap[closest];
-              if (cluster) {
-                setHoveredCluster(cluster);
-              }
-
-              debouncedSetFilteredIndices([closest]);
-            }
-          }
+          hoverCenterPoint(event.transform);
         }
 
         const newXScale = event.transform.rescaleX(xScaleRef.current);
@@ -379,22 +352,7 @@ function ScatterGL({
     if (!quadtreeRef.current) return;
 
     if (useDefaultIndices) {
-      const center = getDataCenter(
-        width,
-        height,
-        zoomIdentity,
-        xScaleRef.current,
-        yScaleRef.current
-      );
-      const closest = findNearestPointData(center.x, center.y);
-      if (closest !== -1) {
-        setHoveredIndex(closest);
-        const cluster = clusterMap[closest];
-        if (cluster) {
-          setHoveredCluster(cluster);
-        }
-      }
-      debouncedSetFilteredIndices([closest]);
+      hoverCenterPoint(transform);
     } else {
       setHoveredIndex(null);
       setHoveredCluster(null);
@@ -486,7 +444,7 @@ function ScatterGL({
       const y = event.clientY - rect.top;
 
       const nearestPoint = findNearestPoint(x, y);
-      // onHover(nearestPoint === -1 ? null : nearestPoint);
+      onHover(nearestPoint === -1 ? null : nearestPoint);
     },
     [drawingPoints, onHover, findNearestPoint]
   );
@@ -530,13 +488,38 @@ function ScatterGL({
     });
   }, [drawingPoints, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
 
+  // Define the new method
+  const hoverCenterPoint = (transform) => {
+    const newCenter = getDataCenter(width, height, transform, xScaleRef.current, yScaleRef.current);
+    setDataCenter(newCenter);
+
+    if (useDefaultIndices) {
+      const closest = findNearestPointData(newCenter.x, newCenter.y);
+      if (closest !== -1) {
+        setHoveredIndex(closest);
+        const cluster = clusterMap[closest];
+        if (cluster) {
+          setHoveredCluster(cluster);
+        }
+
+        debouncedSetFilteredIndices([closest]);
+      }
+    }
+  };
+
+  // Use the new method in your event handler
+  const handleZoom = (event) => {
+    setTransform(event.transform);
+    hoverCenterPoint(event.transform);
+  };
+
   return (
     <canvas
       ref={canvasRef}
       style={{ width, height }}
       className={styles.scatter}
       onMouseMove={handleMouseMove}
-      // onMouseLeave={() => onHover && onHover(null)}
+      onMouseLeave={() => onHover && onHover(null)}
       onClick={handleClick}
     />
   );
