@@ -296,7 +296,10 @@ function ExploreContent() {
           className="full-screen-explore-container"
           style={{ gridTemplateColumns: gridTemplate }}
         >
-          <div className="filter-table-container" style={{ position: 'relative' }}>
+          <div
+            className="filter-table-container"
+            style={{ position: 'relative', overflowX: 'hidden' }}
+          >
             <div style={styles.dragHandle} onMouseDown={startDragging} />
             <div ref={filtersContainerRef}>
               <FilterActions
