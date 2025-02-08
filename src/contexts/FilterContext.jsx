@@ -19,8 +19,13 @@ export function FilterProvider({ children }) {
 
   const { scopeRows, deletedIndices, dataset, datasetId, userId, scope, scopeLoaded } = useScope();
 
-  const [activeFilterTab, setActiveFilterTab] = useState(CLUSTER);
   const [filteredIndices, setFilteredIndices] = useState([]);
+
+  // indices of the points that are currently centered in the view
+  // these should be shown if the user has not filtered the points,
+  // i.e. anyFilterActive is false
+  // Currently, ScatterGL is responsible for calculating these indices
+  const [centeredIndices, setCenteredIndices] = useState([]);
 
   const clusterFilter = useClusterFilter({
     scopeRows,
@@ -47,14 +52,12 @@ export function FilterProvider({ children }) {
     scopeLoaded,
   });
 
-  console.log({ featureFilter, clusterFilter, searchFilter });
-
   // Toggle functions
-  const toggleSearch = () => setActiveFilterTab((prev) => (prev === SEARCH ? null : SEARCH));
-  const toggleFilter = () => setActiveFilterTab((prev) => (prev === CLUSTER ? null : CLUSTER));
-  const toggleSelect = () => setActiveFilterTab((prev) => (prev === SELECT ? null : SELECT));
-  const toggleColumn = () => setActiveFilterTab((prev) => (prev === COLUMN ? null : COLUMN));
-  const toggleFeature = () => setActiveFilterTab((prev) => (prev === FEATURE ? null : FEATURE));
+  // const toggleSearch = () => setActiveFilterTab((prev) => (prev === SEARCH ? null : SEARCH));
+  // const toggleFilter = () => setActiveFilterTab((prev) => (prev === CLUSTER ? null : CLUSTER));
+  // const toggleSelect = () => setActiveFilterTab((prev) => (prev === SELECT ? null : SELECT));
+  // const toggleColumn = () => setActiveFilterTab((prev) => (prev === COLUMN ? null : COLUMN));
+  // const toggleFeature = () => setActiveFilterTab((prev) => (prev === FEATURE ? null : FEATURE));
 
   // Determine if any filter is active
   const anyFilterActive = useMemo(() => {
@@ -74,6 +77,14 @@ export function FilterProvider({ children }) {
     columnFilter.active,
     urlParams,
   ]);
+
+  const dataTableIndices = useMemo(() => {
+    if (anyFilterActive) {
+      return filteredIndices;
+    }
+    return centeredIndices;
+  }, [anyFilterActive, filteredIndices, centeredIndices]);
+
   // Update defaultIndices when scopeRows changes
   // useEffect(() => {
   //   if (scopeRows?.length) {
@@ -121,23 +132,18 @@ export function FilterProvider({ children }) {
   useEffect(() => {}, []);
 
   const filterLoading = useMemo(() => {
-    if (activeFilterTab === CLUSTER) {
-      return clusterFilter.loading;
-    } else if (activeFilterTab === FEATURE) {
-      return featureFilter.loading;
-    } else if (activeFilterTab === SEARCH) {
-      return searchFilter.loading;
-    } else if (activeFilterTab === COLUMN) {
-      return columnFilter.loading;
-    }
-    return false;
-  }, [featureFilter.loading, searchFilter.loading, columnFilter.loading, clusterFilter.loading]);
+    return (
+      clusterFilter.loading || featureFilter.loading || searchFilter.loading || columnFilter.loading
+    );
+  }, [clusterFilter.loading, featureFilter.loading, searchFilter.loading, columnFilter.loading]);
 
   const value = {
-    activeFilterTab,
-    setActiveFilterTab,
+    // activeFilterTab,
+    // setActiveFilterTab,
     filteredIndices,
     setFilteredIndices,
+    centeredIndices,
+    setCenteredIndices,
 
     featureFilter,
     // featureIndices,
@@ -164,11 +170,11 @@ export function FilterProvider({ children }) {
 
     filterLoading,
 
-    toggleSearch,
-    toggleFilter,
-    toggleSelect,
-    toggleColumn,
-    toggleFeature,
+    // toggleSearch,
+    // toggleFilter,
+    // toggleSelect,
+    // toggleColumn,
+    // toggleFeature,
     filterConstants: {
       SEARCH,
       CLUSTER,
@@ -178,6 +184,7 @@ export function FilterProvider({ children }) {
     },
     setUrlParams,
     anyFilterActive,
+    dataTableIndices, // indices that will be shown in the table view
   };
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;

@@ -98,11 +98,12 @@ function ScatterGL({
   ignoreNotSelected = true,
 }) {
   const { isDark: isDarkMode } = useColorMode();
-  const { setFilteredIndices, anyFilterActive } = useFilter();
+  const { setFilteredIndices, anyFilterActive, setCenteredIndices } = useFilter();
   const { clusterMap } = useScope();
 
   // debounce the filtered indices update
-  const debouncedSetFilteredIndices = useDebounce(setFilteredIndices, 50);
+  // const debouncedSetFilteredIndices = useDebounce(setFilteredIndices, 50);
+  const debouncedSetCenteredIndices = useDebounce(setCenteredIndices, 50);
 
   const canvasRef = useRef(null);
   const reglRef = useRef(null);
@@ -116,17 +117,17 @@ function ScatterGL({
   // Set initial data center
   useEffect(() => {
     if (quadtreeRef.current) {
-      if (!anyFilterActive) {
-        const center = getCenterCoordinates(
-          width,
-          height,
-          transform,
-          xScaleRef.current,
-          yScaleRef.current
-        );
-        const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
-        setFilteredIndices(closest);
-      }
+      // if (!anyFilterActive) {
+      const center = getCenterCoordinates(
+        width,
+        height,
+        transform,
+        xScaleRef.current,
+        yScaleRef.current
+      );
+      const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
+      setCenteredIndices(closest);
+      // }
       // const closest = findNearestPointData(center.x, center.y);
       // setFilteredIndices(closest);
       // if (closest !== -1 && useDefaultIndices) {
@@ -287,9 +288,7 @@ function ScatterGL({
 
         // update data center and find nearest point on hover
         if (event.sourceEvent) {
-          if (!anyFilterActive) {
-            setFilteredIndicesBasedOnCenter(event.transform);
-          }
+          updateCenteredIndices(event.transform);
         }
 
         if (onView) {
@@ -465,7 +464,7 @@ function ScatterGL({
     [points, onSelect, findNearestPoint]
   );
 
-  const setFilteredIndicesBasedOnCenter = (transform) => {
+  const updateCenteredIndices = (transform) => {
     const newCenter = getCenterCoordinates(
       width,
       height,
@@ -474,7 +473,7 @@ function ScatterGL({
       yScaleRef.current
     );
     const closest = findNClosestPoints(newCenter.x, newCenter.y, TOP_N_POINTS);
-    debouncedSetFilteredIndices(closest);
+    debouncedSetCenteredIndices(closest);
 
     // if (useDefaultIndices) {
     //   const closest = findNearestPoint(newCenter.x, newCenter.y);

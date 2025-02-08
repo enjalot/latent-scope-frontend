@@ -51,11 +51,12 @@ function VisualizationPane({
 
   const {
     activeFilterTab,
-    filteredIndices,
+    // filteredIndices,
     selectedIndices,
     filterConstants,
     featureFilter,
     clusterFilter,
+    dataTableIndices,
   } = useFilter();
 
   const { sae: { max_activations = [] } = {} } = scope || {};
@@ -85,7 +86,7 @@ function VisualizationPane({
 
   // Add new memoized feature activation lookup
   const featureActivationMap = useMemo(() => {
-    if (!featureIsSelected || !dataTableRows || !filteredIndices) {
+    if (!featureIsSelected || !dataTableRows || !dataTableIndices) {
       return new Map();
     }
 
@@ -107,7 +108,7 @@ function VisualizationPane({
   const drawingPoints = useMemo(() => {
     return scopeRows.map((p, i) => {
       if (featureIsSelected) {
-        if (filteredIndices?.includes(i)) {
+        if (dataTableIndices?.includes(i)) {
           const activation = featureActivationMap.get(p.ls_index);
           return activation !== undefined
             ? [p.x, p.y, mapSelectionKey.selected, activation]
@@ -120,15 +121,15 @@ function VisualizationPane({
         return [-10, -10, mapSelectionKey.hidden, 0.0];
         //   } else if (hoveredIndex === i) {
         //     return [p.x, p.y, mapSelectionKey.hovered, 0.0];
-      } else if (filteredIndices?.includes(i)) {
+      } else if (dataTableIndices?.includes(i)) {
         return [p.x, p.y, mapSelectionKey.selected, 0.0];
-      } else if (filteredIndices?.length) {
+      } else if (dataTableIndices?.length) {
         return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
       } else {
         return [p.x, p.y, mapSelectionKey.normal, 0.0];
       }
     });
-  }, [scopeRows, filteredIndices, featureActivationMap, featureIsSelected]);
+  }, [scopeRows, dataTableIndices, featureActivationMap, featureIsSelected]);
 
   const points = useMemo(() => {
     return scopeRows
@@ -306,7 +307,7 @@ function VisualizationPane({
             strokeWidth={2.5}
             // if there are selected indices already, that means other points will be less visible
             // so we can make the hull a bit more transparent
-            opacity={filteredIndices?.length ? 0.15 : 0.5}
+            opacity={dataTableIndices?.length ? 0.15 : 0.5}
             duration={0}
             xDomain={xDomain}
             yDomain={yDomain}

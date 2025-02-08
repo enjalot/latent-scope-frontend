@@ -36,14 +36,15 @@ function ExploreContent() {
 
   // Get filter-related state from FilterContext
   const {
-    activeFilterTab,
+    // activeFilterTab,
     filteredIndices,
     featureFilter,
     setSelectedIndices,
     filterConstants,
-    setActiveFilterTab,
+    // setActiveFilterTab,
     distances,
     filterLoading,
+    dataTableIndices,
   } = useFilter();
 
   // Keep visualization-specific state
@@ -114,21 +115,21 @@ function ExploreContent() {
     [deletedIndices]
   );
 
-  const handleSelected = useCallback(
-    (indices) => {
-      const nonDeletedIndices = indices.filter((index) => !deletedIndices.includes(index));
-      if (activeFilterTab === filterConstants.CLUSTER) {
-        let selected = scopeRows.filter((row) => nonDeletedIndices.includes(row.ls_index))?.[0];
-        if (selected) {
-          const selectedCluster = clusterLabels.find((d) => d.cluster === selected.cluster);
-          //   setCluster(selectedCluster);
-        }
-      } else {
-        setSelectedIndices(nonDeletedIndices);
-      }
-    },
-    [activeFilterTab, deletedIndices, scopeRows, clusterLabels, setSelectedIndices]
-  );
+  // const handleSelected = useCallback(
+  //   (indices) => {
+  //     const nonDeletedIndices = indices.filter((index) => !deletedIndices.includes(index));
+  //     if (activeFilterTab === filterConstants.CLUSTER) {
+  //       let selected = scopeRows.filter((row) => nonDeletedIndices.includes(row.ls_index))?.[0];
+  //       if (selected) {
+  //         const selectedCluster = clusterLabels.find((d) => d.cluster === selected.cluster);
+  //         //   setCluster(selectedCluster);
+  //       }
+  //     } else {
+  //       setSelectedIndices(nonDeletedIndices);
+  //     }
+  //   },
+  //   [activeFilterTab, deletedIndices, scopeRows, clusterLabels, setSelectedIndices]
+  // );
 
   const containerRef = useRef(null);
   const filtersContainerRef = useRef(null);
@@ -249,13 +250,13 @@ function ExploreContent() {
     },
   };
 
-  const handleFeatureClick = useCallback(
-    (featIdx, activation) => {
-      setActiveFilterTab(filterConstants.FEATURE);
-      featureFilter.setFeature(featIdx);
-    },
-    [setActiveFilterTab, featureFilter.setFeature]
-  );
+  // const handleFeatureClick = useCallback(
+  //   (featIdx, activation) => {
+  //     setActiveFilterTab(filterConstants.FEATURE);
+  //     featureFilter.setFeature(featIdx);
+  //   },
+  //   [setActiveFilterTab, featureFilter.setFeature]
+  // );
 
   console.log({ filteredIndices });
 
@@ -303,9 +304,10 @@ function ExploreContent() {
                 userId={userId}
                 dataset={dataset}
                 scope={scope}
-                filteredIndices={filteredIndices}
+                filteredIndices={dataTableIndices}
                 deletedIndices={deletedIndices}
-                distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
+                // distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
+                distances={[]} // TODO: make this work.
                 clusterMap={clusterMap}
                 clusterLabels={clusterLabels}
                 onDataTableRows={setDataTableRows}
@@ -316,7 +318,7 @@ function ExploreContent() {
                 onClick={handleClicked}
                 page={page}
                 setPage={setPage}
-                handleFeatureClick={handleFeatureClick}
+                handleFeatureClick={() => {}}
                 filterLoading={filterLoading}
               />
             </div>
@@ -337,7 +339,7 @@ function ExploreContent() {
                 hovered={hovered}
                 hoveredIndex={hoveredIndex}
                 onHover={handleHover}
-                onSelect={handleSelected}
+                onSelect={() => {}}
                 hoverAnnotations={hoverAnnotations}
                 selectedAnnotations={selectedAnnotations}
                 hoveredCluster={hoveredCluster}
