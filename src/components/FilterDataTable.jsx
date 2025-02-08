@@ -70,7 +70,6 @@ function FilterDataTable({
   filterLoading = false,
 }) {
   const [rows, setRows] = useState([]);
-  const [defaultRows, setDefaultRows] = useState([]);
 
   // page count is the total number of pages available
   const rowsPerPage = 100;

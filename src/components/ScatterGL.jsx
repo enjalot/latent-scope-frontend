@@ -98,7 +98,7 @@ function ScatterGL({
   ignoreNotSelected = true,
 }) {
   const { isDark: isDarkMode } = useColorMode();
-  const { setFilteredIndices } = useFilter();
+  const { setFilteredIndices, anyFilterActive } = useFilter();
   const { clusterMap } = useScope();
 
   // debounce the filtered indices update
@@ -116,15 +116,17 @@ function ScatterGL({
   // Set initial data center
   useEffect(() => {
     if (quadtreeRef.current) {
-      const center = getCenterCoordinates(
-        width,
-        height,
-        transform,
-        xScaleRef.current,
-        yScaleRef.current
-      );
-      const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
-      setFilteredIndices(closest);
+      if (!anyFilterActive) {
+        const center = getCenterCoordinates(
+          width,
+          height,
+          transform,
+          xScaleRef.current,
+          yScaleRef.current
+        );
+        const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
+        setFilteredIndices(closest);
+      }
       // const closest = findNearestPointData(center.x, center.y);
       // setFilteredIndices(closest);
       // if (closest !== -1 && useDefaultIndices) {
@@ -285,7 +287,9 @@ function ScatterGL({
 
         // update data center and find nearest point on hover
         if (event.sourceEvent) {
-          setFilteredIndicesBasedOnCenter(event.transform);
+          if (!anyFilterActive) {
+            setFilteredIndicesBasedOnCenter(event.transform);
+          }
         }
 
         if (onView) {

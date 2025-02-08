@@ -257,6 +257,8 @@ function ExploreContent() {
     [setActiveFilterTab, featureFilter.setFeature]
   );
 
+  console.log({ filteredIndices });
+
   if (!dataset)
     return (
       <>

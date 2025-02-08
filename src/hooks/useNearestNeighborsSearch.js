@@ -8,9 +8,9 @@ export default function useNearestNeighborsSearch({
   deletedIndices,
   urlParams,
   scopeLoaded,
+  setFilteredIndices,
 }) {
   const [searchText, setSearchText] = useState('');
-  const [searchIndices, setSearchIndices] = useState([]);
   const [distances, setDistances] = useState([]);
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ export default function useNearestNeighborsSearch({
         setDistances(data.distances);
         const limit = 20;
         // TODO: make the # of results configurable
-        setSearchIndices(inds.slice(0, limit));
+        setFilteredIndices(inds.slice(0, limit));
         setLoading(false);
         // onSearchEmbedding?.(data.search_embedding[0]);
       });
@@ -35,7 +35,7 @@ export default function useNearestNeighborsSearch({
 
   const clearSearch = useCallback(() => {
     setSearchText('');
-    setSearchIndices([]);
+    setFilteredIndices([]);
     setDistances([]);
     setActive(false);
   }, []);
@@ -61,8 +61,6 @@ export default function useNearestNeighborsSearch({
   return {
     searchText,
     setSearchText,
-    setSearchIndices,
-    searchIndices,
     distances,
     clearSearch,
     active,

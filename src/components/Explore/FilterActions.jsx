@@ -2,6 +2,8 @@ import React from 'react';
 import styles from './FilterActions.module.scss';
 import { Button } from 'react-element-forge';
 import ClusterFilter from './ClusterFilter';
+import ClusterFilterV2 from './ClusterFilterV2';
+import FeatureFilterV2 from './FeatureFilterV2';
 import ColumnFilter from './ColumnFilter';
 import NearestNeighbor from './NearestNeighbor';
 import FeatureFilter from './FeatureFilter';
@@ -25,28 +27,9 @@ export default function FilterActions({ scatter }) {
 
   const { scope, features, clusterLabels } = useScope();
 
-  let filterComponent = null;
-  switch (activeFilterTab) {
-    case filterConstants.CLUSTER:
-      filterComponent = <ClusterFilter clusterLabels={clusterLabels} />;
-      break;
-    case filterConstants.COLUMN:
-      filterComponent = <ColumnFilter />;
-      break;
-    case filterConstants.FEATURE:
-      filterComponent = <FeatureFilter scope={scope} />;
-      break;
-    case filterConstants.SELECT:
-      filterComponent = <SelectFilter scatter={scatter} />;
-      break;
-    case filterConstants.SEARCH:
-      filterComponent = <NearestNeighbor />;
-      break;
-  }
-
   return (
     <div className={styles.container}>
-      <div className={styles.actionsContainer}>
+      {/* <div className={styles.actionsContainer}>
         <Button
           onClick={toggleFilter}
           className={`${styles.actionsButton} ${activeFilterTab === filterConstants.CLUSTER ? styles.active : styles.notActive}`}
@@ -100,8 +83,15 @@ export default function FilterActions({ scatter }) {
             title="Feature"
           />
         ) : null}
+      </div> */}
+      <div className={styles.actionsRow}>
+        <NearestNeighbor />
+        {/* <ClusterFilter clusterLabels={clusterLabels} /> */}
+        <ClusterFilterV2 clusterLabels={clusterLabels} />
+        {features?.length ? <FeatureFilterV2 /> : null}
+        <ColumnFilter />
+        {/* <SelectFilter scatter={scatter} /> */}
       </div>
-      <div className={styles.actionsRow}>{filterComponent}</div>
     </div>
   );
 }

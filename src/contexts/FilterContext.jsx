@@ -21,13 +21,13 @@ export function FilterProvider({ children }) {
 
   const [activeFilterTab, setActiveFilterTab] = useState(CLUSTER);
   const [filteredIndices, setFilteredIndices] = useState([]);
-  const [selectedIndices, setSelectedIndices] = useState([]);
 
   const clusterFilter = useClusterFilter({
     scopeRows,
     scope,
     scopeLoaded,
     urlParams,
+    setFilteredIndices,
   });
   const columnFilter = useColumnFilter(userId, datasetId, scope);
   const searchFilter = useNearestNeighborsSearch({
@@ -37,6 +37,7 @@ export function FilterProvider({ children }) {
     deletedIndices,
     urlParams,
     scopeLoaded,
+    setFilteredIndices,
   });
   const featureFilter = useFeatureFilter({
     userId,
@@ -46,6 +47,8 @@ export function FilterProvider({ children }) {
     scopeLoaded,
   });
 
+  console.log({ featureFilter, clusterFilter, searchFilter });
+
   // Toggle functions
   const toggleSearch = () => setActiveFilterTab((prev) => (prev === SEARCH ? null : SEARCH));
   const toggleFilter = () => setActiveFilterTab((prev) => (prev === CLUSTER ? null : CLUSTER));
@@ -53,6 +56,24 @@ export function FilterProvider({ children }) {
   const toggleColumn = () => setActiveFilterTab((prev) => (prev === COLUMN ? null : COLUMN));
   const toggleFeature = () => setActiveFilterTab((prev) => (prev === FEATURE ? null : FEATURE));
 
+  // Determine if any filter is active
+  const anyFilterActive = useMemo(() => {
+    return (
+      urlParams.has('cluster') ||
+      urlParams.has('feature') ||
+      urlParams.has('search') ||
+      clusterFilter.active ||
+      searchFilter.active ||
+      featureFilter.active ||
+      columnFilter.active
+    );
+  }, [
+    clusterFilter.active,
+    searchFilter.active,
+    featureFilter.active,
+    columnFilter.active,
+    urlParams,
+  ]);
   // Update defaultIndices when scopeRows changes
   // useEffect(() => {
   //   if (scopeRows?.length) {
@@ -97,15 +118,7 @@ export function FilterProvider({ children }) {
   // Update active tab based on URL params, but only on first load.
   // We only do this on first load to prevent us from switching tabs unintentionally when the URL params are removed
   // (e.g. when a filter is removed through the UI)
-  useEffect(() => {
-    if (urlParams.has('cluster')) {
-      setActiveFilterTab(CLUSTER);
-    } else if (urlParams.has('feature')) {
-      setActiveFilterTab(FEATURE);
-    } else if (urlParams.has('search')) {
-      setActiveFilterTab(SEARCH);
-    }
-  }, []);
+  useEffect(() => {}, []);
 
   const filterLoading = useMemo(() => {
     if (activeFilterTab === CLUSTER) {
@@ -125,8 +138,6 @@ export function FilterProvider({ children }) {
     setActiveFilterTab,
     filteredIndices,
     setFilteredIndices,
-    selectedIndices,
-    setSelectedIndices,
 
     featureFilter,
     // featureIndices,
@@ -166,6 +177,7 @@ export function FilterProvider({ children }) {
       FEATURE,
     },
     setUrlParams,
+    anyFilterActive,
   };
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;

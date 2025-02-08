@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 
-export default function useClusterFilter({ scopeRows, scope, scopeLoaded, urlParams }) {
+export default function useClusterFilter({
+  scopeRows,
+  scope,
+  scopeLoaded,
+  urlParams,
+  setFilteredIndices,
+}) {
   const [cluster, setCluster] = useState(null);
-  const [clusterIndices, setClusterIndices] = useState([]);
+  // const [clusterIndices, setClusterIndices] = useState([]);
   const [active, setActive] = useState(false); // true if a cluster filter is active
   const [loading, setLoading] = useState(false);
   // Initialize cluster from URL params
@@ -23,11 +29,11 @@ export default function useClusterFilter({ scopeRows, scope, scopeLoaded, urlPar
       setLoading(true);
       const annots = scopeRows.filter((d) => d.cluster === cluster.cluster);
       const indices = annots.map((d) => d.ls_index);
-      setClusterIndices(indices);
+      setFilteredIndices(indices);
       setActive(true);
       setLoading(false);
     } else {
-      setClusterIndices([]);
+      setFilteredIndices([]);
       setActive(false);
     }
   }, [cluster, scopeRows, scopeLoaded]);
@@ -35,8 +41,8 @@ export default function useClusterFilter({ scopeRows, scope, scopeLoaded, urlPar
   return {
     cluster,
     setCluster,
-    clusterIndices,
-    setClusterIndices,
+    // clusterIndices,
+    // setClusterIndices,
     active,
     loading,
   };
