@@ -298,7 +298,8 @@ function ScatterGL({
 
     const zoomSelection = select(canvas).call(zoomBehavior);
 
-    const zoomOutFactor = 0.8; // zoom out to 80% of original size
+    // const zoomOutFactor = 0.8; // zoom out to 80% of original size
+    const zoomOutFactor = 2.5; // zoom out to 80% of original size
     const centerX = width / 2;
     const centerY = height / 2;
     const initialTransform = zoomIdentity

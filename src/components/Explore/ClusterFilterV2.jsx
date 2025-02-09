@@ -1,11 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useFilter } from '../../contexts/FilterContext';
 import styles from './ClusterFilterV2.module.scss';
 
 export default function ClusterFilterV2({ clusterLabels }) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const { clusterFilter, setUrlParams, setActiveFilterTab, filterConstants } = useFilter();
   const { cluster, setCluster, clusterIndices } = clusterFilter;
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    // Add event listener when dropdown is open
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Cleanup listener when component unmounts or dropdown closes
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const handleClear = () => {
     setCluster(null);
@@ -20,7 +39,7 @@ export default function ClusterFilterV2({ clusterLabels }) {
   };
 
   return (
-    <div className={styles.filterContainer}>
+    <div className={styles.filterContainer} ref={dropdownRef}>
       <button className={styles.filterButton} onClick={() => setIsOpen(!isOpen)}>
         <div className={styles.filterButtonContent}>
           {cluster && (
