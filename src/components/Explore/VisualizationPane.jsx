@@ -377,16 +377,15 @@ function VisualizationPane({
             // stroke="black"
           />
         )}
+        <PointLabel
+          selectedPoints={selectedPoints}
+          xDomain={xDomain}
+          yDomain={yDomain}
+          width={width}
+          height={height}
+        />
         <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
       </div>
-
-      <PointLabel
-        selectedPoints={selectedPoints}
-        xDomain={xDomain}
-        yDomain={yDomain}
-        width={width}
-        height={height}
-      />
 
       {/* Hover information display */}
       {hovered && (

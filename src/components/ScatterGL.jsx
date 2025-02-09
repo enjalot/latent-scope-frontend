@@ -112,7 +112,7 @@ function ScatterGL({
   const yScaleRef = useRef(scaleLinear().domain([-1, 1]).range([height, 0]));
   const quadtreeRef = useRef(null);
 
-  const TOP_N_POINTS = 20;
+  const TOP_N_POINTS = 10;
 
   // Set initial data center
   useEffect(() => {
