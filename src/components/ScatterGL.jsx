@@ -112,7 +112,7 @@ function ScatterGL({
   const yScaleRef = useRef(scaleLinear().domain([-1, 1]).range([height, 0]));
   const quadtreeRef = useRef(null);
 
-  const TOP_N_POINTS = 10;
+  const TOP_N_POINTS = 20;
 
   // Set initial data center
   useEffect(() => {
@@ -376,6 +376,16 @@ function ScatterGL({
         width;
 
       quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
+        // First check if this node's bounding box is outside our search area
+        const isOutsideSearchArea =
+          x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius;
+
+        // If outside, stop traversing this branch
+        if (isOutsideSearchArea) {
+          return true;
+        }
+
+        // Only process points from nodes within our search area
         if (!node.length) {
           const dx = node.data[0] - dataX;
           const dy = node.data[1] - dataY;
@@ -386,9 +396,9 @@ function ScatterGL({
             nearest = node.data;
           }
         }
-        return (
-          x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius
-        );
+
+        // Continue traversing this branch's children
+        return false;
       });
 
       if (nearest && Math.sqrt(minDistance) <= radius) {
@@ -404,12 +414,22 @@ function ScatterGL({
     const closestPoints = [];
 
     // Search radius in data coordinates
-    const radius =
-      ((quadtreeRadius / transform.k) *
-        (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
-      width;
+    const radius = 0.05;
+    // ((quadtreeRadius / transform.k) *
+    //   (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
+    // width;
 
     quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
+      // First check if this node's bounding box is outside our search area
+      const isOutsideSearchArea =
+        x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius;
+
+      // If outside, stop traversing this branch
+      if (isOutsideSearchArea) {
+        return true;
+      }
+
+      // Only process points from nodes within our search area
       if (!node.length) {
         const dx = node.data[0] - dataX;
         const dy = node.data[1] - dataY;
@@ -423,10 +443,12 @@ function ScatterGL({
           closestPoints.sort((a, b) => a.distance - b.distance);
         }
       }
-      return (
-        x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius
-      );
+
+      // Continue traversing this branch's children
+      return false;
     });
+    // debugger;
+    console.log('closestPoints', closestPoints);
 
     return closestPoints.map(({ point }) =>
       points.findIndex((p) => p[0] === point[0] && p[1] === point[1])
