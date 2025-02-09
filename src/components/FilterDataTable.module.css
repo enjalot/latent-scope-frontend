@@ -303,3 +303,23 @@
 .featureColumnInfoTooltipIcon {
   margin-left: 4px;
 }
+
+/* Add these styles to your CSS module */
+.indexCircleContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 8px;
+}
+
+.indexCircle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}

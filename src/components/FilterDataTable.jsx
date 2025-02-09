@@ -121,6 +121,15 @@ function FilterDataTable({
   }, [filteredIndices, deletedIndices, page, hydrateIndices]);
 
   const formattedColumns = useMemo(() => {
+    // Add index circle column as the first column
+    const indexColumn = {
+      key: 'index-circle',
+      name: '', // Empty header
+      width: 50,
+      renderCell: IndexCircleCell,
+      frozen: true, // Optional: keeps it visible during horizontal scroll
+    };
+
     const ls_features_column = 'ls_features';
     let columns = ['ls_index'];
     // Text column is always the first column (after index)
@@ -259,7 +268,9 @@ function FilterDataTable({
         renderCell,
       };
     });
-    return columnDefs;
+
+    // Add index column as first column
+    return [indexColumn, ...columnDefs];
   }, [dataset, clusterMap, distances, features, feature, sae_id]);
 
   const renderRowWithHover = useCallback(
@@ -375,4 +386,13 @@ function FilterDataTable({
     </div>
   );
 }
+
+const IndexCircleCell = ({ row }) => {
+  return (
+    <div className={styles.indexCircleContainer}>
+      <div className={styles.indexCircle}>{row.idx + 1}</div>
+    </div>
+  );
+};
+
 export default memo(FilterDataTable);
