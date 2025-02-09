@@ -10,6 +10,8 @@ import TilePlot from '../TilePlot';
 import { Tooltip } from 'react-tooltip';
 import CrossHair from '../Crosshair';
 import { processHulls } from '../../utils';
+import PointLabel from './PointLabel';
+
 // import { useColorMode } from '../../hooks/useColorMode';
 
 import { useScope } from '../../contexts/ScopeContext';
@@ -52,7 +54,6 @@ function VisualizationPane({
   const {
     activeFilterTab,
     // filteredIndices,
-    selectedIndices,
     filterConstants,
     featureFilter,
     clusterFilter,
@@ -240,6 +241,14 @@ function VisualizationPane({
     return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
   }, [vizConfig.pointOpacity]);
 
+  // the x,y coordinates of the filtered points, maintained in the order
+  // they appear in filteredIndices. this is used to draw the point labels
+  const selectedPoints = useMemo(() => {
+    return scopeRows
+      .filter((p) => dataTableIndices?.includes(p.ls_index))
+      .map((p, i) => ({ ...p, x: p.x, y: p.y, index: i }));
+  }, [dataTableIndices, scopeRows]);
+
   return (
     // <div style={{ width, height }} ref={umapRef}>
     <div ref={umapRef} style={{ width: '100%', height: '100%' }}>
@@ -370,6 +379,14 @@ function VisualizationPane({
         )}
         <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
       </div>
+
+      <PointLabel
+        selectedPoints={selectedPoints}
+        xDomain={xDomain}
+        yDomain={yDomain}
+        width={width}
+        height={height}
+      />
 
       {/* Hover information display */}
       {hovered && (
