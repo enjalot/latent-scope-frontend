@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import PropTypes from 'prop-types';
 import { Tooltip } from 'react-tooltip';
+import { useFilter } from '../contexts/FilterContext';
 // import DataTable from './DataTable';
 import 'react-data-grid/lib/styles.css';
 
@@ -65,20 +66,19 @@ function FilterDataTable({
   features = [],
   onHover = () => {},
   deletedIndices = [],
-  page,
-  setPage,
   filterLoading = false,
 }) {
   const [rows, setRows] = useState([]);
 
-  const rowsPerPage = 100;
+  const { ROWS_PER_PAGE: rowsPerPage, page, setPage, totalPages } = useFilter();
+
   // page count is the total number of pages available
-  const [pageCount, setPageCount] = useState(0);
-  useEffect(() => {
-    let inds = filteredIndices.length;
-    const count = Math.ceil(inds / rowsPerPage);
-    setPageCount(count);
-  }, [filteredIndices]);
+  // const [pageCount, setPageCount] = useState(0);
+  // useEffect(() => {
+  //   let inds = filteredIndices.length;
+  //   const count = Math.ceil(inds / rowsPerPage);
+  //   setPageCount(count);
+  // }, [filteredIndices]);
 
   // feature tooltip content
   const [featureTooltipContent, setFeatureTooltipContent] = useState(null);
@@ -88,15 +88,8 @@ function FilterDataTable({
     (indices, setRowsTarget) => {
       if (dataset && scope && indices.length) {
         setRowsLoading(true);
-        let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
-        // i am console.logging this because i want to make sure i understand what is being passed in
-        // i expect to see: [0, 99] at first.
-        // then when i go to next page, i expect to see [100, 199]
-        //
-        console.log('==== paged ==== ', { page, paged });
-
-        if (paged.length) {
-          apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
+        if (indices.length) {
+          apiService.getRowsByIndices(userId, dataset.id, scope.id, indices).then((rows) => {
             const rowsWithIdx = rows.map((row, idx) => ({
               ...row,
               idx,
@@ -285,7 +278,7 @@ function FilterDataTable({
     [onHover]
   );
 
-  // console.log('==== FILTER DATA TABLE =====', { filteredIndices, defaultIndices, rows });
+  console.log('==== FILTER DATA TABLE =====', { rows, page });
 
   return (
     <div
@@ -375,15 +368,15 @@ function FilterDataTable({
             ←
           </button>
           <span>
-            Page {page + 1} of {pageCount || 1}
+            Page {page + 1} of {totalPages}
           </span>
           <button
-            onClick={() => setPage((old) => Math.min(pageCount - 1, old + 1))}
-            disabled={page === pageCount - 1}
+            onClick={() => setPage((old) => Math.min(totalPages - 1, old + 1))}
+            disabled={page === totalPages - 1}
           >
             →
           </button>
-          <button onClick={() => setPage(pageCount - 1)} disabled={page === pageCount - 1}>
+          <button onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1}>
             Last
           </button>
         </div>

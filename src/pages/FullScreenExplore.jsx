@@ -55,7 +55,7 @@ function ExploreContent() {
   const [hoverAnnotations, setHoverAnnotations] = useState([]);
   const [dataTableRows, setDataTableRows] = useState([]);
   const [selectedAnnotations, setSelectedAnnotations] = useState([]);
-  const [page, setPage] = useState(0);
+  // const [page, setPage] = useState(0);
 
   // Hover text hydration with debouncing
   const hydrateHoverText = useCallback(
@@ -316,8 +316,6 @@ function ExploreContent() {
                 features={features}
                 onHover={handleHover}
                 onClick={handleClicked}
-                page={page}
-                setPage={setPage}
                 handleFeatureClick={() => {}}
                 filterLoading={filterLoading}
               />

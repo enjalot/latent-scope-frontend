@@ -30,6 +30,7 @@ export function FilterProvider({ children }) {
   // page logic
   const ROWS_PER_PAGE = 10;
   const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   // const clusterFilter = useClusterFilter({
   //   scopeRows,
@@ -86,10 +87,20 @@ export function FilterProvider({ children }) {
 
   const dataTableIndices = useMemo(() => {
     if (anyFilterActive) {
-      return filteredIndices;
+      const paged = filteredIndices.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE);
+      setTotalPages(Math.ceil(filteredIndices.length / ROWS_PER_PAGE));
+      return paged;
+    } else {
+      return centeredIndices;
     }
-    return centeredIndices;
-  }, [anyFilterActive, filteredIndices, centeredIndices]);
+  }, [anyFilterActive, filteredIndices, centeredIndices, page, setTotalPages]);
+
+  const nonDeletedDataTableIndices = useMemo(() => {
+    const indexes = scopeRows
+      .filter((row) => !deletedIndices.includes(row.ls_index))
+      .map((row) => row.ls_index);
+    return indexes;
+  }, [scopeRows, deletedIndices]);
 
   // Update defaultIndices when scopeRows changes
   useEffect(() => {
@@ -105,16 +116,15 @@ export function FilterProvider({ children }) {
     // instinctively i feel like this component should be concerned with handling pagination
 
     if (scopeRows?.length) {
-      const indexes = scopeRows
-        .filter((row) => !deletedIndices.includes(row.ls_index))
-        .map((row) => row.ls_index);
-
-      const paged = indexes.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE);
-      // setCenteredIndices(indexes.slice(0, TOP_N_POINTS));
+      const totalPages = Math.ceil(nonDeletedDataTableIndices.length / ROWS_PER_PAGE);
+      setTotalPages(totalPages);
+      const paged = nonDeletedDataTableIndices.slice(
+        page * ROWS_PER_PAGE,
+        (page + 1) * ROWS_PER_PAGE
+      );
       setCenteredIndices(paged);
-      // setFilteredIndices([]);
     }
-  }, [scopeRows, deletedIndices, setCenteredIndices]);
+  }, [scopeRows, deletedIndices, setCenteredIndices, page, setTotalPages]);
 
   // // Update filtered indices based on active filter
   // useEffect(() => {
@@ -208,6 +218,7 @@ export function FilterProvider({ children }) {
 
     page,
     setPage,
+    totalPages,
     ROWS_PER_PAGE,
   };
 
