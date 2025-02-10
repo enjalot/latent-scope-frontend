@@ -27,6 +27,12 @@ export function FilterProvider({ children }) {
   // Currently, ScatterGL is responsible for calculating these indices
   const [centeredIndices, setCenteredIndices] = useState([]);
 
+  // page logic
+  const ROWS_PER_PAGE = 10;
+  const [page, setPage] = useState(0);
+
+  // const clusterFilter = useClusterFilter({
+  //   scopeRows,
   const clusterFilter = useClusterFilter({
     scopeRows,
     scope,
@@ -86,15 +92,29 @@ export function FilterProvider({ children }) {
   }, [anyFilterActive, filteredIndices, centeredIndices]);
 
   // Update defaultIndices when scopeRows changes
-  // useEffect(() => {
-  //   if (scopeRows?.length) {
-  //     // const indexes = scopeRows
-  //     //   .filter((row) => !deletedIndices.includes(row.ls_index))
-  //     //   .map((row) => row.ls_index);
-  //     // setDefaultIndices(indexes);
-  //     // setFilteredIndices([]);
-  //   }
-  // }, [scopeRows, deletedIndices]);
+  useEffect(() => {
+    // where should I be handling that we only want to show the top N points?
+
+    // so whatever indexes that are being set to centerIndicies will control the highlighted points in the umap
+    // i.e. if we don't truncate any points, then all of them will be highlighted in the umap
+
+    // then we also have to deal with what is being shown in the table view
+    // the table view will take whatever is being set by dataTableIndices (logic above)
+    // and then do its own pagination.
+
+    // instinctively i feel like this component should be concerned with handling pagination
+
+    if (scopeRows?.length) {
+      const indexes = scopeRows
+        .filter((row) => !deletedIndices.includes(row.ls_index))
+        .map((row) => row.ls_index);
+
+      const paged = indexes.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE);
+      // setCenteredIndices(indexes.slice(0, TOP_N_POINTS));
+      setCenteredIndices(paged);
+      // setFilteredIndices([]);
+    }
+  }, [scopeRows, deletedIndices, setCenteredIndices]);
 
   // // Update filtered indices based on active filter
   // useEffect(() => {
@@ -185,6 +205,10 @@ export function FilterProvider({ children }) {
     setUrlParams,
     anyFilterActive,
     dataTableIndices, // indices that will be shown in the table view
+
+    page,
+    setPage,
+    ROWS_PER_PAGE,
   };
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;

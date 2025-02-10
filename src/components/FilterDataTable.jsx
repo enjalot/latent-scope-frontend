@@ -71,8 +71,8 @@ function FilterDataTable({
 }) {
   const [rows, setRows] = useState([]);
 
-  // page count is the total number of pages available
   const rowsPerPage = 100;
+  // page count is the total number of pages available
   const [pageCount, setPageCount] = useState(0);
   useEffect(() => {
     let inds = filteredIndices.length;
@@ -89,6 +89,11 @@ function FilterDataTable({
       if (dataset && scope && indices.length) {
         setRowsLoading(true);
         let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+        // i am console.logging this because i want to make sure i understand what is being passed in
+        // i expect to see: [0, 99] at first.
+        // then when i go to next page, i expect to see [100, 199]
+        //
+        console.log('==== paged ==== ', { page, paged });
 
         if (paged.length) {
           apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {

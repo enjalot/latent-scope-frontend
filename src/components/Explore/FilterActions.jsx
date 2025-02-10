@@ -87,9 +87,9 @@ export default function FilterActions({ scatter }) {
       <div className={styles.actionsRow}>
         <NearestNeighbor />
         {/* <ClusterFilter clusterLabels={clusterLabels} /> */}
-        <ClusterFilterV2 clusterLabels={clusterLabels} />
+        {/* <ClusterFilterV2 clusterLabels={clusterLabels} />
         {features?.length ? <FeatureFilterV2 /> : null}
-        <ColumnFilter />
+        <ColumnFilter /> */}
         {/* <SelectFilter scatter={scatter} /> */}
       </div>
     </div>

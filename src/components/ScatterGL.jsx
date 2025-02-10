@@ -115,30 +115,30 @@ function ScatterGL({
   const TOP_N_POINTS = 10;
 
   // Set initial data center
-  useEffect(() => {
-    if (quadtreeRef.current) {
-      // if (!anyFilterActive) {
-      const center = getCenterCoordinates(
-        width,
-        height,
-        transform,
-        xScaleRef.current,
-        yScaleRef.current
-      );
-      const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
-      setCenteredIndices(closest);
-      // }
-      // const closest = findNearestPointData(center.x, center.y);
-      // setFilteredIndices(closest);
-      // if (closest !== -1 && useDefaultIndices) {
-      //   setHoveredIndex(closest);
-      //   const cluster = clusterMap[closest];
-      //   if (cluster) {
-      //     setHoveredCluster(cluster);
-      //   }
-      // }
-    }
-  }, [width, height]);
+  // useEffect(() => {
+  //   if (quadtreeRef.current) {
+  //     // if (!anyFilterActive) {
+  //     const center = getCenterCoordinates(
+  //       width,
+  //       height,
+  //       transform,
+  //       xScaleRef.current,
+  //       yScaleRef.current
+  //     );
+  //     const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
+  //     setCenteredIndices(closest);
+  //     // }
+  //     // const closest = findNearestPointData(center.x, center.y);
+  //     // setFilteredIndices(closest);
+  //     // if (closest !== -1 && useDefaultIndices) {
+  //     //   setHoveredIndex(closest);
+  //     //   const cluster = clusterMap[closest];
+  //     //   if (cluster) {
+  //     //     setHoveredCluster(cluster);
+  //     //   }
+  //     // }
+  //   }
+  // }, [width, height]);
 
   // make xScaleRef and yScaleRef update when width and height change
   useEffect(() => {
@@ -287,9 +287,9 @@ function ScatterGL({
         const newYScale = event.transform.rescaleY(yScaleRef.current);
 
         // update data center and find nearest point on hover
-        if (event.sourceEvent) {
-          updateCenteredIndices(event.transform);
-        }
+        // if (event.sourceEvent) {
+        //   updateCenteredIndices(event.transform);
+        // }
 
         if (onView) {
           onView(newXScale.domain(), newYScale.domain());
@@ -298,12 +298,16 @@ function ScatterGL({
 
     const zoomSelection = select(canvas).call(zoomBehavior);
 
-    // const zoomOutFactor = 0.8; // zoom out to 80% of original size
-    const zoomOutFactor = 2.5; // zoom out to 80% of original size
+    // Calculate initial transform to center the view
+    const zoomOutFactor = 0.8;
     const centerX = width / 2;
     const centerY = height / 2;
+
+    // First translate to center, then scale, then translate back
+    // This ensures the scaling happens around the center point
     const initialTransform = zoomIdentity
       .translate(centerX, centerY)
+      // .scale(1 / zoomOutFactor) // Use inverse of zoom factor to zoom out
       .scale(zoomOutFactor)
       .translate(-centerX, -centerY);
 
