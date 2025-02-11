@@ -37,8 +37,8 @@ export const mapSelectionOpacity = [
 ];
 export const mapPointSizeRange = [
   3, // normal
-  6, // selected
+  14, // selected
   2, // not selected
-  12.5, // hovered
+  14,
   0, // hidden
 ];

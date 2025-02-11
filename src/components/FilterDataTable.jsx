@@ -278,8 +278,6 @@ function FilterDataTable({
     [onHover]
   );
 
-  console.log('==== FILTER DATA TABLE =====', { rows, page });
-
   return (
     <div
       className={`${styles.filterDataTable} ${rowsLoading ? styles.loading : ''}`}

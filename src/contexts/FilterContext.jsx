@@ -16,32 +16,21 @@ const FilterContext = createContext(null);
 
 export function FilterProvider({ children }) {
   const [urlParams, setUrlParams] = useSearchParams();
-
   const { scopeRows, deletedIndices, dataset, datasetId, userId, scope, scopeLoaded } = useScope();
 
-  const [filteredIndices, setFilteredIndices] = useState([]);
-
-  // indices of the points that are currently centered in the view
-  // these should be shown if the user has not filtered the points,
-  // i.e. anyFilterActive is false
-  // Currently, ScatterGL is responsible for calculating these indices
-  const [centeredIndices, setCenteredIndices] = useState([]);
-
-  // page logic
-  const ROWS_PER_PAGE = 10;
+  // Core pagination state
+  const ROWS_PER_PAGE = 20;
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [allFilteredIndices, setAllFilteredIndices] = useState([]);
+  const [shownIndices, setShownIndices] = useState([]);
 
-  // const clusterFilter = useClusterFilter({
-  //   scopeRows,
-  const clusterFilter = useClusterFilter({
-    scopeRows,
-    scope,
-    scopeLoaded,
-    urlParams,
-    setFilteredIndices,
-  });
-  const columnFilter = useColumnFilter(userId, datasetId, scope);
+  // Base set of non-deleted indices
+  const baseIndices = useMemo(() => {
+    return scopeRows.map((row) => row.ls_index).filter((index) => !deletedIndices.includes(index));
+  }, [scopeRows, deletedIndices]);
+
+  // Filter hooks
   const searchFilter = useNearestNeighborsSearch({
     userId,
     datasetId,
@@ -49,8 +38,51 @@ export function FilterProvider({ children }) {
     deletedIndices,
     urlParams,
     scopeLoaded,
-    setFilteredIndices,
+    setFilteredIndices: setAllFilteredIndices,
   });
+
+  // Determine if any filter is active
+  const anyFilterActive = useMemo(() => {
+    return (
+      // urlParams.has('cluster') ||
+      // urlParams.has('feature') ||
+      urlParams.has('search') || searchFilter.active
+    );
+  }, [searchFilter.active, urlParams]);
+
+  // Reset page when filter status changes
+  useEffect(() => {
+    setPage(0);
+  }, [anyFilterActive]);
+
+  // Update total pages whenever base indices change
+  useEffect(() => {
+    setTotalPages(Math.ceil(allFilteredIndices.length / ROWS_PER_PAGE));
+  }, [allFilteredIndices]);
+
+  // Update shown indices when page or allFilteredIndices changes
+  useEffect(() => {
+    const start = page * ROWS_PER_PAGE;
+    const end = start + ROWS_PER_PAGE;
+    setShownIndices(allFilteredIndices.slice(start, end));
+  }, [page, allFilteredIndices]);
+
+  // Set default indices when no filter is active
+  useEffect(() => {
+    if (!anyFilterActive) {
+      setAllFilteredIndices(baseIndices);
+    }
+  }, [anyFilterActive, baseIndices]);
+
+  const clusterFilter = useClusterFilter({
+    scopeRows,
+    scope,
+    scopeLoaded,
+    urlParams,
+    setFilteredIndices: setAllFilteredIndices,
+  });
+  const columnFilter = useColumnFilter(userId, datasetId, scope);
+
   const featureFilter = useFeatureFilter({
     userId,
     datasetId,
@@ -65,35 +97,6 @@ export function FilterProvider({ children }) {
   // const toggleSelect = () => setActiveFilterTab((prev) => (prev === SELECT ? null : SELECT));
   // const toggleColumn = () => setActiveFilterTab((prev) => (prev === COLUMN ? null : COLUMN));
   // const toggleFeature = () => setActiveFilterTab((prev) => (prev === FEATURE ? null : FEATURE));
-
-  // Determine if any filter is active
-  const anyFilterActive = useMemo(() => {
-    return (
-      urlParams.has('cluster') ||
-      urlParams.has('feature') ||
-      urlParams.has('search') ||
-      clusterFilter.active ||
-      searchFilter.active ||
-      featureFilter.active ||
-      columnFilter.active
-    );
-  }, [
-    clusterFilter.active,
-    searchFilter.active,
-    featureFilter.active,
-    columnFilter.active,
-    urlParams,
-  ]);
-
-  const dataTableIndices = useMemo(() => {
-    if (anyFilterActive) {
-      const paged = filteredIndices.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE);
-      setTotalPages(Math.ceil(filteredIndices.length / ROWS_PER_PAGE));
-      return paged;
-    } else {
-      return centeredIndices;
-    }
-  }, [anyFilterActive, filteredIndices, centeredIndices, page, setTotalPages]);
 
   const nonDeletedDataTableIndices = useMemo(() => {
     const indexes = scopeRows
@@ -118,13 +121,15 @@ export function FilterProvider({ children }) {
     if (scopeRows?.length) {
       const totalPages = Math.ceil(nonDeletedDataTableIndices.length / ROWS_PER_PAGE);
       setTotalPages(totalPages);
+      setAllFilteredIndices(nonDeletedDataTableIndices);
       const paged = nonDeletedDataTableIndices.slice(
         page * ROWS_PER_PAGE,
         (page + 1) * ROWS_PER_PAGE
       );
-      setCenteredIndices(paged);
+      setShownIndices(paged);
+      // setPage(0);
     }
-  }, [scopeRows, deletedIndices, setCenteredIndices, page, setTotalPages]);
+  }, [scopeRows, deletedIndices, setAllFilteredIndices, page, setShownIndices, , setTotalPages]);
 
   // // Update filtered indices based on active filter
   // useEffect(() => {
@@ -159,21 +164,21 @@ export function FilterProvider({ children }) {
   // Update active tab based on URL params, but only on first load.
   // We only do this on first load to prevent us from switching tabs unintentionally when the URL params are removed
   // (e.g. when a filter is removed through the UI)
-  useEffect(() => {}, []);
 
   const filterLoading = useMemo(() => {
     return (
-      clusterFilter.loading || featureFilter.loading || searchFilter.loading || columnFilter.loading
+      // clusterFilter.loading || featureFilter.loading || searchFilter.loading || columnFilter.loading
+      searchFilter.loading
     );
-  }, [clusterFilter.loading, featureFilter.loading, searchFilter.loading, columnFilter.loading]);
+  }, [searchFilter.loading]);
 
   const value = {
     // activeFilterTab,
     // setActiveFilterTab,
-    filteredIndices,
-    setFilteredIndices,
-    centeredIndices,
-    setCenteredIndices,
+    allFilteredIndices,
+    setAllFilteredIndices,
+    shownIndices,
+    setShownIndices,
 
     featureFilter,
     // featureIndices,
@@ -192,7 +197,7 @@ export function FilterProvider({ children }) {
     clusterFilter,
     // setCluster,
 
-    columnFilter,
+    // columnFilter,
     // columnFiltersActive,
     // setColumnFiltersActive,
     // columnFilters,
@@ -214,7 +219,7 @@ export function FilterProvider({ children }) {
     },
     setUrlParams,
     anyFilterActive,
-    dataTableIndices, // indices that will be shown in the table view
+    dataTableIndices: shownIndices, // indices that will be shown in the table view
 
     page,
     setPage,

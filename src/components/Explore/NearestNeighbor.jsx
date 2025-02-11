@@ -4,7 +4,7 @@ import styles from './NearestNeighbor.module.scss';
 import { useFilter } from '../../contexts/FilterContext';
 
 export default function NearestNeighbor() {
-  const { filteredIndices, searchFilter, setUrlParams } = useFilter();
+  const { allFilteredIndices, searchFilter, setUrlParams, shownIndices } = useFilter();
   const { loading, setSearchText, clearSearch, searchText: defaultValue, active } = searchFilter;
   const [inputValue, setInputValue] = useState(defaultValue);
 
@@ -62,7 +62,7 @@ export default function NearestNeighbor() {
         </div>
       </div>
       <div className={`${styles.count}`}>
-        {active ? <span>{filteredIndices.length} rows</span> : null}
+        {active ? <span>{shownIndices.length} rows</span> : null}
       </div>
     </div>
   );
