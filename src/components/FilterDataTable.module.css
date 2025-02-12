@@ -310,7 +310,6 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  /* padding: 0 8px; */
 }
 
 .indexCircle {
@@ -322,5 +321,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 10px;
+  color: #fff;
 }
