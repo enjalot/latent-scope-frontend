@@ -18,9 +18,11 @@ const Search = () => {
     {
       label: 'Features',
       options: [
-        // Add your feature options here
-        // Example:
-        // { value: 'feature1', label: 'Feature 1' },
+        { value: 'sentiment', label: 'Sentiment Analysis' },
+        { value: 'keywords', label: 'Key Words' },
+        { value: 'entities', label: 'Named Entities' },
+        { value: 'topics', label: 'Topic Modeling' },
+        { value: 'summary', label: 'Text Summary' },
       ],
     },
   ];
