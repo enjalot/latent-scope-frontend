@@ -6,6 +6,7 @@ import useColumnFilter from '../hooks/useColumnFilter';
 import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
 import useClusterFilter from '../hooks/useClusterFilter';
 import useFeatureFilter from '../hooks/useFeatureFilter';
+
 export const SEARCH = 'search';
 export const CLUSTER = 'filter';
 export const SELECT = 'select';
