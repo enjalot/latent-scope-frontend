@@ -1,0 +1,24 @@
+.resultsList {
+  width: 100%;
+}
+
+.resultRow {
+  padding: 8px 16px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: var(--neutrals-color-neutral-1);
+  }
+}
+
+.resultContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-color-text-main);
+  font-size: 14px;
+}
+
+.searchIcon {
+  color: var(--text-color-text-subtle);
+} 

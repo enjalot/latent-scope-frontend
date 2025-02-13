@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import SuggestionsPanel from './SuggestionsPanel';
 import NearestNeighborResults from './NearestNeighbor';
 import FilterResults from './Filters';
+import SearchResults from './SearchResults';
 import styles from './Container.module.scss';
 /*
  * SearchContainer is the main parent component that manages the overall search state.
@@ -71,10 +72,13 @@ const Container = () => {
       {/* When a query exists, show the NN search result and filter options */}
       {query !== '' && (
         <div className={styles.searchResults}>
+          <div className={styles.searchResultsHeader}>
+            <SearchResults query={query} onSearch={() => {}} />
+          </div>
           {/* NearestNeighborResults performs and displays the vector search based on the query */}
-          <NearestNeighborResults query={query} />
+          {/* <NearestNeighborResults query={query} /> */}
           {/* FilterResults displays grouped filter options like Clusters and Features */}
-          <FilterResults query={query} />
+          {/* <FilterResults query={query} /> */}
         </div>
       )}
     </div>
