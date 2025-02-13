@@ -40,6 +40,10 @@
   }
 }
 
+.searchButtonContainer {
+    padding-top: 6px;
+}
+
 
 .resultsList {
     width: 100%;
@@ -48,7 +52,10 @@
   .resultRow {
     padding: 8px 16px;
     cursor: pointer;
-    
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+
     &:hover {
       background-color: var(--neutrals-color-neutral-1);
     }

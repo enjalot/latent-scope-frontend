@@ -1,5 +1,5 @@
 // SearchContainer.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import SuggestionsPanel from './SuggestionsPanel';
 import NearestNeighborResults from './NearestNeighbor';
 import FilterResults from './Filters';
@@ -29,9 +29,9 @@ const Container = () => {
   const handleInputChange = (val) => {
     setQuery(val);
     // Optionally update suggestions based on the current input value
-    if (val === '') {
-      setSuggestions([]);
-    }
+
+    // re-open the dropdown whenever the query changes
+    setDropdownIsOpen(true);
   };
 
   const handleInputFocus = () => {
@@ -49,6 +49,25 @@ const Container = () => {
     setIsInputFocused(false); // Hide results after selection
   };
 
+  // dropdown related state.
+  // we need to manage this here because we need to re-open the dropdown whenever the query changes.
+
+  // Handle clicks outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        setDropdownIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const [dropdownIsOpen, setDropdownIsOpen] = useState(true);
+  const selectRef = useRef(null);
+
   return (
     <div className={styles.searchContainer}>
       {/* SearchInput receives the current query and change handler */}
@@ -64,16 +83,20 @@ const Container = () => {
 
       {/* Show SuggestionsPanel only when input is focused and there's no query */}
       {query === '' && isInputFocused && (
-        <div className={styles.searchResults}>
+        <div className={styles.searchResults} ref={selectRef}>
           <SuggestionsPanel suggestions={suggestions} onSelect={handleSuggestionSelect} />
         </div>
       )}
 
       {/* When a query exists, show the NN search result and filter options */}
       {query !== '' && (
-        <div className={styles.searchResults}>
+        <div className={styles.searchResults} ref={selectRef}>
           <div className={styles.searchResultsHeader}>
-            <SearchResults query={query} onSearch={() => {}} />
+            <SearchResults
+              query={query}
+              setDropdownIsOpen={setDropdownIsOpen}
+              dropdownIsOpen={dropdownIsOpen}
+            />
           </div>
           {/* NearestNeighborResults performs and displays the vector search based on the query */}
           {/* <NearestNeighborResults query={query} /> */}
