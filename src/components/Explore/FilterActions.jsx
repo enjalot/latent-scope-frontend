@@ -5,6 +5,7 @@ import ClusterFilter from './ClusterFilter';
 import ClusterFilterV2 from './ClusterFilterV2';
 import FeatureFilterV2 from './FeatureFilterV2';
 import ColumnFilter from './ColumnFilter';
+import Search from '../Search';
 import NearestNeighbor from './NearestNeighbor';
 import FeatureFilter from './FeatureFilter';
 import { useFilter } from '../../contexts/FilterContext';
@@ -85,7 +86,8 @@ export default function FilterActions({ scatter }) {
         ) : null}
       </div> */}
       <div className={styles.actionsRow}>
-        <NearestNeighbor />
+        <Search />
+        {/* <NearestNeighbor /> */}
         {/* <ClusterFilter clusterLabels={clusterLabels} /> */}
         {/* <ClusterFilterV2 clusterLabels={clusterLabels} />
         {features?.length ? <FeatureFilterV2 /> : null}
