@@ -269,6 +269,7 @@ function FilterDataTable({
 
     // Add index column as first column
     return [indexColumn, ...columnDefs];
+    // return columnDefs;
   }, [dataset, clusterMap, distances, features, feature, sae_id]);
 
   const renderRowWithHover = useCallback(

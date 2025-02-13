@@ -1,10 +1,9 @@
 // SearchContainer.jsx
 import React, { useState } from 'react';
-import Input from './Input';
 import SuggestionsPanel from './SuggestionsPanel';
 import NearestNeighborResults from './NearestNeighbor';
 import FilterResults from './Filters';
-
+import styles from './Container.module.scss';
 /*
  * SearchContainer is the main parent component that manages the overall search state.
  * It holds the current query and suggestion data, and conditionally renders subcomponents.
@@ -16,6 +15,7 @@ import FilterResults from './Filters';
  */
 const Container = () => {
   const [query, setQuery] = useState('');
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const [suggestions, setSuggestions] = useState([
     'sentiment',
     'keywords',
@@ -33,13 +33,6 @@ const Container = () => {
     }
   };
 
-  const [isInputFocused, setIsInputFocused] = useState(false);
-
-  // Handle when a user selects a suggestion from the SuggestionsPanel
-  const handleSuggestionSelect = (suggestion) => {
-    setQuery(suggestion);
-  };
-
   const handleInputFocus = () => {
     console.log('input focused');
     setIsInputFocused(true);
@@ -49,10 +42,17 @@ const Container = () => {
     setIsInputFocused(false);
   };
 
+  // Handle when a user selects a suggestion from the SuggestionsPanel
+  const handleSuggestionSelect = (suggestion) => {
+    setQuery(suggestion);
+    setIsInputFocused(false); // Hide results after selection
+  };
+
   return (
-    <div className="search-container">
+    <div className={styles.searchContainer}>
       {/* SearchInput receives the current query and change handler */}
       <input
+        className={styles.searchInput}
         type="text"
         value={query}
         onChange={(e) => handleInputChange(e.target.value)}
@@ -63,17 +63,19 @@ const Container = () => {
 
       {/* Show SuggestionsPanel only when input is focused and there's no query */}
       {query === '' && isInputFocused && (
-        <SuggestionsPanel suggestions={suggestions} onSelect={handleSuggestionSelect} />
+        <div className={styles.searchResults}>
+          <SuggestionsPanel suggestions={suggestions} onSelect={handleSuggestionSelect} />
+        </div>
       )}
 
       {/* When a query exists, show the NN search result and filter options */}
       {query !== '' && (
-        <>
+        <div className={styles.searchResults}>
           {/* NearestNeighborResults performs and displays the vector search based on the query */}
           <NearestNeighborResults query={query} />
           {/* FilterResults displays grouped filter options like Clusters and Features */}
           <FilterResults query={query} />
-        </>
+        </div>
       )}
     </div>
   );
