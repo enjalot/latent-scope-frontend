@@ -16,7 +16,13 @@ import FilterResults from './Filters';
  */
 const Container = () => {
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
+  const [suggestions, setSuggestions] = useState([
+    'sentiment',
+    'keywords',
+    'entities',
+    'topics',
+    'summary',
+  ]);
 
   // Handle updates to the search query from the input field
   const handleInputChange = (val) => {
@@ -27,18 +33,36 @@ const Container = () => {
     }
   };
 
+  const [isInputFocused, setIsInputFocused] = useState(false);
+
   // Handle when a user selects a suggestion from the SuggestionsPanel
   const handleSuggestionSelect = (suggestion) => {
     setQuery(suggestion);
   };
 
+  const handleInputFocus = () => {
+    console.log('input focused');
+    setIsInputFocused(true);
+  };
+
+  const handleInputBlur = () => {
+    setIsInputFocused(false);
+  };
+
   return (
     <div className="search-container">
       {/* SearchInput receives the current query and change handler */}
-      <Input value={query} onChange={handleInputChange} />
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => handleInputChange(e.target.value)}
+        placeholder="Search dataset for..."
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+      />
 
-      {/* Show SuggestionsPanel only when there is no active query */}
-      {query === '' && (
+      {/* Show SuggestionsPanel only when input is focused and there's no query */}
+      {query === '' && isInputFocused && (
         <SuggestionsPanel suggestions={suggestions} onSelect={handleSuggestionSelect} />
       )}
 
