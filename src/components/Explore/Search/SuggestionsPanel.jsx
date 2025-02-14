@@ -7,7 +7,14 @@ import styles from './SuggestionsPanel.module.scss';
  * SuggestionsPanel displays a list of suggestions when there is no active search query.
  * Each suggestion is clickable, triggering the onSelect callback to update the query.
  */
-const SuggestionsPanel = ({ suggestions, onSelect }) => {
+const SuggestionsPanel = ({ onSelect }) => {
+  const suggestions = [
+    'Search for points by cluster',
+    'Search for points by feature',
+    'Search for points by column',
+    'Or, start typing to search for points using a nearest neighbors query',
+  ];
+
   return (
     <div className={styles.suggestionsList}>
       {suggestions.map((suggestion, index) => (
@@ -22,7 +29,6 @@ const SuggestionsPanel = ({ suggestions, onSelect }) => {
 };
 
 SuggestionsPanel.propTypes = {
-  suggestions: PropTypes.array.isRequired,
   onSelect: PropTypes.func.isRequired,
 };
 

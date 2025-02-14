@@ -5,6 +5,9 @@
     justify-content: center;
     height: 100%;
     width: 100%;
+}
+
+.searchBarContainer {
     position: relative;
 }
 
@@ -39,4 +42,11 @@
         opacity: 1;
         transform: translateY(0) scaleY(1);
     }
+}
+
+.searchResultsMetadata {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
 }

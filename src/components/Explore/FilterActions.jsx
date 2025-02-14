@@ -11,6 +11,7 @@ import NearestNeighbor from './NearestNeighbor';
 import FeatureFilter from './FeatureFilter';
 import { useFilter } from '../../contexts/FilterContext';
 import { useScope } from '../../contexts/ScopeContext';
+
 export default function FilterActions({ scatter }) {
   const {
     activeFilterTab,
@@ -25,6 +26,7 @@ export default function FilterActions({ scatter }) {
     searchFilter,
     featureFilter,
     filterConstants,
+    shownIndices,
   } = useFilter();
 
   const { scope, features, clusterLabels } = useScope();

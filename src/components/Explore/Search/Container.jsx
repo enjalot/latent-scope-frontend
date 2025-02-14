@@ -5,6 +5,7 @@ import NearestNeighborResults from './NearestNeighbor';
 import FilterResults from './Filters';
 import SearchResults from './SearchResults';
 import styles from './Container.module.scss';
+import { useFilter } from '../../../contexts/FilterContext';
 /*
  * SearchContainer is the main parent component that manages the overall search state.
  * It holds the current query and suggestion data, and conditionally renders subcomponents.
@@ -17,13 +18,6 @@ import styles from './Container.module.scss';
 const Container = () => {
   const [query, setQuery] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const [suggestions, setSuggestions] = useState([
-    'sentiment',
-    'keywords',
-    'entities',
-    'topics',
-    'summary',
-  ]);
 
   // Handle updates to the search query from the input field
   const handleInputChange = (val) => {
@@ -49,7 +43,7 @@ const Container = () => {
     setIsInputFocused(false); // Hide results after selection
   };
 
-  // dropdown related state.
+  // ==== DROPDOWN RELATED STATE ====
   // we need to manage this here because we need to re-open the dropdown whenever the query changes.
 
   // Handle clicks outside to close dropdown
@@ -70,40 +64,56 @@ const Container = () => {
 
   return (
     <div className={styles.searchContainer}>
-      {/* SearchInput receives the current query and change handler */}
-      <input
-        className={styles.searchInput}
-        type="text"
-        value={query}
-        onChange={(e) => handleInputChange(e.target.value)}
-        placeholder="Search dataset for..."
-        onFocus={handleInputFocus}
-        onBlur={handleInputBlur}
-      />
+      <div className={styles.searchBarContainer}>
+        {/* SearchInput receives the current query and change handler */}
+        <input
+          className={styles.searchInput}
+          type="text"
+          value={query}
+          onChange={(e) => handleInputChange(e.target.value)}
+          placeholder="Search dataset for..."
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
+        />
 
-      {/* Show SuggestionsPanel only when input is focused and there's no query */}
-      {/* {query === '' && isInputFocused && (
-        <div className={styles.searchResults} ref={selectRef}>
-          <SuggestionsPanel suggestions={suggestions} onSelect={handleSuggestionSelect} />
-        </div>
-      )} */}
-
-      {/* When a query exists, show the NN search result and filter options */}
-      {query !== '' && (
-        <div className={styles.searchResults} ref={selectRef}>
-          <div className={styles.searchResultsHeader}>
-            <SearchResults
-              query={query}
-              setDropdownIsOpen={setDropdownIsOpen}
-              dropdownIsOpen={dropdownIsOpen}
-            />
+        {/* Show SuggestionsPanel only when input is focused and there's no query */}
+        {query === '' && isInputFocused && (
+          <div className={styles.searchResults} ref={selectRef}>
+            <SuggestionsPanel onSelect={handleSuggestionSelect} />
           </div>
-          {/* NearestNeighborResults performs and displays the vector search based on the query */}
-          {/* <NearestNeighborResults query={query} /> */}
-          {/* FilterResults displays grouped filter options like Clusters and Features */}
-          {/* <FilterResults query={query} /> */}
-        </div>
-      )}
+        )}
+
+        {/* When a query exists, show the NN search result and filter options */}
+        {query !== '' && (
+          <div className={styles.searchResults} ref={selectRef}>
+            <div className={styles.searchResultsHeader}>
+              <SearchResults
+                query={query}
+                setDropdownIsOpen={setDropdownIsOpen}
+                dropdownIsOpen={dropdownIsOpen}
+              />
+            </div>
+            {/* NearestNeighborResults performs and displays the vector search based on the query */}
+            {/* <NearestNeighborResults query={query} /> */}
+            {/* FilterResults displays grouped filter options like Clusters and Features */}
+            {/* <FilterResults query={query} /> */}
+          </div>
+        )}
+      </div>
+      <SearchResultsMetadata />
+    </div>
+  );
+};
+
+const SearchResultsMetadata = () => {
+  const { shownIndices } = useFilter();
+
+  return (
+    <div className={styles.searchResultsMetadata}>
+      <div className={styles.searchResultsMetadataItem}>
+        <span className={styles.searchResultsMetadataLabel}>Total Results: </span>
+        <span className={styles.searchResultsMetadataValue}>{shownIndices.length}</span>
+      </div>
     </div>
   );
 };
