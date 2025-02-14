@@ -1,6 +1,7 @@
 // SearchContainer.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import SuggestionsPanel from './SuggestionsPanel';
+import { Button } from 'react-element-forge';
 import NearestNeighborResults from './NearestNeighbor';
 import FilterResults from './Filters';
 import SearchResults from './SearchResults';
@@ -29,7 +30,6 @@ const Container = () => {
   };
 
   const handleInputFocus = () => {
-    console.log('input focused');
     setIsInputFocused(true);
   };
 
@@ -62,19 +62,48 @@ const Container = () => {
   const [dropdownIsOpen, setDropdownIsOpen] = useState(true);
   const selectRef = useRef(null);
 
+  const [hasSelection, setHasSelection] = useState(false);
+
+  const handleSelect = (selection) => {
+    console.log('Selection made:', selection);
+    setHasSelection(true);
+    setDropdownIsOpen(false);
+
+    // TODO: Add logic to update search indices here
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    setHasSelection(false);
+    setDropdownIsOpen(false);
+    // TODO: Add logic to clear search indices here
+  };
+
   return (
     <div className={styles.searchContainer}>
       <div className={styles.searchBarContainer}>
         {/* SearchInput receives the current query and change handler */}
-        <input
-          className={styles.searchInput}
-          type="text"
-          value={query}
-          onChange={(e) => handleInputChange(e.target.value)}
-          placeholder="Search dataset for..."
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-        />
+        <div className={styles.inputWrapper}>
+          <input
+            className={styles.searchInput}
+            type="text"
+            value={query}
+            onChange={(e) => handleInputChange(e.target.value)}
+            placeholder="Search dataset for..."
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+          />
+          {hasSelection && (
+            <Button
+              color="secondary"
+              className={styles.searchButton}
+              //   disabled={loading}
+              onClick={handleClear}
+              //   icon={loading ? 'pie-chart' : active ? 'x' : 'search'}
+              icon="x"
+            />
+          )}
+        </div>
 
         {/* Show SuggestionsPanel only when input is focused and there's no query */}
         {query === '' && isInputFocused && (
@@ -91,6 +120,7 @@ const Container = () => {
                 query={query}
                 setDropdownIsOpen={setDropdownIsOpen}
                 dropdownIsOpen={dropdownIsOpen}
+                onSelect={handleSelect}
               />
             </div>
             {/* NearestNeighborResults performs and displays the vector search based on the query */}
