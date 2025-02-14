@@ -3,7 +3,6 @@ export const filterByQuery = (features, query, top = 5) => {
   if (!query) return [];
 
   const searchTerm = query.toLowerCase();
-  debugger;
   return features
     .filter(
       (feature) =>

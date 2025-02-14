@@ -5,6 +5,7 @@ import { Button } from 'react-element-forge';
 import NearestNeighborResults from './NearestNeighbor';
 import FilterResults from './Filters';
 import SearchResults from './SearchResults';
+import { useScope } from '../../../contexts/ScopeContext';
 import styles from './Container.module.scss';
 import { useFilter } from '../../../contexts/FilterContext';
 /*
@@ -19,6 +20,9 @@ import { useFilter } from '../../../contexts/FilterContext';
 const Container = () => {
   const [query, setQuery] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
+
+  const { clusterMap, clusterLabels } = useScope();
+  const { searchFilter, featureFilter, clusterFilter, setUrlParams } = useFilter();
 
   const { setAnyFilterActive } = useFilter();
 
@@ -73,7 +77,35 @@ const Container = () => {
     setAnyFilterActive(true);
 
     // TODO: Add logic to update search indices here
+    // here we need to apply the relevant filters.
+
+    const { type, value } = selection;
+
+    console.log('selection', selection);
+
+    if (type === 'cluster') {
+      const { setCluster } = clusterFilter;
+      const cluster = clusterLabels[value];
+      if (cluster) {
+        setCluster(cluster);
+      }
+    } else if (type === 'feature') {
+      const { setFeature } = featureFilter;
+      console.log('===setting feature===', value);
+      setFeature(value);
+    } else if (type === 'search') {
+      const { setSearchText } = searchFilter;
+      console.log('===setting search text===', value);
+      setSearchText(value);
+    }
   };
+
+  // if (cluster !== value) {
+  //   setUrlParams((prev) => {
+  //     prev.set('cluster', value);
+  //     return prev;
+  //   });
+  // }
 
   const handleClear = () => {
     setQuery('');
@@ -109,11 +141,11 @@ const Container = () => {
         </div>
 
         {/* Show SuggestionsPanel only when input is focused and there's no query */}
-        {query === '' && isInputFocused && (
+        {/* {query === '' && isInputFocused && (
           <div className={styles.searchResults} ref={selectRef}>
             <SuggestionsPanel onSelect={handleSuggestionSelect} />
           </div>
-        )}
+        )} */}
 
         {/* When a query exists, show the NN search result and filter options */}
         {query !== '' && (

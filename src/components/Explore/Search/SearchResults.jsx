@@ -9,37 +9,18 @@ import { filterByQuery } from './utils';
 // Custom Option component with group-specific handlers
 const Option = ({ children, ...props }) => {
   const { data, selectProps } = props;
-  const { setUrlParams } = useFilter();
   const { setDropdownIsOpen, onSelect } = selectProps;
 
   const handleClick = (e) => {
     e.preventDefault();
+
     // Get the group type from the option's parent group
     const groupType = props.options.find((group) =>
       group.options?.some((opt) => opt.value === data.value)
     )?.label;
 
-    switch (groupType) {
-      case 'Clusters':
-        console.log('Cluster clicked:', data.label, data.value);
-        onSelect({ type: 'cluster', value: data.value });
-        setUrlParams((prev) => {
-          prev.set('cluster', data.value);
-          return prev;
-        });
-        break;
-      case 'Features':
-        console.log('Feature clicked:', data.label, data.value);
-        onSelect({ type: 'feature', value: data.value });
-        setUrlParams((prev) => {
-          prev.set('feature', data.value);
-          return prev;
-        });
-        break;
-      default:
-        console.log('Unknown group type clicked:', data.label);
-    }
-
+    let type = groupType === 'Clusters' ? 'cluster' : 'feature';
+    onSelect({ type, value: data.value });
     setDropdownIsOpen(false);
   };
 
@@ -99,18 +80,11 @@ const customStyles = {
 // Custom Menu component with NN search
 const NNSearch = ({ children, ...props }) => {
   const { selectProps } = props;
-  const { query, setDropdownIsOpen, onSelect } = selectProps;
-  const { searchFilter, setUrlParams } = useFilter();
-  const { setSearchText } = searchFilter;
+  const { query, onSelect } = selectProps;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSearchText(query);
-    setDropdownIsOpen(false);
-    // setUrlParams((prev) => {
-    //   prev.set('search', query);
-    //   return prev;
-    // });
+    // report back to the parent
     onSelect({ type: 'search', value: query });
   };
 
@@ -141,8 +115,6 @@ const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen, onSelect }) =
     () => clusterLabels.map((cluster) => ({ value: cluster.cluster, label: cluster.label })),
     [clusterLabels]
   );
-
-  console.log({ featureOptions, clusterOptions });
 
   // Group options by type
   const groupedOptions = [
