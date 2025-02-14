@@ -1,16 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import PropTypes from 'prop-types';
 import Select, { components } from 'react-select';
 import styles from './SearchResults.module.scss';
 import { useFilter } from '../../../contexts/FilterContext';
 import { useScope } from '../../../contexts/ScopeContext';
-
+import { filterByQuery } from './utils';
 // Custom Option component with group-specific handlers
 const Option = ({ children, ...props }) => {
   const { data, selectProps } = props;
   const { setUrlParams } = useFilter();
-  const { setDropdownIsOpen } = selectProps;
+  const { setDropdownIsOpen, onSelect } = selectProps;
 
   const handleClick = (e) => {
     e.preventDefault();
@@ -22,6 +22,7 @@ const Option = ({ children, ...props }) => {
     switch (groupType) {
       case 'Clusters':
         console.log('Cluster clicked:', data.label, data.value);
+        onSelect({ type: 'cluster', value: data.value });
         setUrlParams((prev) => {
           prev.set('cluster', data.value);
           return prev;
@@ -29,6 +30,7 @@ const Option = ({ children, ...props }) => {
         break;
       case 'Features':
         console.log('Feature clicked:', data.label, data.value);
+        onSelect({ type: 'feature', value: data.value });
         setUrlParams((prev) => {
           prev.set('feature', data.value);
           return prev;
@@ -55,10 +57,49 @@ const Group = ({ children, ...props }) => {
   return <components.Group {...props}>{children}</components.Group>;
 };
 
+const customStyles = {
+  control: () => ({
+    display: 'none',
+  }),
+  menu: (base) => ({
+    ...base,
+    border: 'none',
+    boxShadow: 'none',
+    backgroundColor: 'transparent',
+    position: 'static',
+  }),
+  group: (base) => ({
+    ...base,
+    padding: '8px 0',
+  }),
+  groupHeading: (base) => ({
+    ...base,
+    color: 'var(--text-color-text-subtle)',
+    fontSize: '0.9em',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    padding: '0 12px',
+    marginBottom: '8px',
+  }),
+  option: (base, state) => ({
+    ...base,
+    padding: '8px 16px',
+    backgroundColor: state.isFocused ? 'var(--neutrals-color-neutral-1)' : 'transparent',
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: 'var(--neutrals-color-neutral-1)',
+    },
+  }),
+  menuList: (base) => ({
+    ...base,
+    padding: 0,
+  }),
+};
+
 // Custom Menu component with NN search
 const NNSearch = ({ children, ...props }) => {
   const { selectProps } = props;
-  const { query, setDropdownIsOpen } = selectProps;
+  const { query, setDropdownIsOpen, onSelect } = selectProps;
   const { searchFilter, setUrlParams } = useFilter();
   const { setSearchText } = searchFilter;
 
@@ -66,10 +107,11 @@ const NNSearch = ({ children, ...props }) => {
     e.preventDefault();
     setSearchText(query);
     setDropdownIsOpen(false);
-    setUrlParams((prev) => {
-      prev.set('search', query);
-      return prev;
-    });
+    // setUrlParams((prev) => {
+    //   prev.set('search', query);
+    //   return prev;
+    // });
+    onSelect({ type: 'search', value: query });
   };
 
   return (
@@ -87,68 +129,35 @@ const NNSearch = ({ children, ...props }) => {
   );
 };
 
-const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen }) => {
-  const { clusterLabels } = useScope();
+const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen, onSelect }) => {
+  const { clusterLabels, features } = useScope();
+
+  const featureOptions = useMemo(
+    () => (features.length > 0 ? filterByQuery(features, query, 5) : []),
+    [features, query]
+  );
+
+  const clusterOptions = useMemo(
+    () => clusterLabels.map((cluster) => ({ value: cluster.cluster, label: cluster.label })),
+    [clusterLabels]
+  );
+
+  console.log({ featureOptions, clusterOptions });
 
   // Group options by type
   const groupedOptions = [
     {
       label: 'Clusters',
-      options: clusterLabels.map((cluster) => ({
-        value: cluster.cluster,
-        label: cluster.label,
-      })),
-    },
-    {
-      label: 'Features',
-      options: [
-        { value: 'sentiment', label: 'Sentiment Analysis' },
-        { value: 'keywords', label: 'Key Words' },
-        { value: 'entities', label: 'Named Entities' },
-        { value: 'topics', label: 'Topic Modeling' },
-        { value: 'summary', label: 'Text Summary' },
-      ],
+      options: clusterOptions,
     },
   ];
 
-  const customStyles = {
-    control: () => ({
-      display: 'none',
-    }),
-    menu: (base) => ({
-      ...base,
-      border: 'none',
-      boxShadow: 'none',
-      backgroundColor: 'transparent',
-      position: 'static',
-    }),
-    group: (base) => ({
-      ...base,
-      padding: '8px 0',
-    }),
-    groupHeading: (base) => ({
-      ...base,
-      color: 'var(--text-color-text-subtle)',
-      fontSize: '0.9em',
-      fontWeight: 600,
-      textTransform: 'uppercase',
-      padding: '0 12px',
-      marginBottom: '8px',
-    }),
-    option: (base, state) => ({
-      ...base,
-      padding: '8px 16px',
-      backgroundColor: state.isFocused ? 'var(--neutrals-color-neutral-1)' : 'transparent',
-      cursor: 'pointer',
-      '&:hover': {
-        backgroundColor: 'var(--neutrals-color-neutral-1)',
-      },
-    }),
-    menuList: (base) => ({
-      ...base,
-      padding: 0,
-    }),
-  };
+  if (featureOptions.length > 0) {
+    groupedOptions.push({
+      label: 'Features',
+      options: featureOptions,
+    });
+  }
 
   // Enhanced filter function
   const filterOption = (option, inputValue) => {
@@ -173,6 +182,7 @@ const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen }) => {
       onMenuOpen={() => true}
       onMenuClose={() => false}
       onChange={() => false}
+      onSelect={onSelect}
       controlShouldRenderValue={false}
       filterOption={filterOption}
       inputValue={query}
@@ -187,6 +197,7 @@ SearchResults.propTypes = {
   query: PropTypes.string.isRequired,
   dropdownIsOpen: PropTypes.bool.isRequired,
   setDropdownIsOpen: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
 };
 
 export default SearchResults;

@@ -20,6 +20,8 @@ const Container = () => {
   const [query, setQuery] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
 
+  const { setAnyFilterActive } = useFilter();
+
   // Handle updates to the search query from the input field
   const handleInputChange = (val) => {
     setQuery(val);
@@ -68,6 +70,7 @@ const Container = () => {
     console.log('Selection made:', selection);
     setHasSelection(true);
     setDropdownIsOpen(false);
+    setAnyFilterActive(true);
 
     // TODO: Add logic to update search indices here
   };
@@ -76,7 +79,7 @@ const Container = () => {
     setQuery('');
     setHasSelection(false);
     setDropdownIsOpen(false);
-    // TODO: Add logic to clear search indices here
+    setAnyFilterActive(false);
   };
 
   return (

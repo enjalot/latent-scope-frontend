@@ -42,14 +42,7 @@ export function FilterProvider({ children }) {
     setFilteredIndices: setAllFilteredIndices,
   });
 
-  // Determine if any filter is active
-  const anyFilterActive = useMemo(() => {
-    return (
-      // urlParams.has('cluster') ||
-      // urlParams.has('feature') ||
-      urlParams.has('search') || searchFilter.active
-    );
-  }, [searchFilter.active, urlParams]);
+  const [anyFilterActive, setAnyFilterActive] = useState(false);
 
   // Reset page when filter status changes
   useEffect(() => {
@@ -220,6 +213,7 @@ export function FilterProvider({ children }) {
     },
     setUrlParams,
     anyFilterActive,
+    setAnyFilterActive,
     dataTableIndices: shownIndices, // indices that will be shown in the table view
 
     page,
