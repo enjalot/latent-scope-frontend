@@ -1,28 +1,66 @@
 import React from 'react';
+
 import PropTypes from 'prop-types';
 import Select, { components } from 'react-select';
 import styles from './SearchResults.module.scss';
-import { useState, useRef, useEffect } from 'react';
-import { Button } from 'react-element-forge';
-
 import { useFilter } from '../../../contexts/FilterContext';
+import { useScope } from '../../../contexts/ScopeContext';
 
-// Custom Option component to maintain our styling
+// Custom Option component with group-specific handlers
 const Option = ({ children, ...props }) => {
+  const { data, selectProps } = props;
+  const { setUrlParams } = useFilter();
+  const { setDropdownIsOpen } = selectProps;
+
+  const handleClick = (e) => {
+    e.preventDefault();
+    // Get the group type from the option's parent group
+    const groupType = props.options.find((group) =>
+      group.options?.some((opt) => opt.value === data.value)
+    )?.label;
+
+    switch (groupType) {
+      case 'Clusters':
+        console.log('Cluster clicked:', data.label, data.value);
+        setUrlParams((prev) => {
+          prev.set('cluster', data.value);
+          return prev;
+        });
+        break;
+      case 'Features':
+        console.log('Feature clicked:', data.label, data.value);
+        setUrlParams((prev) => {
+          prev.set('feature', data.value);
+          return prev;
+        });
+        break;
+      default:
+        console.log('Unknown group type clicked:', data.label);
+    }
+
+    setDropdownIsOpen(false);
+  };
+
   return (
-    <components.Option {...props}>
-      <div className={styles.resultContent}>{children}</div>
-    </components.Option>
+    <div onClick={handleClick}>
+      <components.Option {...props}>
+        <div className={styles.resultContent}>{children}</div>
+      </components.Option>
+    </div>
   );
 };
 
-// Custom Menu component to add our search button at the top
+// Custom Group component
+const Group = ({ children, ...props }) => {
+  return <components.Group {...props}>{children}</components.Group>;
+};
+
+// Custom Menu component with NN search
 const NNSearch = ({ children, ...props }) => {
   const { selectProps } = props;
   const { query, setDropdownIsOpen } = selectProps;
-
-  const { allFilteredIndices, searchFilter, setUrlParams, shownIndices } = useFilter();
-  const { loading, setSearchText, clearSearch, active } = searchFilter;
+  const { searchFilter, setUrlParams } = useFilter();
+  const { setSearchText } = searchFilter;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -37,26 +75,12 @@ const NNSearch = ({ children, ...props }) => {
   return (
     <components.Menu {...props}>
       <div className={styles.resultsList}>
-        {/* Nearest Neighbor Search Option */}
         <div className={styles.resultRow} onClick={handleSubmit}>
           <div className={styles.resultContent}>
             <span className={styles.searchIcon}>🔍</span>
             <span>Search for nearest neighbors to: "{query}"</span>
           </div>
-          {/* <div className={styles.searchButtonContainer}>
-            <Button
-              color="secondary"
-              className={styles.searchButton}
-              disabled={loading}
-              onClick={(e) => {
-                e.preventDefault();
-                active ? handleClear() : handleSubmit(e);
-              }}
-              icon={loading ? 'pie-chart' : active ? 'x' : 'search'}
-            />
-          </div> */}
         </div>
-        {/* Regular Select Options */}
         {children}
       </div>
     </components.Menu>
@@ -64,17 +88,32 @@ const NNSearch = ({ children, ...props }) => {
 };
 
 const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen }) => {
-  // Example options - replace with your actual options
-  const options = [
-    { value: 'cluster1', label: 'Cluster: Result 1', type: 'cluster' },
-    { value: 'cluster2', label: 'Cluster: Result 2', type: 'cluster' },
-    { value: 'feature1', label: 'Feature: Result 1', type: 'feature' },
-    { value: 'feature2', label: 'Feature: Result 2', type: 'feature' },
+  const { clusterLabels } = useScope();
+
+  // Group options by type
+  const groupedOptions = [
+    {
+      label: 'Clusters',
+      options: clusterLabels.map((cluster) => ({
+        value: cluster.cluster,
+        label: cluster.label,
+      })),
+    },
+    {
+      label: 'Features',
+      options: [
+        { value: 'sentiment', label: 'Sentiment Analysis' },
+        { value: 'keywords', label: 'Key Words' },
+        { value: 'entities', label: 'Named Entities' },
+        { value: 'topics', label: 'Topic Modeling' },
+        { value: 'summary', label: 'Text Summary' },
+      ],
+    },
   ];
 
   const customStyles = {
     control: () => ({
-      display: 'none', // Hide the control since we're using our own input
+      display: 'none',
     }),
     menu: (base) => ({
       ...base,
@@ -82,6 +121,19 @@ const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen }) => {
       boxShadow: 'none',
       backgroundColor: 'transparent',
       position: 'static',
+    }),
+    group: (base) => ({
+      ...base,
+      padding: '8px 0',
+    }),
+    groupHeading: (base) => ({
+      ...base,
+      color: 'var(--text-color-text-subtle)',
+      fontSize: '0.9em',
+      fontWeight: 600,
+      textTransform: 'uppercase',
+      padding: '0 12px',
+      marginBottom: '8px',
     }),
     option: (base, state) => ({
       ...base,
@@ -98,28 +150,43 @@ const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen }) => {
     }),
   };
 
+  // Enhanced filter function
+  const filterOption = (option, inputValue) => {
+    // If this is a group, check if any of its options match
+    if (option.options) {
+      return option.options.some((subOption) =>
+        subOption.label.toLowerCase().includes(inputValue.toLowerCase())
+      );
+    }
+    // For individual options
+    return option.label.toLowerCase().includes(inputValue.toLowerCase());
+  };
+
   return (
     <Select
-      options={options}
-      components={{ Option, Menu: NNSearch }}
+      options={groupedOptions}
+      components={{ Option, Group, Menu: NNSearch }}
       styles={customStyles}
-      query={query} // Props that are passed to the Menu component
-      setDropdownIsOpen={setDropdownIsOpen} // Props that are passed to the Menu component
+      query={query}
+      setDropdownIsOpen={setDropdownIsOpen}
       menuIsOpen={dropdownIsOpen}
       onMenuOpen={() => true}
       onMenuClose={() => false}
-      onChange={() => false} // Close on selection
+      onChange={() => false}
       controlShouldRenderValue={false}
-      filterOption={(option, inputValue) => {
-        return option.label.toLowerCase().includes(inputValue.toLowerCase());
-      }}
+      filterOption={filterOption}
+      inputValue={query}
+      isSearchable={true}
+      hideSelectedOptions={false}
+      closeMenuOnSelect={false}
     />
   );
 };
 
 SearchResults.propTypes = {
   query: PropTypes.string.isRequired,
-  onSearch: PropTypes.func.isRequired,
+  dropdownIsOpen: PropTypes.bool.isRequired,
+  setDropdownIsOpen: PropTypes.func.isRequired,
 };
 
 export default SearchResults;

@@ -21,7 +21,16 @@
 
 .searchIcon {
   color: var(--text-color-text-subtle);
-} 
+}
+
+.groupHeading {
+  color: var(--text-color-text-subtle);
+  font-size: 0.9em;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0 12px;
+  margin-bottom: 8px;
+}
 
 /* Dark mode styles */
 @media (prefers-color-scheme: dark) {
@@ -31,12 +40,16 @@
 
   .resultRow {
     &:hover {
-      background-color: #555;  // Matches the active filter-row background in dark mode
+      background-color: #555;
     }
   }
 
   .resultContent {
-    color: #fff;  // Light text for dark background
+    color: #fff;
+  }
+
+  .groupHeading {
+    color: #999;
   }
 }
 
