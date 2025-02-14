@@ -82,11 +82,11 @@ const Container = () => {
       />
 
       {/* Show SuggestionsPanel only when input is focused and there's no query */}
-      {query === '' && isInputFocused && (
+      {/* {query === '' && isInputFocused && (
         <div className={styles.searchResults} ref={selectRef}>
           <SuggestionsPanel suggestions={suggestions} onSelect={handleSuggestionSelect} />
         </div>
-      )}
+      )} */}
 
       {/* When a query exists, show the NN search result and filter options */}
       {query !== '' && (

@@ -31,14 +31,15 @@ export const mapSelectionColorsDark = [
 export const mapSelectionOpacity = [
   0.75, // normal
   0.95, // selected
-  0.25, // not selected
+  // 0.25, // not selected
+  0.75, // not selected
   1, // hovered
   0, // hidden
 ];
 export const mapPointSizeRange = [
   3, // normal
-  14, // selected
+  12, // selected
   2, // not selected
-  14,
+  12,
   0, // hidden
 ];
