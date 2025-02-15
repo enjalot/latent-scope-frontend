@@ -7,6 +7,7 @@ import SearchResults from './SearchResults';
 import { useScope } from '../../../contexts/ScopeContext';
 import styles from './Container.module.scss';
 import { useFilter } from '../../../contexts/FilterContext';
+import { filterConstants } from './utils';
 /*
  * SearchContainer is the main parent component that manages the overall search state.
  * It holds the current query and suggestion data, and conditionally renders subcomponents.
@@ -17,7 +18,6 @@ import { useFilter } from '../../../contexts/FilterContext';
  *    2. FilterResults: to display grouped filter options (e.g., Clusters, Features) related to the query.
  */
 const Container = () => {
-
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [selection, setSelection] = useState(null);
 
@@ -84,16 +84,16 @@ const Container = () => {
     const { type, value, label } = selection;
     setSearchQuery(label);
 
-    if (type === 'cluster') {
+    if (type === filterConstants.CLUSTER) {
       const { setCluster } = clusterFilter;
       const cluster = clusterLabels[value];
       if (cluster) {
         setCluster(cluster);
       }
-    } else if (type === 'feature') {
+    } else if (type === filterConstants.FEATURE) {
       const { setFeature } = featureFilter;
       setFeature(value);
-    } else if (type === 'search') {
+    } else if (type === filterConstants.SEARCH) {
       const { setSearchText } = searchFilter;
       setSearchText(value);
     }

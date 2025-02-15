@@ -28,3 +28,10 @@ export const findClustersByQuery = (clusters, query, top = 5) => {
       label: cluster.label,
     }));
 };
+
+export const filterConstants = {
+  SEARCH: 'search',
+  CLUSTER: 'cluster',
+  FEATURE: 'feature',
+  COLUMN: 'column',
+};

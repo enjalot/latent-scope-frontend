@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import Select, { components } from 'react-select';
 import styles from './SearchResults.module.scss';
 import { useScope } from '../../../contexts/ScopeContext';
-import { findFeaturesByQuery, findClustersByQuery } from './utils';
+import { filterConstants, findFeaturesByQuery, findClustersByQuery } from './utils';
 
 // Function to underline the search term
 const underlineText = (text, query) => {
@@ -34,7 +34,7 @@ const Option = (props) => {
       group.options?.some((opt) => opt.value === data.value)
     )?.label;
 
-    let type = groupType === 'Clusters' ? 'cluster' : 'feature';
+    let type = groupType === 'Clusters' ? filterConstants.CLUSTER : filterConstants.FEATURE;
     onSelect({ type, value: data.value, label: data.label });
   };
 
@@ -103,7 +103,7 @@ const NNSearch = ({ children, ...props }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSelect({ type: 'search', value: query });
+    onSelect({ type: filterConstants.SEARCH, value: query });
   };
 
   return (

@@ -11,6 +11,7 @@ import { Tooltip } from 'react-tooltip';
 import CrossHair from '../Crosshair';
 import { processHulls } from '../../utils';
 import PointLabel from './PointLabel';
+import { filterConstants } from './Search/utils';
 
 // import { useColorMode } from '../../hooks/useColorMode';
 
@@ -54,7 +55,6 @@ function VisualizationPane({
   const {
     activeFilterTab,
     // filteredIndices,
-    filterConstants,
     featureFilter,
     clusterFilter,
     dataTableIndices,

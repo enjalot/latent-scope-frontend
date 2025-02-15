@@ -7,11 +7,7 @@ import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
 import useClusterFilter from '../hooks/useClusterFilter';
 import useFeatureFilter from '../hooks/useFeatureFilter';
 
-export const SEARCH = 'search';
-export const CLUSTER = 'filter';
-export const SELECT = 'select';
-export const COLUMN = 'column';
-export const FEATURE = 'feature';
+
 
 const FilterContext = createContext(null);
 
@@ -163,8 +159,6 @@ export function FilterProvider({ children }) {
   }, [searchFilter.loading]);
 
   const value = {
-    // activeFilterTab,
-    // setActiveFilterTab,
     allFilteredIndices,
     setAllFilteredIndices,
     shownIndices,
@@ -200,13 +194,6 @@ export function FilterProvider({ children }) {
     // toggleSelect,
     // toggleColumn,
     // toggleFeature,
-    filterConstants: {
-      SEARCH,
-      CLUSTER,
-      SELECT,
-      COLUMN,
-      FEATURE,
-    },
     setUrlParams,
     anyFilterActive,
     setAnyFilterActive,
