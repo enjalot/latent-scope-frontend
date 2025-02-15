@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiService } from '../lib/apiService';
 
-export default function useFeatureFilter({ userId, datasetId, scope, urlParams, scopeLoaded }) {
+export default function useFeatureFilter({
+  userId,
+  datasetId,
+  scope,
+  urlParams,
+  scopeLoaded,
+  setFilteredIndices,
+}) {
   const [feature, setFeature] = useState(-1);
   const [threshold, setThreshold] = useState(0.1);
-  const [featureIndices, setFeatureIndices] = useState([]);
   const [featureIndicesLoaded, setFeatureIndicesLoaded] = useState(false);
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,23 +40,21 @@ export default function useFeatureFilter({ userId, datasetId, scope, urlParams, 
       setFeatureIndicesLoaded(false);
       setLoading(true);
       apiService.searchSaeFeature(userId, datasetId, scope?.id, feature, threshold).then((data) => {
-        setFeatureIndices(data);
+        setFilteredIndices(data);
         setFeatureIndicesLoaded(true);
         setLoading(false);
       });
     } else {
-      setFeatureIndices([]);
+      setFilteredIndices([]);
       setLoading(false);
     }
-  }, [userId, datasetId, scope, feature, threshold, setFeatureIndices, scopeLoaded]);
+  }, [userId, datasetId, scope, feature, threshold, setFilteredIndices, scopeLoaded]);
 
   return {
     feature,
     setFeature,
     threshold,
     setThreshold,
-    featureIndices,
-    setFeatureIndices,
     featureIndicesLoaded,
     active,
     loading,

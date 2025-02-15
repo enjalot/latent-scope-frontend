@@ -83,6 +83,7 @@ export function FilterProvider({ children }) {
     scope,
     urlParams,
     scopeLoaded,
+    setFilteredIndices: setAllFilteredIndices,
   });
 
   // Toggle functions

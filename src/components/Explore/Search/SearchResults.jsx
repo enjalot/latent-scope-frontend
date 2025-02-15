@@ -3,9 +3,9 @@ import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Select, { components } from 'react-select';
 import styles from './SearchResults.module.scss';
-import { useFilter } from '../../../contexts/FilterContext';
 import { useScope } from '../../../contexts/ScopeContext';
-import { filterByQuery } from './utils';
+import { findFeaturesByQuery, findClustersByQuery } from './utils';
+
 // Custom Option component with group-specific handlers
 const Option = ({ children, ...props }) => {
   const { data, selectProps } = props;
@@ -20,7 +20,7 @@ const Option = ({ children, ...props }) => {
     )?.label;
 
     let type = groupType === 'Clusters' ? 'cluster' : 'feature';
-    onSelect({ type, value: data.value });
+    onSelect({ type, value: data.value, label: data.label });
     setDropdownIsOpen(false);
   };
 
@@ -85,7 +85,7 @@ const NNSearch = ({ children, ...props }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     // report back to the parent
-    onSelect({ type: 'search', value: query });
+    onSelect({ type: 'search', value: query, label: query });
   };
 
   return (
@@ -107,13 +107,13 @@ const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen, onSelect }) =
   const { clusterLabels, features } = useScope();
 
   const featureOptions = useMemo(
-    () => (features.length > 0 ? filterByQuery(features, query, 5) : []),
+    () => (features.length > 0 ? findFeaturesByQuery(features, query, 5) : []),
     [features, query]
   );
 
   const clusterOptions = useMemo(
-    () => clusterLabels.map((cluster) => ({ value: cluster.cluster, label: cluster.label })),
-    [clusterLabels]
+    () => findClustersByQuery(clusterLabels, query, 5),
+    [clusterLabels, query]
   );
 
   // Group options by type

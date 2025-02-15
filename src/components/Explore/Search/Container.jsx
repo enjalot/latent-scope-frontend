@@ -20,9 +20,10 @@ import { useFilter } from '../../../contexts/FilterContext';
 const Container = () => {
   const [query, setQuery] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [selection, setSelection] = useState(null);
 
-  const { clusterMap, clusterLabels } = useScope();
-  const { searchFilter, featureFilter, clusterFilter, setUrlParams } = useFilter();
+  const { clusterLabels } = useScope();
+  const { searchFilter, featureFilter, clusterFilter } = useFilter();
 
   const { setAnyFilterActive } = useFilter();
 
@@ -71,17 +72,14 @@ const Container = () => {
   const [hasSelection, setHasSelection] = useState(false);
 
   const handleSelect = (selection) => {
-    console.log('Selection made:', selection);
     setHasSelection(true);
     setDropdownIsOpen(false);
     setAnyFilterActive(true);
-
+    setSelection(selection);
     // TODO: Add logic to update search indices here
     // here we need to apply the relevant filters.
 
     const { type, value } = selection;
-
-    console.log('selection', selection);
 
     if (type === 'cluster') {
       const { setCluster } = clusterFilter;
@@ -91,14 +89,15 @@ const Container = () => {
       }
     } else if (type === 'feature') {
       const { setFeature } = featureFilter;
-      console.log('===setting feature===', value);
+      console.log('=====setting feature======', value);
       setFeature(value);
     } else if (type === 'search') {
       const { setSearchText } = searchFilter;
-      console.log('===setting search text===', value);
       setSearchText(value);
     }
   };
+
+  // TODO: update query in url params
 
   // if (cluster !== value) {
   //   setUrlParams((prev) => {
@@ -112,6 +111,7 @@ const Container = () => {
     setHasSelection(false);
     setDropdownIsOpen(false);
     setAnyFilterActive(false);
+    setSelection(null);
   };
 
   return (
@@ -158,26 +158,47 @@ const Container = () => {
                 onSelect={handleSelect}
               />
             </div>
-            {/* NearestNeighborResults performs and displays the vector search based on the query */}
-            {/* <NearestNeighborResults query={query} /> */}
-            {/* FilterResults displays grouped filter options like Clusters and Features */}
-            {/* <FilterResults query={query} /> */}
           </div>
         )}
       </div>
-      <SearchResultsMetadata />
+      <SearchResultsMetadata selection={selection} />
     </div>
   );
 };
 
-const SearchResultsMetadata = () => {
+const SearchResultsMetadata = ({ selection }) => {
   const { shownIndices } = useFilter();
+
+  // if no selection, show the default metadata
+  if (!selection) {
+    return (
+      <div className={styles.searchResultsMetadata}>
+        <div className={styles.searchResultsMetadataItem}>
+          <span className={styles.searchResultsMetadataLabel}>
+            Default (showing first {shownIndices.length} rows in dataset):{` `}
+          </span>
+        </div>
+        <div className={styles.searchResultsMetadataItem}>
+          <span className={styles.searchResultsMetadataValue}>{shownIndices.length} results</span>
+        </div>
+      </div>
+    );
+  }
+
+  const { type, label } = selection;
+
+  const totalResults = shownIndices.length;
+  const headerLabel = type === 'cluster' ? 'Cluster' : type === 'feature' ? 'Feature' : 'Search';
 
   return (
     <div className={styles.searchResultsMetadata}>
       <div className={styles.searchResultsMetadataItem}>
-        <span className={styles.searchResultsMetadataLabel}>Total Results: </span>
-        <span className={styles.searchResultsMetadataValue}>{shownIndices.length}</span>
+        <span className={styles.searchResultsMetadataLabel}>{headerLabel}: </span>
+        <span className={styles.searchResultsMetadataValue}>{label}</span>
+      </div>
+      <div className={styles.searchResultsMetadataItem}>
+        <span className={styles.searchResultsMetadataLabel}>Total Rows: </span>
+        <span className={styles.searchResultsMetadataValue}>{totalResults}</span>
       </div>
     </div>
   );
