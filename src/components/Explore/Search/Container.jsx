@@ -22,9 +22,14 @@ const Container = () => {
   const [selection, setSelection] = useState(null);
 
   const { clusterLabels } = useScope();
-  const { searchFilter, featureFilter, clusterFilter } = useFilter();
-
-  const { setAnyFilterActive, searchQuery, setSearchQuery } = useFilter();
+  const {
+    searchFilter,
+    featureFilter,
+    clusterFilter,
+    setAnyFilterActive,
+    searchQuery,
+    setSearchQuery,
+  } = useFilter();
 
   // Handle updates to the search query from the input field
   const handleInputChange = (val) => {
@@ -45,7 +50,7 @@ const Container = () => {
 
   // Handle when a user selects a suggestion from the SuggestionsPanel
   const handleSuggestionSelect = (suggestion) => {
-    setQuery(suggestion);
+    setSearchQuery(suggestion);
     setIsInputFocused(false); // Hide results after selection
   };
 
@@ -77,7 +82,7 @@ const Container = () => {
     setSelection(selection);
 
     const { type, value, label } = selection;
-    setQuery(label);
+    setSearchQuery(label);
 
     if (type === 'cluster') {
       const { setCluster } = clusterFilter;
@@ -104,6 +109,13 @@ const Container = () => {
   // }
 
   const handleClear = () => {
+    const { type } = selection;
+    if (type === 'search') {
+      const { setSearchText, setDistances } = searchFilter;
+      setSearchText('');
+      setDistances([]);
+    }
+
     setSearchQuery('');
     setHasSelection(false);
     setDropdownIsOpen(false);

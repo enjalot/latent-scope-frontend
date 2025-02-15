@@ -61,6 +61,7 @@ export default function useNearestNeighborsSearch({
   return {
     searchText,
     setSearchText,
+    setDistances,
     distances,
     clearSearch,
     active,

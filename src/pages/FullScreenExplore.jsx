@@ -17,6 +17,23 @@ import { useScope } from '../contexts/ScopeContext';
 import { useFilter } from '../contexts/FilterContext';
 import useDebounce from '../hooks/useDebounce';
 
+const styles = {
+  dragHandle: {
+    position: 'absolute',
+    right: -15,
+    top: 0,
+    bottom: 0,
+    width: 30,
+    cursor: 'ew-resize',
+    backgroundColor: 'transparent',
+    transition: 'background-color 0.2s',
+    '&:hover': {
+      backgroundColor: '#e0e0e0',
+    },
+    zIndex: 10,
+  },
+};
+
 // Create a new component that wraps the main content
 function ExploreContent() {
   // Get scope-related state from ScopeContext
@@ -35,18 +52,8 @@ function ExploreContent() {
   } = useScope();
 
   // Get filter-related state from FilterContext
-  const {
-    // activeFilterTab,
-    filteredIndices,
-    featureFilter,
-    setSelectedIndices,
-    filterConstants,
-    // setActiveFilterTab,
-    distances,
-    filterLoading,
-    dataTableIndices,
-    setSearchQuery,
-  } = useFilter();
+  const { featureFilter, filterLoading, dataTableIndices, setSearchQuery, searchFilter } =
+    useFilter();
 
   // Keep visualization-specific state
   const [scatter, setScatter] = useState({});
@@ -234,22 +241,6 @@ function ExploreContent() {
   };
 
   // Add this CSS-in-JS style object near the top of the component
-  const styles = {
-    dragHandle: {
-      position: 'absolute',
-      right: -15,
-      top: 0,
-      bottom: 0,
-      width: 30,
-      cursor: 'ew-resize',
-      backgroundColor: 'transparent',
-      transition: 'background-color 0.2s',
-      '&:hover': {
-        backgroundColor: '#e0e0e0',
-      },
-      zIndex: 10,
-    },
-  };
 
   const handleFeatureClick = useCallback(
     (featIdx, activation, label) => {
@@ -305,8 +296,7 @@ function ExploreContent() {
                 scope={scope}
                 filteredIndices={dataTableIndices}
                 deletedIndices={deletedIndices}
-                // distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
-                distances={[]} // TODO: make this work.
+                distances={searchFilter.distances}
                 clusterMap={clusterMap}
                 clusterLabels={clusterLabels}
                 onDataTableRows={setDataTableRows}
