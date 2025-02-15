@@ -45,6 +45,7 @@ function ExploreContent() {
     distances,
     filterLoading,
     dataTableIndices,
+    setSearchQuery,
   } = useFilter();
 
   // Keep visualization-specific state
@@ -251,10 +252,11 @@ function ExploreContent() {
   };
 
   const handleFeatureClick = useCallback(
-    (featIdx, activation) => {
+    (featIdx, activation, label) => {
+      setSearchQuery(label);
       featureFilter.setFeature(featIdx);
     },
-    [featureFilter.setFeature]
+    [featureFilter.setFeature, setSearchQuery]
   );
 
   if (!dataset)

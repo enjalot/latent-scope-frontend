@@ -17,18 +17,18 @@ import { useFilter } from '../../../contexts/FilterContext';
  *    2. FilterResults: to display grouped filter options (e.g., Clusters, Features) related to the query.
  */
 const Container = () => {
-  const [query, setQuery] = useState('');
+
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [selection, setSelection] = useState(null);
 
   const { clusterLabels } = useScope();
   const { searchFilter, featureFilter, clusterFilter } = useFilter();
 
-  const { setAnyFilterActive } = useFilter();
+  const { setAnyFilterActive, searchQuery, setSearchQuery } = useFilter();
 
   // Handle updates to the search query from the input field
   const handleInputChange = (val) => {
-    setQuery(val);
+    setSearchQuery(val);
     // Optionally update suggestions based on the current input value
 
     // re-open the dropdown whenever the query changes
@@ -104,7 +104,7 @@ const Container = () => {
   // }
 
   const handleClear = () => {
-    setQuery('');
+    setSearchQuery('');
     setHasSelection(false);
     setDropdownIsOpen(false);
     setAnyFilterActive(false);
@@ -119,7 +119,7 @@ const Container = () => {
           <input
             className={styles.searchInput}
             type="text"
-            value={query}
+            value={searchQuery}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Search dataset for..."
             onFocus={handleInputFocus}
@@ -145,10 +145,14 @@ const Container = () => {
         )} */}
 
         {/* When a query exists, show the NN search result and filter options */}
-        {query !== '' && (
+        {searchQuery !== '' && (
           <div className={styles.searchResults} ref={selectRef}>
             <div className={styles.searchResultsHeader}>
-              <SearchResults query={query} onSelect={handleSelect} menuIsOpen={dropdownIsOpen} />
+              <SearchResults
+                query={searchQuery}
+                onSelect={handleSelect}
+                menuIsOpen={dropdownIsOpen}
+              />
             </div>
           </div>
         )}

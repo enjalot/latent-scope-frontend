@@ -26,10 +26,10 @@ function FeatureModal({
 
   const featureClick = useCallback(
     (featIdx, activation) => {
-      handleFeatureClick(featIdx, activation);
+      handleFeatureClick(featIdx, activation, features[featIdx]?.label);
       onClose();
     },
-    [handleFeatureClick, onClose]
+    [handleFeatureClick, onClose, features]
   );
 
   return (

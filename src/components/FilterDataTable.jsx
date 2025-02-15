@@ -45,11 +45,7 @@ function RowWithHover({ props, onHover }) {
   );
 }
 
-function extent(activations) {
-  const min = Math.min(...activations);
-  const max = Math.max(...activations);
-  return [min, max];
-}
+
 
 function FilterDataTable({
   handleFeatureClick,

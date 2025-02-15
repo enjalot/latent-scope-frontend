@@ -16,6 +16,8 @@ export const FEATURE = 'feature';
 const FilterContext = createContext(null);
 
 export function FilterProvider({ children }) {
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [urlParams, setUrlParams] = useSearchParams();
   const { scopeRows, deletedIndices, dataset, datasetId, userId, scope, scopeLoaded } = useScope();
 
@@ -214,6 +216,8 @@ export function FilterProvider({ children }) {
     setPage,
     totalPages,
     ROWS_PER_PAGE,
+    searchQuery,
+    setSearchQuery,
   };
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;
