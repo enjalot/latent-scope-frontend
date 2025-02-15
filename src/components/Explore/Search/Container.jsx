@@ -152,12 +152,7 @@ const Container = () => {
         {query !== '' && (
           <div className={styles.searchResults} ref={selectRef}>
             <div className={styles.searchResultsHeader}>
-              <SearchResults
-                query={query}
-                setDropdownIsOpen={setDropdownIsOpen}
-                dropdownIsOpen={dropdownIsOpen}
-                onSelect={handleSelect}
-              />
+              <SearchResults query={query} onSelect={handleSelect} menuIsOpen={dropdownIsOpen} />
             </div>
           </div>
         )}

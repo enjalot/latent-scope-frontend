@@ -24,7 +24,7 @@ const underlineText = (text, query) => {
 // Custom Option component
 const Option = (props) => {
   const { data, selectProps } = props;
-  const { setDropdownIsOpen, onSelect, inputValue } = selectProps;
+  const { onSelect, inputValue } = selectProps;
 
   const handleClick = (e) => {
     e.preventDefault();
@@ -36,7 +36,6 @@ const Option = (props) => {
 
     let type = groupType === 'Clusters' ? 'cluster' : 'feature';
     onSelect({ type, value: data.value, label: data.label });
-    setDropdownIsOpen(false);
   };
 
   return (
@@ -122,7 +121,7 @@ const NNSearch = ({ children, ...props }) => {
   );
 };
 
-const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen, onSelect }) => {
+const SearchResults = ({ query, onSelect, menuIsOpen }) => {
   const { clusterLabels, features } = useScope();
 
   const NUM_RESULTS = 5;
@@ -174,8 +173,6 @@ const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen, onSelect }) =
       }}
       styles={customStyles}
       query={query}
-      setDropdownIsOpen={setDropdownIsOpen}
-      menuIsOpen={dropdownIsOpen}
       onMenuOpen={() => true}
       onMenuClose={() => false}
       onChange={() => false}
@@ -186,6 +183,7 @@ const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen, onSelect }) =
       isSearchable={true}
       hideSelectedOptions={false}
       closeMenuOnSelect={false}
+      menuIsOpen={menuIsOpen}
     />
   );
 };
@@ -193,7 +191,6 @@ const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen, onSelect }) =
 SearchResults.propTypes = {
   query: PropTypes.string.isRequired,
   dropdownIsOpen: PropTypes.bool.isRequired,
-  setDropdownIsOpen: PropTypes.func.isRequired,
   onSelect: PropTypes.func.isRequired,
 };
 
