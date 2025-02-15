@@ -63,8 +63,6 @@ const customStyles = {
     boxShadow: 'none',
     backgroundColor: 'transparent',
     position: 'static',
-    overflowY: 'visible',
-    maxHeight: 'none',
   }),
   group: (base) => ({
     ...base,
@@ -91,18 +89,22 @@ const customStyles = {
   menuList: (base) => ({
     ...base,
     padding: 0,
+    overflowY: 'visible',
+    maxHeight: 'none',
   }),
 };
 
 // Custom Menu component with NN search
 const NNSearch = ({ children, ...props }) => {
   const { selectProps } = props;
-  const { query, onSelect } = selectProps;
+  const { query, onSelect, options } = selectProps;
+
+  // Check if there are any matches in the cluster / feature options
+  const hasMatches = options.some((group) => group.options && group.options.length > 0);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // report back to the parent
-    onSelect({ type: 'search', value: query, label: query });
+    onSelect({ type: 'search', value: query });
   };
 
   return (
@@ -114,7 +116,7 @@ const NNSearch = ({ children, ...props }) => {
             <span>Search for nearest neighbors to: "{query}"</span>
           </div>
         </div>
-        {children}
+        {hasMatches && children} {/* Only render cluster / feature options if there are matches */}
       </div>
     </components.Menu>
   );
@@ -165,7 +167,11 @@ const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen, onSelect }) =
   return (
     <Select
       options={groupedOptions}
-      components={{ Option, Group, Menu: NNSearch }}
+      components={{
+        Option,
+        Group,
+        Menu: NNSearch,
+      }}
       styles={customStyles}
       query={query}
       setDropdownIsOpen={setDropdownIsOpen}
