@@ -79,7 +79,8 @@ const Container = () => {
     // TODO: Add logic to update search indices here
     // here we need to apply the relevant filters.
 
-    const { type, value } = selection;
+    const { type, value, label } = selection;
+    setQuery(label);
 
     if (type === 'cluster') {
       const { setCluster } = clusterFilter;

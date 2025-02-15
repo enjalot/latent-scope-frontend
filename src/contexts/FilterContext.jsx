@@ -86,13 +86,6 @@ export function FilterProvider({ children }) {
     setFilteredIndices: setAllFilteredIndices,
   });
 
-  // Toggle functions
-  // const toggleSearch = () => setActiveFilterTab((prev) => (prev === SEARCH ? null : SEARCH));
-  // const toggleFilter = () => setActiveFilterTab((prev) => (prev === CLUSTER ? null : CLUSTER));
-  // const toggleSelect = () => setActiveFilterTab((prev) => (prev === SELECT ? null : SELECT));
-  // const toggleColumn = () => setActiveFilterTab((prev) => (prev === COLUMN ? null : COLUMN));
-  // const toggleFeature = () => setActiveFilterTab((prev) => (prev === FEATURE ? null : FEATURE));
-
   const nonDeletedDataTableIndices = useMemo(() => {
     const indexes = scopeRows
       .filter((row) => !deletedIndices.includes(row.ls_index))
