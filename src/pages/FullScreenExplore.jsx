@@ -250,13 +250,12 @@ function ExploreContent() {
     },
   };
 
-  // const handleFeatureClick = useCallback(
-  //   (featIdx, activation) => {
-  //     setActiveFilterTab(filterConstants.FEATURE);
-  //     featureFilter.setFeature(featIdx);
-  //   },
-  //   [setActiveFilterTab, featureFilter.setFeature]
-  // );
+  const handleFeatureClick = useCallback(
+    (featIdx, activation) => {
+      featureFilter.setFeature(featIdx);
+    },
+    [featureFilter.setFeature]
+  );
 
   if (!dataset)
     return (
@@ -314,7 +313,7 @@ function ExploreContent() {
                 features={features}
                 onHover={handleHover}
                 onClick={handleClicked}
-                handleFeatureClick={() => {}}
+                handleFeatureClick={handleFeatureClick}
                 filterLoading={filterLoading}
               />
             </div>
