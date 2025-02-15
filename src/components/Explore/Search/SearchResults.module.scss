@@ -12,9 +12,6 @@
 }
 
 .resultContent {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   color: var(--text-color-text-main);
   font-size: 14px;
 }
@@ -74,14 +71,20 @@
     }
   }
   
-  .resultContent {
+ 
+  .searchIcon {
+    color: var(--text-color-text-subtle);
+  }
+
+  .underline {
+    text-decoration: underline;
+    text-decoration-color: var(--interactions---primary-color-interaction-primary);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  .searchResultContent {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--text-color-text-main);
-    font-size: 14px;
-  }
-  
-  .searchIcon {
-    color: var(--text-color-text-subtle);
   }

@@ -6,10 +6,25 @@ import styles from './SearchResults.module.scss';
 import { useScope } from '../../../contexts/ScopeContext';
 import { findFeaturesByQuery, findClustersByQuery } from './utils';
 
-// Custom Option component with group-specific handlers
-const Option = ({ children, ...props }) => {
+// Function to underline the search term
+const underlineText = (text, query) => {
+  if (!query) return text;
+  const parts = text.split(new RegExp(`(${query})`, 'gi'));
+  return parts.map((part, index) =>
+    part.toLowerCase() === query.toLowerCase() ? (
+      <span key={index} className={styles.underline}>
+        {part}
+      </span>
+    ) : (
+      <span key={index}>{part}</span>
+    )
+  );
+};
+
+// Custom Option component
+const Option = (props) => {
   const { data, selectProps } = props;
-  const { setDropdownIsOpen, onSelect } = selectProps;
+  const { setDropdownIsOpen, onSelect, inputValue } = selectProps;
 
   const handleClick = (e) => {
     e.preventDefault();
@@ -27,7 +42,7 @@ const Option = ({ children, ...props }) => {
   return (
     <div onClick={handleClick}>
       <components.Option {...props}>
-        <div className={styles.resultContent}>{children}</div>
+        <div className={styles.resultContent}>{underlineText(data.label, inputValue)}</div>
       </components.Option>
     </div>
   );
@@ -94,7 +109,7 @@ const NNSearch = ({ children, ...props }) => {
     <components.Menu {...props}>
       <div className={styles.resultsList}>
         <div className={styles.resultRow} onClick={handleSubmit}>
-          <div className={styles.resultContent}>
+          <div className={styles.searchResultContent}>
             <span className={styles.searchIcon}>🔍</span>
             <span>Search for nearest neighbors to: "{query}"</span>
           </div>
