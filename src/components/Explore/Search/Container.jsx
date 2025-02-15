@@ -2,8 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SuggestionsPanel from './SuggestionsPanel';
 import { Button } from 'react-element-forge';
-import NearestNeighborResults from './NearestNeighbor';
-import FilterResults from './Filters';
+
 import SearchResults from './SearchResults';
 import { useScope } from '../../../contexts/ScopeContext';
 import styles from './Container.module.scss';
@@ -76,8 +75,6 @@ const Container = () => {
     setDropdownIsOpen(false);
     setAnyFilterActive(true);
     setSelection(selection);
-    // TODO: Add logic to update search indices here
-    // here we need to apply the relevant filters.
 
     const { type, value, label } = selection;
     setQuery(label);
@@ -90,7 +87,6 @@ const Container = () => {
       }
     } else if (type === 'feature') {
       const { setFeature } = featureFilter;
-      console.log('=====setting feature======', value);
       setFeature(value);
     } else if (type === 'search') {
       const { setSearchText } = searchFilter;
