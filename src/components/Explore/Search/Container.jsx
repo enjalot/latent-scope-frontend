@@ -168,7 +168,7 @@ const Container = () => {
 };
 
 const SearchResultsMetadata = ({ selection }) => {
-  const { shownIndices } = useFilter();
+  const { shownIndices, allFilteredIndices } = useFilter();
 
   // if no selection, show the default metadata
   if (!selection) {
@@ -188,7 +188,7 @@ const SearchResultsMetadata = ({ selection }) => {
 
   const { type, label } = selection;
 
-  const totalResults = shownIndices.length;
+  const totalResults = allFilteredIndices.length;
   const headerLabel = type === 'cluster' ? 'Cluster' : type === 'feature' ? 'Feature' : 'Search';
 
   return (
