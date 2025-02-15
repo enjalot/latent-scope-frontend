@@ -48,6 +48,8 @@ const customStyles = {
     boxShadow: 'none',
     backgroundColor: 'transparent',
     position: 'static',
+    overflowY: 'visible',
+    maxHeight: 'none',
   }),
   group: (base) => ({
     ...base,
@@ -106,13 +108,15 @@ const NNSearch = ({ children, ...props }) => {
 const SearchResults = ({ query, dropdownIsOpen, setDropdownIsOpen, onSelect }) => {
   const { clusterLabels, features } = useScope();
 
+  const NUM_RESULTS = 5;
+
   const featureOptions = useMemo(
-    () => (features.length > 0 ? findFeaturesByQuery(features, query, 5) : []),
+    () => (features.length > 0 ? findFeaturesByQuery(features, query, NUM_RESULTS) : []),
     [features, query]
   );
 
   const clusterOptions = useMemo(
-    () => findClustersByQuery(clusterLabels, query, 5),
+    () => findClustersByQuery(clusterLabels, query, NUM_RESULTS),
     [clusterLabels, query]
   );
 
