@@ -11,17 +11,6 @@ export default function useClusterFilter({
   // const [clusterIndices, setClusterIndices] = useState([]);
   const [active, setActive] = useState(false); // true if a cluster filter is active
   const [loading, setLoading] = useState(false);
-  // Initialize cluster from URL params
-  useEffect(() => {
-    if (scopeLoaded && urlParams.has('cluster')) {
-      setActive(true);
-      const clusterParam = parseInt(urlParams.get('cluster'));
-      const clusterFromParam = scope?.cluster_labels_lookup?.[clusterParam];
-      if (clusterFromParam) {
-        setCluster(clusterFromParam);
-      }
-    }
-  }, [scopeLoaded, urlParams, scope]);
 
   // Update cluster indices when cluster changes
   useEffect(() => {

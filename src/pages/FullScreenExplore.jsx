@@ -52,7 +52,7 @@ function ExploreContent() {
   } = useScope();
 
   // Get filter-related state from FilterContext
-  const { featureFilter, filterLoading, dataTableIndices, setSearchQuery, searchFilter } =
+  const { searchFilter, featureFilter, filterLoading, dataTableIndices, setFilterQuery } =
     useFilter();
 
   // Keep visualization-specific state
@@ -244,10 +244,10 @@ function ExploreContent() {
 
   const handleFeatureClick = useCallback(
     (featIdx, activation, label) => {
-      setSearchQuery(label);
+      setFilterQuery(label);
       featureFilter.setFeature(featIdx);
     },
-    [featureFilter.setFeature, setSearchQuery]
+    [featureFilter.setFeature, setFilterQuery]
   );
 
   if (!dataset)
@@ -318,7 +318,7 @@ function ExploreContent() {
               setHovered(null);
             }}
           >
-            {scopeRows?.length ? (
+            {scopeRows?.length && scopeLoaded ? (
               <VisualizationPane
                 width={width}
                 height={height}

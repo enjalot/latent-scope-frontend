@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SuggestionsPanel from './SuggestionsPanel';
 import { Button } from 'react-element-forge';
+import { useSearchParams } from 'react-router-dom';
 
 import SearchResults from './SearchResults';
 import { useScope } from '../../../contexts/ScopeContext';
@@ -21,24 +22,24 @@ const Container = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [selection, setSelection] = useState(null);
 
-  const { clusterLabels } = useScope();
+  const { clusterLabels, scopeLoaded } = useScope();
   const {
     searchFilter,
     featureFilter,
     clusterFilter,
     setAnyFilterActive,
-    searchQuery,
-    setSearchQuery,
+    filterQuery,
+    setFilterQuery,
     columnFilter,
   } = useFilter();
 
   // Handle updates to the search query from the input field
   const handleInputChange = (val) => {
-    setSearchQuery(val);
+    setFilterQuery(val);
     // Optionally update suggestions based on the current input value
 
     // re-open the dropdown whenever the query changes
-    setDropdownIsOpen(true);
+    // setDropdownIsOpen(true);
   };
 
   const handleInputFocus = () => {
@@ -51,9 +52,60 @@ const Container = () => {
 
   // Handle when a user selects a suggestion from the SuggestionsPanel
   const handleSuggestionSelect = (suggestion) => {
-    setSearchQuery(suggestion);
+    setFilterQuery(suggestion);
     setIsInputFocused(false); // Hide results after selection
   };
+
+  // ==== URL PARAMS ====
+
+  const [urlParams, setUrlParams] = useSearchParams();
+
+  // need to initialize the filter state from the url params on first render
+  // maybe this should be done in the FilterProvider?
+  useEffect(() => {
+    if (!scopeLoaded) return;
+
+    // let's just grab the first key for now
+    const key = urlParams.keys().next().value;
+    const value = urlParams.get(key);
+
+    if (key === filterConstants.SEARCH) {
+      const { setSearchText } = searchFilter;
+      setSearchText(value);
+      setFilterQuery(value);
+    } else if (key === filterConstants.CLUSTER) {
+      const { setCluster } = clusterFilter;
+      const cluster = clusterLabels.find((cluster) => cluster.cluster === parseInt(value));
+      if (cluster) {
+        setCluster(cluster);
+        setFilterQuery(cluster.label);
+      }
+    } else if (key === filterConstants.FEATURE) {
+      const { setFeature } = featureFilter;
+      setFeature(value);
+    } else if (key === filterConstants.COLUMN) {
+      const { setColumnFiltersActive } = columnFilter;
+      // const
+      // setColumnFiltersActive({ [column]: value });
+    }
+
+    // const anyFilterActive = [
+    //   filterConstants.CLUSTER,
+    //   filterConstants.FEATURE,
+    //   filterConstants.COLUMN,
+    //   filterConstants.SEARCH,
+    // ].some((filter) => key === filter);
+
+    // setAnyFilterActive(anyFilterActive);
+  }, [
+    urlParams,
+    scopeLoaded,
+    searchFilter,
+    clusterFilter,
+    featureFilter,
+    columnFilter,
+    setAnyFilterActive,
+  ]);
 
   // ==== DROPDOWN RELATED STATE ====
   // we need to manage this here because we need to re-open the dropdown whenever the query changes.
@@ -83,7 +135,7 @@ const Container = () => {
     setSelection(selection);
 
     const { type, value, label, column } = selection;
-    setSearchQuery(label);
+    setFilterQuery(label);
 
     if (type === filterConstants.CLUSTER) {
       const { setCluster } = clusterFilter;
@@ -101,30 +153,41 @@ const Container = () => {
       const { setColumnFiltersActive } = columnFilter;
       setColumnFiltersActive({ [column]: value });
     }
+
+    setUrlParams((prev) => {
+      if (type === filterConstants.COLUMN) {
+        prev.set('column', column);
+        prev.set('value', value);
+      } else {
+        prev.set(type, value);
+      }
+      return prev;
+    });
   };
-
-  // TODO: update query in url params
-
-  // if (cluster !== value) {
-  //   setUrlParams((prev) => {
-  //     prev.set('cluster', value);
-  //     return prev;
-  //   });
-  // }
 
   const handleClear = () => {
     const { type } = selection;
-    if (type === 'search') {
+    if (type === filterConstants.SEARCH) {
       const { setSearchText, setDistances } = searchFilter;
       setSearchText('');
       setDistances([]);
     }
 
-    setSearchQuery('');
+    setFilterQuery('');
     setHasSelection(false);
     setDropdownIsOpen(false);
     setAnyFilterActive(false);
     setSelection(null);
+
+    // delete all filter params from the url
+    setUrlParams((prev) => {
+      prev.delete('cluster');
+      prev.delete('feature');
+      prev.delete('search');
+      prev.delete('column');
+      prev.delete('value');
+      return new URLSearchParams(prev);
+    });
   };
 
   return (
@@ -135,7 +198,7 @@ const Container = () => {
           <input
             className={styles.searchInput}
             type="text"
-            value={searchQuery}
+            value={filterQuery}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Search dataset for..."
             onFocus={handleInputFocus}
@@ -161,11 +224,11 @@ const Container = () => {
         )} */}
 
         {/* When a query exists, show the NN search result and filter options */}
-        {searchQuery !== '' && (
+        {filterQuery !== '' && (
           <div className={styles.searchResults} ref={selectRef}>
             <div className={styles.searchResultsHeader}>
               <SearchResults
-                query={searchQuery}
+                query={filterQuery}
                 onSelect={handleSelect}
                 menuIsOpen={dropdownIsOpen}
               />
@@ -187,7 +250,7 @@ const SearchResultsMetadata = ({ selection }) => {
       <div className={styles.searchResultsMetadata}>
         <div className={styles.searchResultsMetadataItem}>
           <span className={styles.searchResultsMetadataLabel}>
-            Default (showing first {shownIndices.length} rows in dataset):{` `}
+            Showing first {shownIndices.length} rows in dataset:
           </span>
         </div>
         <div className={styles.searchResultsMetadataItem}>
