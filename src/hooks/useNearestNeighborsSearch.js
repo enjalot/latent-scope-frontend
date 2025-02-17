@@ -50,14 +50,6 @@ export default function useNearestNeighborsSearch({
     }
   }, [searchText, search]);
 
-  // Initialize search from URL params
-  useEffect(() => {
-    if (scopeLoaded && urlParams.has('search')) {
-      const searchParam = urlParams.get('search');
-      setSearchText(searchParam);
-    }
-  }, [scopeLoaded, urlParams]);
-
   return {
     searchText,
     setSearchText,

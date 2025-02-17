@@ -20,7 +20,6 @@ import { filterConstants } from './utils';
  */
 const Container = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const [selection, setSelection] = useState(null);
 
   const { clusterLabels, scopeLoaded } = useScope();
   const {
@@ -31,6 +30,8 @@ const Container = () => {
     filterQuery,
     setFilterQuery,
     columnFilter,
+    selection,
+    setSelection,
   } = useFilter();
 
   // Handle updates to the search query from the input field
@@ -222,11 +223,11 @@ const Container = () => {
         </div>
 
         {/* Show SuggestionsPanel only when input is focused and there's no query */}
-        {/* {query === '' && isInputFocused && (
+        {filterQuery === '' && isInputFocused && (
           <div className={styles.searchResults} ref={selectRef}>
             <SuggestionsPanel onSelect={handleSuggestionSelect} />
           </div>
-        )} */}
+        )}
 
         {/* When a query exists, show the NN search result and filter options */}
         {filterQuery !== '' && (

@@ -40,12 +40,12 @@ export default function useFeatureFilter({
       setFeatureIndicesLoaded(false);
       setLoading(true);
       apiService.searchSaeFeature(userId, datasetId, scope?.id, feature, threshold).then((data) => {
-        setFilteredIndices(data);
+        // setFilteredIndices(data);
         setFeatureIndicesLoaded(true);
         setLoading(false);
       });
     } else {
-      setFilteredIndices([]);
+      // setFilteredIndices([]);
       setLoading(false);
     }
   }, [userId, datasetId, scope, feature, threshold, setFilteredIndices, scopeLoaded]);

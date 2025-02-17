@@ -6,8 +6,7 @@ import useColumnFilter from '../hooks/useColumnFilter';
 import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
 import useClusterFilter from '../hooks/useClusterFilter';
 import useFeatureFilter from '../hooks/useFeatureFilter';
-
-
+import { filterConstants } from '../components/Explore/Search/utils';
 
 const FilterContext = createContext(null);
 
@@ -21,14 +20,39 @@ export function FilterProvider({ children }) {
   const ROWS_PER_PAGE = 20;
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [allFilteredIndices, setAllFilteredIndices] = useState([]);
-  const [shownIndices, setShownIndices] = useState([]);
+  const [filteredIndices, setFilteredIndices] = useState([]);
   const [anyFilterActive, setAnyFilterActive] = useState(false);
+
+  // This is the currently selected filter
+  const [selection, setSelection] = useState(null);
 
   // Base set of non-deleted indices
   const baseIndices = useMemo(() => {
     return scopeRows.map((row) => row.ls_index).filter((index) => !deletedIndices.includes(index));
   }, [scopeRows, deletedIndices]);
+
+  // Derive the indices that will be shown in the table view from the filtered indices
+  const shownIndices = useMemo(() => {
+    const start = page * ROWS_PER_PAGE;
+    return filteredIndices.slice(start, start + ROWS_PER_PAGE);
+  }, [filteredIndices, page]);
+
+  // Update total pages and page state whenever base indices change
+  useEffect(() => {
+    setTotalPages(Math.ceil(filteredIndices.length / ROWS_PER_PAGE));
+    setPage(0);
+  }, [filteredIndices]);
+
+  // apply the filters to the base indices
+  useEffect(() => {
+    if (!anyFilterActive) {
+      setFilteredIndices(baseIndices);
+    } else {
+      // this needs to be a function of the currently active filter.
+      const evens = baseIndices.filter((index) => index % 2 === 0);
+      setFilteredIndices(evens);
+    }
+  }, [scopeLoaded, anyFilterActive, baseIndices]);
 
   // Filter hooks
   const searchFilter = useNearestNeighborsSearch({
@@ -38,18 +62,8 @@ export function FilterProvider({ children }) {
     deletedIndices,
     urlParams,
     scopeLoaded,
-    setFilteredIndices: setAllFilteredIndices,
+    setFilteredIndices,
   });
-
-  // Reset page when filter status changes
-  useEffect(() => {
-    setPage(0);
-  }, [anyFilterActive]);
-
-  // Update total pages whenever base indices change
-  useEffect(() => {
-    setTotalPages(Math.ceil(allFilteredIndices.length / ROWS_PER_PAGE));
-  }, [allFilteredIndices]);
 
   // Update shown indices when page or allFilteredIndices changes
   // useEffect(() => {
@@ -72,24 +86,17 @@ export function FilterProvider({ children }) {
     scope,
     scopeLoaded,
     urlParams,
-    setFilteredIndices: setAllFilteredIndices,
+    setFilteredIndices: setFilteredIndices,
   });
-  const columnFilter = useColumnFilter(userId, datasetId, scope, setAllFilteredIndices);
+  const columnFilter = useColumnFilter(userId, datasetId, scope, setFilteredIndices);
   const featureFilter = useFeatureFilter({
     userId,
     datasetId,
     scope,
     urlParams,
     scopeLoaded,
-    setFilteredIndices: setAllFilteredIndices,
+    setFilteredIndices,
   });
-
-  const nonDeletedDataTableIndices = useMemo(() => {
-    const indexes = scopeRows
-      .filter((row) => !deletedIndices.includes(row.ls_index))
-      .map((row) => row.ls_index);
-    return indexes;
-  }, [scopeRows, deletedIndices]);
 
   // // Update defaultIndices when scopeRows changes
   // useEffect(() => {
@@ -129,10 +136,9 @@ export function FilterProvider({ children }) {
   }, [searchFilter.loading]);
 
   const value = {
-    allFilteredIndices,
-    setAllFilteredIndices,
+    allFilteredIndices: filteredIndices,
+    setAllFilteredIndices: setFilteredIndices,
     shownIndices,
-    setShownIndices,
 
     featureFilter,
     // featureIndices,
@@ -175,6 +181,8 @@ export function FilterProvider({ children }) {
     ROWS_PER_PAGE,
     filterQuery,
     setFilterQuery,
+    selection,
+    setSelection,
   };
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;

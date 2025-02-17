@@ -152,20 +152,20 @@ const NNSearch = ({ children, ...props }) => {
   );
 };
 
+const NUM_SEARCH_RESULTS = 4;
+
 const SearchResults = ({ query, menuIsOpen, onSelect }) => {
   const { features, userId, datasetId, scope, clusterLabels } = useScope();
   const columnFilter = useColumnFilter(userId, datasetId, scope);
   const { columnFilters } = columnFilter;
 
-  const NUM_RESULTS = 4;
-
   const featureOptions = useMemo(
-    () => (features.length > 0 ? findFeaturesByQuery(features, query, NUM_RESULTS) : []),
+    () => (features.length > 0 ? findFeaturesByQuery(features, query, NUM_SEARCH_RESULTS) : []),
     [features, query]
   );
 
   const clusterOptions = useMemo(
-    () => findClustersByQuery(clusterLabels, query, NUM_RESULTS),
+    () => findClustersByQuery(clusterLabels, query, NUM_SEARCH_RESULTS),
     [clusterLabels, query]
   );
 
@@ -187,7 +187,7 @@ const SearchResults = ({ query, menuIsOpen, onSelect }) => {
     const searchTerm = query.toLowerCase();
     return options
       .filter((option) => option.value.toString().toLowerCase().includes(searchTerm))
-      .slice(0, NUM_RESULTS);
+      .slice(0, NUM_SEARCH_RESULTS);
   }, [columnFilters, query]);
 
   // Group options by type

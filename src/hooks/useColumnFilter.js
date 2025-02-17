@@ -50,7 +50,7 @@ const useColumnFilter = (userId, datasetId, scope, setAllFilteredIndices) => {
       columnQuery(columnFiltersActive);
       setActive(true);
     } else if (setAllFilteredIndices) {
-      setAllFilteredIndices([]);
+      // setAllFilteredIndices([]);
       setActive(false);
     }
   }, [columnFiltersActive, columnQuery, setAllFilteredIndices]);

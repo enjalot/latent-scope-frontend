@@ -18,11 +18,11 @@ export default function useClusterFilter({
       setLoading(true);
       const annots = scopeRows.filter((d) => d.cluster === cluster.cluster);
       const indices = annots.map((d) => d.ls_index);
-      setFilteredIndices(indices);
+      // setFilteredIndices(indices);
       setActive(true);
       setLoading(false);
     } else {
-      setFilteredIndices([]);
+      // setFilteredIndices([]);
       setActive(false);
     }
   }, [cluster, scopeRows, scopeLoaded]);
