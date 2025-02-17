@@ -190,8 +190,6 @@ const SearchResults = ({ query, menuIsOpen, onSelect }) => {
       .slice(0, NUM_RESULTS);
   }, [columnFilters, query]);
 
-  console.log({ columnOptions });
-
   // Group options by type
   const groupedOptions = [
     {

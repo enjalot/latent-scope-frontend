@@ -23,6 +23,7 @@ export function FilterProvider({ children }) {
   const [totalPages, setTotalPages] = useState(0);
   const [allFilteredIndices, setAllFilteredIndices] = useState([]);
   const [shownIndices, setShownIndices] = useState([]);
+  const [anyFilterActive, setAnyFilterActive] = useState(false);
 
   // Base set of non-deleted indices
   const baseIndices = useMemo(() => {
@@ -40,8 +41,6 @@ export function FilterProvider({ children }) {
     setFilteredIndices: setAllFilteredIndices,
   });
 
-  const [anyFilterActive, setAnyFilterActive] = useState(false);
-
   // Reset page when filter status changes
   useEffect(() => {
     setPage(0);
@@ -53,18 +52,20 @@ export function FilterProvider({ children }) {
   }, [allFilteredIndices]);
 
   // Update shown indices when page or allFilteredIndices changes
-  useEffect(() => {
-    const start = page * ROWS_PER_PAGE;
-    const end = start + ROWS_PER_PAGE;
-    setShownIndices(allFilteredIndices.slice(start, end));
-  }, [page, allFilteredIndices]);
+  // useEffect(() => {
+  //   const start = page * ROWS_PER_PAGE;
+  //   const end = start + ROWS_PER_PAGE;
+  //   setShownIndices(allFilteredIndices.slice(start, end));
+  // }, [page, allFilteredIndices]);
 
-  // Set default indices when no filter is active
-  useEffect(() => {
-    if (!anyFilterActive) {
-      setAllFilteredIndices(baseIndices);
-    }
-  }, [anyFilterActive, baseIndices]);
+  // // Set default indices when no filter is active
+  // useEffect(() => {
+  //   if (!anyFilterActive) {
+  //     setAllFilteredIndices(baseIndices);
+  //   } else {
+  //     setAllFilteredIndices(shownIndices);
+  //   }
+  // }, [anyFilterActive, baseIndices, shownIndices]);
 
   const clusterFilter = useClusterFilter({
     scopeRows,
@@ -90,31 +91,31 @@ export function FilterProvider({ children }) {
     return indexes;
   }, [scopeRows, deletedIndices]);
 
-  // Update defaultIndices when scopeRows changes
-  useEffect(() => {
-    // where should I be handling that we only want to show the top N points?
+  // // Update defaultIndices when scopeRows changes
+  // useEffect(() => {
+  //   // where should I be handling that we only want to show the top N points?
 
-    // so whatever indexes that are being set to centerIndicies will control the highlighted points in the umap
-    // i.e. if we don't truncate any points, then all of them will be highlighted in the umap
+  //   // so whatever indexes that are being set to centerIndicies will control the highlighted points in the umap
+  //   // i.e. if we don't truncate any points, then all of them will be highlighted in the umap
 
-    // then we also have to deal with what is being shown in the table view
-    // the table view will take whatever is being set by dataTableIndices (logic above)
-    // and then do its own pagination.
+  //   // then we also have to deal with what is being shown in the table view
+  //   // the table view will take whatever is being set by dataTableIndices (logic above)
+  //   // and then do its own pagination.
 
-    // instinctively i feel like this component should be concerned with handling pagination
+  //   // instinctively i feel like this component should be concerned with handling pagination
 
-    if (scopeRows?.length) {
-      const totalPages = Math.ceil(nonDeletedDataTableIndices.length / ROWS_PER_PAGE);
-      setTotalPages(totalPages);
-      setAllFilteredIndices(nonDeletedDataTableIndices);
-      const paged = nonDeletedDataTableIndices.slice(
-        page * ROWS_PER_PAGE,
-        (page + 1) * ROWS_PER_PAGE
-      );
-      setShownIndices(paged);
-      // setPage(0);
-    }
-  }, [scopeRows, deletedIndices, setAllFilteredIndices, page, setShownIndices, , setTotalPages]);
+  //   if (scopeRows?.length) {
+  //     const totalPages = Math.ceil(nonDeletedDataTableIndices.length / ROWS_PER_PAGE);
+  //     setTotalPages(totalPages);
+  //     setAllFilteredIndices(nonDeletedDataTableIndices);
+  //     const paged = nonDeletedDataTableIndices.slice(
+  //       page * ROWS_PER_PAGE,
+  //       (page + 1) * ROWS_PER_PAGE
+  //     );
+  //     setShownIndices(paged);
+  //     // setPage(0);
+  //   }
+  // }, [scopeRows, deletedIndices, setAllFilteredIndices, page, setShownIndices, , setTotalPages]);
 
   // Update active tab based on URL params, but only on first load.
   // We only do this on first load to prevent us from switching tabs unintentionally when the URL params are removed

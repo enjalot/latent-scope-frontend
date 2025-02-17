@@ -39,7 +39,7 @@ const Container = () => {
     // Optionally update suggestions based on the current input value
 
     // re-open the dropdown whenever the query changes
-    // setDropdownIsOpen(true);
+    setDropdownIsOpen(true);
   };
 
   const handleInputFocus = () => {
@@ -89,14 +89,23 @@ const Container = () => {
       // setColumnFiltersActive({ [column]: value });
     }
 
-    // const anyFilterActive = [
-    //   filterConstants.CLUSTER,
-    //   filterConstants.FEATURE,
-    //   filterConstants.COLUMN,
-    //   filterConstants.SEARCH,
-    // ].some((filter) => key === filter);
+    const anyFilterActive = [
+      filterConstants.CLUSTER,
+      filterConstants.FEATURE,
+      filterConstants.COLUMN,
+      filterConstants.SEARCH,
+    ].some((filter) => key === filter);
 
-    // setAnyFilterActive(anyFilterActive);
+    setAnyFilterActive(anyFilterActive);
+
+    if (anyFilterActive) {
+      const selection = {
+        type: key,
+        value: value,
+        label: value,
+      };
+      setSelection(selection);
+    }
   }, [
     urlParams,
     scopeLoaded,
@@ -123,13 +132,10 @@ const Container = () => {
     };
   }, []);
 
-  const [dropdownIsOpen, setDropdownIsOpen] = useState(true);
+  const [dropdownIsOpen, setDropdownIsOpen] = useState(false);
   const selectRef = useRef(null);
 
-  const [hasSelection, setHasSelection] = useState(false);
-
   const handleSelect = (selection) => {
-    setHasSelection(true);
     setDropdownIsOpen(false);
     setAnyFilterActive(true);
     setSelection(selection);
@@ -174,7 +180,6 @@ const Container = () => {
     }
 
     setFilterQuery('');
-    setHasSelection(false);
     setDropdownIsOpen(false);
     setAnyFilterActive(false);
     setSelection(null);
@@ -204,7 +209,7 @@ const Container = () => {
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
           />
-          {hasSelection && (
+          {selection !== null && (
             <Button
               color="secondary"
               className={styles.searchButton}
