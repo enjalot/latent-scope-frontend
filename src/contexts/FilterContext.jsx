@@ -75,6 +75,8 @@ export function FilterProvider({ children }) {
   });
   const columnFilter = useColumnFilter(userId, datasetId, scope);
 
+  console.log({ columnFilter });
+
   const featureFilter = useFeatureFilter({
     userId,
     datasetId,
@@ -117,36 +119,6 @@ export function FilterProvider({ children }) {
     }
   }, [scopeRows, deletedIndices, setAllFilteredIndices, page, setShownIndices, , setTotalPages]);
 
-  // // Update filtered indices based on active filter
-  // useEffect(() => {
-  //   switch (activeFilterTab) {
-  //     case CLUSTER:
-  //       setFilteredIndices(clusterFilter.clusterIndices);
-  //       break;
-  //     case SEARCH:
-  //       setFilteredIndices(searchFilter.searchIndices);
-  //       break;
-  //     case SELECT:
-  //       setFilteredIndices(selectedIndices);
-  //       break;
-  //     case COLUMN:
-  //       setFilteredIndices(columnFilter.columnIndices);
-  //       break;
-  //     case FEATURE:
-  //       setFilteredIndices(featureFilter.featureIndices);
-  //       break;
-  //     default:
-  //       setFilteredIndices([]);
-  //   }
-  // }, [
-  //   activeFilterTab,
-  //   clusterFilter.clusterIndices,
-  //   searchFilter.searchIndices,
-  //   selectedIndices,
-  //   columnFilter.columnIndices,
-  //   featureFilter.featureIndices,
-  // ]);
-
   // Update active tab based on URL params, but only on first load.
   // We only do this on first load to prevent us from switching tabs unintentionally when the URL params are removed
   // (e.g. when a filter is removed through the UI)
@@ -181,7 +153,7 @@ export function FilterProvider({ children }) {
     clusterFilter,
     // setCluster,
 
-    // columnFilter,
+    columnFilter,
     // columnFiltersActive,
     // setColumnFiltersActive,
     // columnFilters,

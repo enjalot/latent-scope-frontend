@@ -5,6 +5,7 @@ import Select, { components } from 'react-select';
 import styles from './SearchResults.module.scss';
 import { useScope } from '../../../contexts/ScopeContext';
 import { filterConstants, findFeaturesByQuery, findClustersByQuery } from './utils';
+import useColumnFilter from '../../../hooks/useColumnFilter';
 
 // Function to underline the search term
 const underlineText = (text, query) => {
@@ -122,7 +123,9 @@ const NNSearch = ({ children, ...props }) => {
 };
 
 const SearchResults = ({ query, onSelect, menuIsOpen }) => {
-  const { clusterLabels, features } = useScope();
+  const { scope, clusterLabels, features, userId, datasetId } = useScope();
+  const { columnFilter } = useColumnFilter(userId, datasetId, scope);
+  const { columnFilters } = columnFilter;
 
   const NUM_RESULTS = 5;
 
