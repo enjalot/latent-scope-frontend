@@ -7,6 +7,10 @@ import { useScope } from '../../../contexts/ScopeContext';
 import { filterConstants, findFeaturesByQuery, findClustersByQuery } from './utils';
 import useColumnFilter from '../../../hooks/useColumnFilter';
 
+const COLUMNS = 'Columns';
+const CLUSTERS = 'Clusters';
+const FEATURES = 'Features';
+
 // Function to underline the search term
 const underlineText = (text, query) => {
   if (!query) return text;
@@ -29,15 +33,41 @@ const Option = (props) => {
 
   const handleClick = (e) => {
     e.preventDefault();
-
-    // Get the group type from the option's parent group
     const groupType = props.options.find((group) =>
       group.options?.some((opt) => opt.value === data.value)
     )?.label;
 
-    let type = groupType === 'Clusters' ? filterConstants.CLUSTER : filterConstants.FEATURE;
-    onSelect({ type, value: data.value, label: data.label });
+    if (groupType === COLUMNS) {
+      onSelect({
+        type: 'column',
+        value: data.value,
+        column: data.column,
+        label: data.label,
+      });
+    } else if (groupType === CLUSTERS) {
+      onSelect({ type: 'cluster', value: data.value, label: data.label });
+    } else if (groupType === FEATURES) {
+      onSelect({ type: 'feature', value: data.value, label: data.label });
+    }
   };
+
+  // Get the group type
+  const groupType = props.options.find((group) =>
+    group.options?.some((opt) => opt.value === data.value)
+  )?.label;
+
+  if (groupType === COLUMNS) {
+    return (
+      <div onClick={handleClick}>
+        <components.Option {...props}>
+          <div className={styles.columnResultContent}>
+            <span>{underlineText(data.label, inputValue)}</span>
+            <span className={styles.columnLabel}>{data.column}</span>
+          </div>
+        </components.Option>
+      </div>
+    );
+  }
 
   return (
     <div onClick={handleClick}>
@@ -122,12 +152,12 @@ const NNSearch = ({ children, ...props }) => {
   );
 };
 
-const SearchResults = ({ query, onSelect, menuIsOpen }) => {
-  const { scope, clusterLabels, features, userId, datasetId } = useScope();
-  const { columnFilter } = useColumnFilter(userId, datasetId, scope);
+const SearchResults = ({ query, menuIsOpen, onSelect }) => {
+  const { features, userId, datasetId, scope, clusterLabels } = useScope();
+  const columnFilter = useColumnFilter(userId, datasetId, scope);
   const { columnFilters } = columnFilter;
 
-  const NUM_RESULTS = 5;
+  const NUM_RESULTS = 4;
 
   const featureOptions = useMemo(
     () => (features.length > 0 ? findFeaturesByQuery(features, query, NUM_RESULTS) : []),
@@ -139,18 +169,48 @@ const SearchResults = ({ query, onSelect, menuIsOpen }) => {
     [clusterLabels, query]
   );
 
+  // Transform column values into options
+  const columnOptions = useMemo(() => {
+    if (!columnFilters) return [];
+
+    // Flatten all column values into searchable options
+    const options = columnFilters.flatMap((column) =>
+      column.categories.map((category) => ({
+        value: category,
+        label: category, // Just the value
+        column: column.column, // Store column name for display
+      }))
+    );
+
+    // Filter based on query
+    if (!query) return [];
+    const searchTerm = query.toLowerCase();
+    return options
+      .filter((option) => option.value.toString().toLowerCase().includes(searchTerm))
+      .slice(0, NUM_RESULTS);
+  }, [columnFilters, query]);
+
+  console.log({ columnOptions });
+
   // Group options by type
   const groupedOptions = [
     {
-      label: 'Clusters',
+      label: CLUSTERS,
       options: clusterOptions,
     },
   ];
 
   if (featureOptions.length > 0) {
     groupedOptions.push({
-      label: 'Features',
+      label: FEATURES,
       options: featureOptions,
+    });
+  }
+
+  if (columnOptions.length > 0) {
+    groupedOptions.push({
+      label: COLUMNS,
+      options: columnOptions,
     });
   }
 
@@ -193,7 +253,7 @@ const SearchResults = ({ query, onSelect, menuIsOpen }) => {
 
 SearchResults.propTypes = {
   query: PropTypes.string.isRequired,
-  dropdownIsOpen: PropTypes.bool.isRequired,
+  menuIsOpen: PropTypes.bool.isRequired,
   onSelect: PropTypes.func.isRequired,
 };
 

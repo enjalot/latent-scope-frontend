@@ -88,3 +88,14 @@
     align-items: center;
     gap: 8px;
   }
+
+  .columnResultContent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .columnLabel {
+    color: var(--text-color-text-subtle);
+    font-size: 12px;
+  }

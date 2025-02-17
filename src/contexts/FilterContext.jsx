@@ -73,10 +73,7 @@ export function FilterProvider({ children }) {
     urlParams,
     setFilteredIndices: setAllFilteredIndices,
   });
-  const columnFilter = useColumnFilter(userId, datasetId, scope);
-
-  console.log({ columnFilter });
-
+  const columnFilter = useColumnFilter(userId, datasetId, scope, setAllFilteredIndices);
   const featureFilter = useFeatureFilter({
     userId,
     datasetId,

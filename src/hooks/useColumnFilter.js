@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../lib/apiService';
 
-const useColumnFilter = (userId, datasetId, scope) => {
+const useColumnFilter = (userId, datasetId, scope, setAllFilteredIndices) => {
   const [columnFiltersActive, setColumnFiltersActive] = useState({});
-  const [columnIndices, setColumnIndices] = useState([]);
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -37,7 +36,7 @@ const useColumnFilter = (userId, datasetId, scope) => {
         }
       });
       apiService.columnFilter(userId, datasetId, scope?.id, query).then((indices) => {
-        setColumnIndices(indices.map((d) => d.index));
+        setAllFilteredIndices(indices.map((d) => d.index));
         setLoading(false);
       });
     },
@@ -50,18 +49,16 @@ const useColumnFilter = (userId, datasetId, scope) => {
     if (activeFilters > 0) {
       columnQuery(columnFiltersActive);
       setActive(true);
-    } else if (setColumnIndices) {
-      setColumnIndices([]);
+    } else if (setAllFilteredIndices) {
+      setAllFilteredIndices([]);
       setActive(false);
     }
-  }, [columnFiltersActive, columnQuery, setColumnIndices]);
+  }, [columnFiltersActive, columnQuery, setAllFilteredIndices]);
 
   return {
     columnFiltersActive,
     setColumnFiltersActive,
     columnFilters,
-    columnIndices,
-    setColumnIndices,
     active,
     loading,
   };

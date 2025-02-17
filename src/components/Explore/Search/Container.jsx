@@ -29,6 +29,7 @@ const Container = () => {
     setAnyFilterActive,
     searchQuery,
     setSearchQuery,
+    columnFilter,
   } = useFilter();
 
   // Handle updates to the search query from the input field
@@ -81,7 +82,7 @@ const Container = () => {
     setAnyFilterActive(true);
     setSelection(selection);
 
-    const { type, value, label } = selection;
+    const { type, value, label, column } = selection;
     setSearchQuery(label);
 
     if (type === filterConstants.CLUSTER) {
@@ -96,6 +97,9 @@ const Container = () => {
     } else if (type === filterConstants.SEARCH) {
       const { setSearchText } = searchFilter;
       setSearchText(value);
+    } else if (type === filterConstants.COLUMN) {
+      const { setColumnFiltersActive } = columnFilter;
+      setColumnFiltersActive({ [column]: value });
     }
   };
 
