@@ -29,7 +29,7 @@ const underlineText = (text, query) => {
 // Custom Option component
 const Option = (props) => {
   const { data, selectProps } = props;
-  const { onSelect, inputValue } = selectProps;
+  const { onSelect, inputValue, setFilterQuery } = selectProps;
 
   const handleClick = (e) => {
     e.preventDefault();
@@ -44,10 +44,13 @@ const Option = (props) => {
         column: data.column,
         label: data.label,
       });
+      setFilterQuery(data.label);
     } else if (groupType === CLUSTERS) {
       onSelect({ type: 'cluster', value: data.value, label: data.label });
+      setFilterQuery(data.label);
     } else if (groupType === FEATURES) {
       onSelect({ type: 'feature', value: data.value, label: data.label });
+      setFilterQuery(data.label);
     }
   };
 
@@ -104,7 +107,7 @@ const customStyles = {
     fontSize: '0.9em',
     fontWeight: 600,
     textTransform: 'uppercase',
-    padding: '0 12px',
+    padding: '0 10px',
     marginBottom: '8px',
   }),
   option: (base, state) => ({
@@ -125,9 +128,9 @@ const customStyles = {
 };
 
 // Custom Menu component with NN search
-const NNSearch = ({ children, ...props }) => {
+const MenuWithNNSearch = ({ children, ...props }) => {
   const { selectProps } = props;
-  const { query, onSelect, options } = selectProps;
+  const { query, onSelect, options, setFilterQuery } = selectProps;
 
   // Check if there are any matches in the cluster / feature options
   const hasMatches = options.some((group) => group.options && group.options.length > 0);
@@ -135,6 +138,7 @@ const NNSearch = ({ children, ...props }) => {
   const handleNNSubmit = (e) => {
     e.preventDefault();
     onSelect({ type: filterConstants.SEARCH, value: query });
+    setFilterQuery(query);
   };
 
   return (
@@ -156,7 +160,7 @@ const NNSearch = ({ children, ...props }) => {
 
 export const NUM_SEARCH_RESULTS = 4;
 
-const SearchResults = ({ query, menuIsOpen, onSelect }) => {
+const SearchResults = ({ query, menuIsOpen, onSelect, setFilterQuery }) => {
   const { features, userId, datasetId, scope, clusterLabels } = useScope();
   const columnFilter = useColumnFilter(userId, datasetId, scope);
   const { columnFilters } = columnFilter;
@@ -216,11 +220,7 @@ const SearchResults = ({ query, menuIsOpen, onSelect }) => {
     });
   }
 
-  console.log(groupedOptions);
-
-  // Enhanced filter function
   const filterOption = (option, inputValue) => {
-    console.log(option, inputValue);
     if (!inputValue) return true;
 
     // If this is a group, check if any of its options match
@@ -239,10 +239,11 @@ const SearchResults = ({ query, menuIsOpen, onSelect }) => {
       components={{
         Option,
         Group,
-        Menu: NNSearch,
+        Menu: MenuWithNNSearch,
       }}
       styles={customStyles}
       query={query}
+      setFilterQuery={setFilterQuery}
       onMenuOpen={() => true}
       onMenuClose={() => false}
       onChange={() => false}
@@ -262,6 +263,7 @@ SearchResults.propTypes = {
   query: PropTypes.string.isRequired,
   menuIsOpen: PropTypes.bool.isRequired,
   onSelect: PropTypes.func.isRequired,
+  setFilterQuery: PropTypes.func.isRequired,
 };
 
 export default SearchResults;

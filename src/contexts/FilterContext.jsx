@@ -205,7 +205,7 @@ import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
 import useClusterFilter from '../hooks/useClusterFilter';
 import useFeatureFilter from '../hooks/useFeatureFilter';
 
-import { filterConstants } from '../components/Explore/Search/utils';
+import { filterConstants, findFeatureLabel } from '../components/Explore/Search/utils';
 
 const FilterContext = createContext(null);
 
@@ -220,8 +220,16 @@ export function FilterProvider({ children }) {
 
   const [urlParams, setUrlParams] = useSearchParams();
   // Pull shared data from a higher-level context.
-  const { scopeRows, deletedIndices, userId, datasetId, scope, scopeLoaded, clusterLabels } =
-    useScope();
+  const {
+    features,
+    scopeRows,
+    deletedIndices,
+    userId,
+    datasetId,
+    scope,
+    scopeLoaded,
+    clusterLabels,
+  } = useScope();
 
   // Base set of non-deleted indices from the dataset.
   const baseIndices = useMemo(() => {
@@ -251,10 +259,11 @@ export function FilterProvider({ children }) {
         setFilterConfig({ type: filterConstants.CLUSTER, value: parseInt(value) });
       }
     } else if (key === filterConstants.FEATURE) {
-      // setFilterQuery(value);
       setFilterConfig({ type: filterConstants.FEATURE, value });
     } else if (key === filterConstants.COLUMN) {
-      setFilterConfig({ type: filterConstants.COLUMN, value: { column: key, value } });
+      const value = urlParams.get('value');
+      const column = urlParams.get('column');
+      setFilterConfig({ type: filterConstants.COLUMN, value, column });
     }
   }, [urlParams, scopeLoaded]);
 
@@ -288,13 +297,17 @@ export function FilterProvider({ children }) {
           }
           case filterConstants.FEATURE: {
             const { setFeature, filter } = featureFilter;
-            setFeature(value);
-            indices = await filter();
+            const featureLabel = findFeatureLabel(features, parseInt(value));
+            if (featureLabel) {
+              setFeature(value);
+              indices = await filter();
+            }
             break;
           }
           case filterConstants.COLUMN: {
             const { filter } = columnFilter;
-            indices = await filter(value);
+            const { column } = filterConfig;
+            indices = await filter(column, value);
             break;
           }
           default: {

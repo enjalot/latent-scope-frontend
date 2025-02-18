@@ -1,6 +1,7 @@
 // SearchContainer.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from 'react-element-forge';
+import { useSearchParams } from 'react-router-dom';
 
 import SearchResults from './SearchResults';
 import { useScope } from '../../../contexts/ScopeContext';
@@ -18,6 +19,7 @@ import { filterConstants } from './utils';
  */
 const Container = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [urlParams, setUrlParams] = useSearchParams();
 
   const { clusterLabels, scopeLoaded } = useScope();
   const {
@@ -90,6 +92,8 @@ const Container = () => {
       }
       return prev;
     });
+
+    setDropdownIsOpen(false);
   };
 
   const handleClear = () => {
@@ -152,6 +156,7 @@ const Container = () => {
           <div className={styles.searchResultsHeader}>
             <SearchResults
               query={filterQuery}
+              setFilterQuery={setFilterQuery}
               onSelect={handleSelect}
               menuIsOpen={dropdownIsOpen || isInputFocused}
             />

@@ -39,6 +39,10 @@ export const findClustersByQuery = (clusters, query, top = 5) => {
     }));
 };
 
+export const findFeatureLabel = (features, feature) => {
+  return features.find((f) => f.feature === feature)?.label;
+};
+
 export const filterConstants = {
   SEARCH: 'search',
   CLUSTER: 'cluster',

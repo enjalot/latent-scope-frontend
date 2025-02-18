@@ -23,7 +23,8 @@ export default function useFeatureFilter({ userId, datasetId, scope, scopeLoaded
     }
   }, [feature, scope, setThreshold]);
 
-  const filter = async (feature) => {
+  const filter = async () => {
+    console.log('feature', feature);
     if (feature >= 0) {
       const data = await apiService.searchSaeFeature(
         userId,
@@ -32,6 +33,7 @@ export default function useFeatureFilter({ userId, datasetId, scope, scopeLoaded
         feature,
         threshold
       );
+      console.log('data', data);
       return data;
     }
     return [];

@@ -19,18 +19,15 @@ const useColumnFilter = (userId, datasetId, scope) => {
       .filter((d) => d.counts && Object.keys(d.counts).length > 1);
   }, [dataset]);
 
-  const filter = async (filters) => {
-    let query = [];
-    Object.keys(filters).forEach((c) => {
-      let f = filters[c];
-      if (f) {
-        query.push({
-          column: c,
-          type: 'eq',
-          value: f,
-        });
-      }
-    });
+  const filter = async (column, value) => {
+    let query = [
+      {
+        column: column,
+        type: 'eq',
+        value: value,
+      },
+    ];
+    console.log({ query });
     return apiService.columnFilter(userId, datasetId, scope?.id, query);
   };
 
