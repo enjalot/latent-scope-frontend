@@ -205,7 +205,11 @@ import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
 import useClusterFilter from '../hooks/useClusterFilter';
 import useFeatureFilter from '../hooks/useFeatureFilter';
 
-import { filterConstants, findFeatureLabel } from '../components/Explore/Search/utils';
+import {
+  filterConstants,
+  findFeatureLabel,
+  validateColumnAndValue,
+} from '../components/Explore/Search/utils';
 
 const FilterContext = createContext(null);
 
@@ -259,11 +263,19 @@ export function FilterProvider({ children }) {
         setFilterConfig({ type: filterConstants.CLUSTER, value: parseInt(value) });
       }
     } else if (key === filterConstants.FEATURE) {
-      setFilterConfig({ type: filterConstants.FEATURE, value });
+      const featureLabel = findFeatureLabel(features, parseInt(value));
+      if (featureLabel) {
+        setFilterQuery(featureLabel);
+        setFilterConfig({ type: filterConstants.FEATURE, value });
+      }
     } else if (key === filterConstants.COLUMN) {
       const value = urlParams.get('value');
       const column = urlParams.get('column');
-      setFilterConfig({ type: filterConstants.COLUMN, value, column });
+      const { columnFilters } = columnFilter;
+      if (validateColumnAndValue(column, value, columnFilters)) {
+        setFilterQuery(`${column}: ${value}`);
+        setFilterConfig({ type: filterConstants.COLUMN, value, column });
+      }
     }
   }, [urlParams, scopeLoaded]);
 

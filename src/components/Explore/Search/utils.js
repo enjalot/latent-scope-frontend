@@ -43,6 +43,12 @@ export const findFeatureLabel = (features, feature) => {
   return features.find((f) => f.feature === feature)?.label;
 };
 
+export const validateColumnAndValue = (column, value, columnFilters) => {
+  const columnFilter = columnFilters.find((c) => c.column === column);
+  if (!columnFilter) return false;
+  return columnFilter.categories.includes(value);
+};
+
 export const filterConstants = {
   SEARCH: 'search',
   CLUSTER: 'cluster',
