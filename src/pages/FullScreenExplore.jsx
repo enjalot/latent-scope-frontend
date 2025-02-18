@@ -17,6 +17,8 @@ import { useScope } from '../contexts/ScopeContext';
 import { useFilter } from '../contexts/FilterContext';
 import useDebounce from '../hooks/useDebounce';
 
+import { filterConstants } from '../components/Explore/Search/utils';
+
 const styles = {
   dragHandle: {
     position: 'absolute',
@@ -52,8 +54,15 @@ function ExploreContent() {
   } = useScope();
 
   // Get filter-related state from FilterContext
-  // const { searchFilter, featureFilter, filterLoading, dataTableIndices, setFilterQuery } =
-  const { filterLoading, shownIndices, setFilterQuery } = useFilter();
+  const {
+    filterLoading,
+    shownIndices,
+    setFilterQuery,
+    featureFilter,
+    setFilterConfig,
+    setFilterActive,
+    setUrlParams,
+  } = useFilter();
 
   // Keep visualization-specific state
   const [scatter, setScatter] = useState({});
@@ -241,13 +250,19 @@ function ExploreContent() {
 
   // Add this CSS-in-JS style object near the top of the component
 
-  // const handleFeatureClick = useCallback(
-  //   (featIdx, activation, label) => {
-  //     setFilterQuery(label);
-  //     featureFilter.setFeature(featIdx);
-  //   },
-  //   [featureFilter.setFeature, setFilterQuery]
-  // );
+  const handleFeatureClick = useCallback(
+    (featIdx, activation, label) => {
+      setFilterQuery(label);
+      setFilterConfig({ type: filterConstants.FEATURE, value: featIdx, label });
+      featureFilter.setFeature(featIdx);
+      setFilterActive(true);
+      setUrlParams((prev) => {
+        prev.set('feature', featIdx);
+        return new URLSearchParams(prev);
+      });
+    },
+    [featureFilter.setFeature, setFilterQuery, setFilterConfig, setFilterActive, setUrlParams]
+  );
 
   if (!dataset)
     return (
@@ -301,13 +316,11 @@ function ExploreContent() {
                 clusterLabels={clusterLabels}
                 onDataTableRows={setDataTableRows}
                 sae_id={sae?.id}
-                feature={-1}
-                // feature={featureFilter.feature}
+                feature={featureFilter.feature}
                 features={features}
                 onHover={handleHover}
                 onClick={handleClicked}
-                // handleFeatureClick={handleFeatureClick}
-                handleFeatureClick={() => {}}
+                handleFeatureClick={handleFeatureClick}
                 filterLoading={filterLoading}
               />
             </div>

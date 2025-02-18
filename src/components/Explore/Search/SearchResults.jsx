@@ -38,18 +38,21 @@ const Option = (props) => {
     )?.label;
 
     if (groupType === COLUMNS) {
+      const label = `${data.column}: ${data.value}`;
       onSelect({
-        type: 'column',
+        type: filterConstants.COLUMN,
         value: data.value,
         column: data.column,
-        label: data.label,
+        label,
       });
-      setFilterQuery(data.label);
+      setFilterQuery(label);
     } else if (groupType === CLUSTERS) {
-      onSelect({ type: 'cluster', value: data.value, label: data.label });
-      setFilterQuery(data.label);
+      onSelect({ type: filterConstants.CLUSTER, value: data.value, label: data.label });
+      const label = `Cluster ${data.value}`;
+      setFilterQuery(label);
     } else if (groupType === FEATURES) {
-      onSelect({ type: 'feature', value: data.value, label: data.label });
+      console.log('feature group');
+      onSelect({ type: filterConstants.FEATURE, value: data.value, label: data.label });
       setFilterQuery(data.label);
     }
   };
@@ -137,7 +140,7 @@ const MenuWithNNSearch = ({ children, ...props }) => {
 
   const handleNNSubmit = (e) => {
     e.preventDefault();
-    onSelect({ type: filterConstants.SEARCH, value: query });
+    onSelect({ type: filterConstants.SEARCH, value: query, label: query });
     setFilterQuery(query);
   };
 

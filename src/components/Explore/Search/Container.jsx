@@ -52,12 +52,6 @@ const Container = () => {
     setIsInputFocused(false);
   };
 
-  // Handle when a user selects a suggestion from the SuggestionsPanel
-  const handleSuggestionSelect = (suggestion) => {
-    setFilterQuery(suggestion);
-    setIsInputFocused(false); // Hide results after selection
-  };
-
   // ==== DROPDOWN RELATED STATE ====
   // we need to manage this here because we need to re-open the dropdown whenever the query changes.
 
@@ -77,7 +71,6 @@ const Container = () => {
   }, []);
 
   const handleSelect = (selection) => {
-    console.log('handleSelect', selection);
     setDropdownIsOpen(false);
     setFilterConfig(selection);
     setFilterActive(true);
@@ -105,6 +98,9 @@ const Container = () => {
       clear();
     } else if (type === filterConstants.FEATURE) {
       const { clear } = featureFilter;
+      clear();
+    } else if (type === filterConstants.COLUMN) {
+      const { clear } = columnFilter;
       clear();
     }
 
@@ -142,9 +138,7 @@ const Container = () => {
             <Button
               color="secondary"
               className={styles.searchButton}
-              //   disabled={loading}
               onClick={handleClear}
-              //   icon={loading ? 'pie-chart' : active ? 'x' : 'search'}
               icon="x"
             />
           )}
@@ -189,7 +183,14 @@ const SearchResultsMetadata = ({ filterConfig }) => {
   const { type, label } = filterConfig;
 
   const totalResults = filteredIndices.length;
-  const headerLabel = type === 'cluster' ? 'Cluster' : type === 'feature' ? 'Feature' : 'Search';
+  const headerLabel =
+    type === filterConstants.CLUSTER
+      ? 'Cluster'
+      : type === filterConstants.FEATURE
+        ? 'Feature'
+        : type === filterConstants.COLUMN
+          ? 'Column'
+          : 'Nearest Neighbor Search';
 
   return (
     <div className={styles.searchResultsMetadata}>

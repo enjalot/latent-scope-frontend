@@ -48,6 +48,7 @@ export function FilterProvider({ children }) {
   const clusterFilter = useClusterFilter({ scopeRows, scope, scopeLoaded });
   const searchFilter = useNearestNeighborsSearch({ userId, datasetId, scope, deletedIndices });
 
+  // Populate filter state from url params
   useEffect(() => {
     if (!scopeLoaded) return;
 
@@ -58,14 +59,18 @@ export function FilterProvider({ children }) {
 
     if (key === filterConstants.SEARCH) {
       setFilterQuery(value);
-      setFilterConfig({ type: filterConstants.SEARCH, value });
+      setFilterConfig({ type: filterConstants.SEARCH, value, label: value });
     } else if (key === filterConstants.CLUSTER) {
       const cluster = clusterLabels.find((cluster) => cluster.cluster === numericValue);
       if (cluster) {
         const { setCluster } = clusterFilter;
         setCluster(cluster);
         setFilterQuery(cluster.label);
-        setFilterConfig({ type: filterConstants.CLUSTER, value: numericValue });
+        setFilterConfig({
+          type: filterConstants.CLUSTER,
+          value: numericValue,
+          label: cluster.label,
+        });
       }
     } else if (key === filterConstants.FEATURE) {
       const featureLabel = findFeatureLabel(features, numericValue);
@@ -73,7 +78,11 @@ export function FilterProvider({ children }) {
         const { setFeature } = featureFilter;
         setFeature(numericValue);
         setFilterQuery(featureLabel);
-        setFilterConfig({ type: filterConstants.FEATURE, value: numericValue });
+        setFilterConfig({
+          type: filterConstants.FEATURE,
+          value: numericValue,
+          label: featureLabel,
+        });
       }
     } else if (urlParams.has('column') && urlParams.has('value')) {
       const value = urlParams.get('value');
@@ -81,7 +90,12 @@ export function FilterProvider({ children }) {
       const { columnFilters } = columnFilter;
       if (validateColumnAndValue(column, value, columnFilters)) {
         setFilterQuery(`${column}: ${value}`);
-        setFilterConfig({ type: filterConstants.COLUMN, value, column });
+        setFilterConfig({
+          type: filterConstants.COLUMN,
+          value,
+          column,
+          label: `${column}: ${value}`,
+        });
       }
     }
   }, [features, urlParams, scopeLoaded]);
@@ -190,6 +204,8 @@ export function FilterProvider({ children }) {
     // columnToValue
     // columnFilters
     // columnIndices
+
+    setUrlParams,
   };
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;
