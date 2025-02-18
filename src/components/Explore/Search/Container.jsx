@@ -77,6 +77,7 @@ const Container = () => {
   }, []);
 
   const handleSelect = (selection) => {
+    console.log('handleSelect', selection);
     setDropdownIsOpen(false);
     setFilterConfig(selection);
     setFilterActive(true);
@@ -92,8 +93,6 @@ const Container = () => {
       }
       return prev;
     });
-
-    setDropdownIsOpen(false);
   };
 
   const handleClear = () => {
@@ -158,7 +157,7 @@ const Container = () => {
               query={filterQuery}
               setFilterQuery={setFilterQuery}
               onSelect={handleSelect}
-              menuIsOpen={dropdownIsOpen || isInputFocused}
+              menuIsOpen={dropdownIsOpen || (isInputFocused && filterQuery === '')}
             />
           </div>
         </div>

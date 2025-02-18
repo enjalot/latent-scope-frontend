@@ -43,6 +43,8 @@ export const findFeatureLabel = (features, feature) => {
   return features.find((f) => f.feature === feature)?.label;
 };
 
+// check that the given column and value are valid
+// meaning that the column exists and the value is one of the categories
 export const validateColumnAndValue = (column, value, columnFilters) => {
   const columnFilter = columnFilters.find((c) => c.column === column);
   if (!columnFilter) return false;
