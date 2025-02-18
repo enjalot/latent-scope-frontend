@@ -1,6 +1,11 @@
 // find all features that match the query
 export const findFeaturesByQuery = (features, query, top = 5) => {
-  if (!query) return [];
+  if (!query) {
+    return features.slice(0, top).map((feature) => ({
+      value: feature.feature,
+      label: `(${feature.feature}) ${feature.label}`,
+    }));
+  }
 
   const searchTerm = query.toLowerCase();
   return features
@@ -17,7 +22,12 @@ export const findFeaturesByQuery = (features, query, top = 5) => {
 };
 
 export const findClustersByQuery = (clusters, query, top = 5) => {
-  if (!query) return [];
+  if (!query) {
+    return clusters.slice(0, top).map((cluster) => ({
+      value: cluster.cluster,
+      label: cluster.label,
+    }));
+  }
 
   const searchTerm = query.toLowerCase();
   return clusters

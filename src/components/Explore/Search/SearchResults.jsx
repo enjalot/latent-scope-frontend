@@ -132,7 +132,7 @@ const NNSearch = ({ children, ...props }) => {
   // Check if there are any matches in the cluster / feature options
   const hasMatches = options.some((group) => group.options && group.options.length > 0);
 
-  const handleSubmit = (e) => {
+  const handleNNSubmit = (e) => {
     e.preventDefault();
     onSelect({ type: filterConstants.SEARCH, value: query });
   };
@@ -140,19 +140,21 @@ const NNSearch = ({ children, ...props }) => {
   return (
     <components.Menu {...props}>
       <div className={styles.resultsList}>
-        <div className={styles.resultRow} onClick={handleSubmit}>
-          <div className={styles.searchResultContent}>
-            <span className={styles.searchIcon}>🔍</span>
-            <span>Search for nearest neighbors to: "{query}"</span>
+        {query === '' ? null : (
+          <div className={styles.resultRow} onClick={handleNNSubmit}>
+            <div className={styles.searchResultContent}>
+              <span className={styles.searchIcon}>🔍</span>
+              <span>Search for nearest neighbors to: "{query}"</span>
+            </div>
           </div>
-        </div>
-        {hasMatches && children} {/* Only render cluster / feature options if there are matches */}
+        )}
+        {hasMatches && children}
       </div>
     </components.Menu>
   );
 };
 
-const NUM_SEARCH_RESULTS = 4;
+export const NUM_SEARCH_RESULTS = 4;
 
 const SearchResults = ({ query, menuIsOpen, onSelect }) => {
   const { features, userId, datasetId, scope, clusterLabels } = useScope();
@@ -171,7 +173,9 @@ const SearchResults = ({ query, menuIsOpen, onSelect }) => {
 
   // Transform column values into options
   const columnOptions = useMemo(() => {
-    if (!columnFilters) return [];
+    if (!columnFilters) {
+      return [];
+    }
 
     // Flatten all column values into searchable options
     const options = columnFilters.flatMap((column) =>
@@ -183,7 +187,7 @@ const SearchResults = ({ query, menuIsOpen, onSelect }) => {
     );
 
     // Filter based on query
-    if (!query) return [];
+    if (!query) return options.slice(0, NUM_SEARCH_RESULTS);
     const searchTerm = query.toLowerCase();
     return options
       .filter((option) => option.value.toString().toLowerCase().includes(searchTerm))
@@ -212,8 +216,13 @@ const SearchResults = ({ query, menuIsOpen, onSelect }) => {
     });
   }
 
+  console.log(groupedOptions);
+
   // Enhanced filter function
   const filterOption = (option, inputValue) => {
+    console.log(option, inputValue);
+    if (!inputValue) return true;
+
     // If this is a group, check if any of its options match
     if (option.options) {
       return option.options.some((subOption) =>

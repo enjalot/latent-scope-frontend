@@ -52,18 +52,11 @@ function VisualizationPane({
 }) {
   const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
 
-  const {
-    activeFilterTab,
-    // filteredIndices,
-    featureFilter,
-    clusterFilter,
-    dataTableIndices,
-  } = useFilter();
+  const { featureFilter, clusterFilter, dataTableIndices } = useFilter();
 
   const { sae: { max_activations = [] } = {} } = scope || {};
 
   // only show the hull if we are filtering by cluster
-  // const showHull = activeFilterTab === filterConstants.CLUSTER;
   const showHull = true;
 
   const [xDomain, setXDomain] = useState([-1, 1]);
@@ -83,8 +76,7 @@ function VisualizationPane({
 
   const size = [width, height];
 
-  const featureIsSelected =
-    featureFilter.feature !== -1 && activeFilterTab === filterConstants.FEATURE;
+  const featureIsSelected = featureFilter.feature !== -1;
 
   // Add new memoized feature activation lookup
   const featureActivationMap = useMemo(() => {
@@ -285,10 +277,7 @@ function VisualizationPane({
             onSelect={onSelect}
             onHover={onHover}
             featureIsSelected={featureIsSelected}
-            ignoreNotSelected={
-              activeFilterTab === filterConstants.SEARCH ||
-              activeFilterTab === filterConstants.FEATURE
-            }
+            ignoreNotSelected={featureIsSelected}
           />
         )}
         {/* show all the hulls */}

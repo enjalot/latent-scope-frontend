@@ -258,7 +258,7 @@ export function FilterProvider({ children }) {
     }
   }, [urlParams, scopeLoaded]);
 
-  // Unified filtering logic: whenever filterConfig (or dependencies) change,
+  // ==== Filtering ====
   // compute filteredIndices based on the active filter.
   useEffect(() => {
     async function applyFilter() {

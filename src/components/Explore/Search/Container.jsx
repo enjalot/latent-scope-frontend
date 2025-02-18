@@ -1,8 +1,6 @@
 // SearchContainer.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import SuggestionsPanel from './SuggestionsPanel';
 import { Button } from 'react-element-forge';
-import { useSearchParams } from 'react-router-dom';
 
 import SearchResults from './SearchResults';
 import { useScope } from '../../../contexts/ScopeContext';
@@ -58,69 +56,11 @@ const Container = () => {
     setIsInputFocused(false); // Hide results after selection
   };
 
-  // ==== URL PARAMS ====
-
-  const [urlParams, setUrlParams] = useSearchParams();
-
-  // need to initialize the filter state from the url params on first render
-  // maybe this should be done in the FilterProvider?
-  // useEffect(() => {
-  //   if (!scopeLoaded) return;
-
-  //   // let's just grab the first key for now
-  //   const key = urlParams.keys().next().value;
-  //   const value = urlParams.get(key);
-
-  //   if (key === filterConstants.SEARCH) {
-  //     const { setSearchText } = searchFilter;
-  //     setSearchText(value);
-  //     setFilterQuery(value);
-  //   } else if (key === filterConstants.CLUSTER) {
-  //     const { setCluster } = clusterFilter;
-  //     const cluster = clusterLabels.find((cluster) => cluster.cluster === parseInt(value));
-  //     if (cluster) {
-  //       setCluster(cluster);
-  //       setFilterQuery(cluster.label);
-  //     }
-  //   } else if (key === filterConstants.FEATURE) {
-  //     const { setFeature } = featureFilter;
-  //     setFeature(value);
-  //   } else if (key === filterConstants.COLUMN) {
-  //     const { setColumnFiltersActive } = columnFilter;
-  //     // const
-  //     // setColumnFiltersActive({ [column]: value });
-  //   }
-
-  //   const anyFilterActive = [
-  //     filterConstants.CLUSTER,
-  //     filterConstants.FEATURE,
-  //     filterConstants.COLUMN,
-  //     filterConstants.SEARCH,
-  //   ].some((filter) => key === filter);
-
-  //   setAnyFilterActive(anyFilterActive);
-
-  //   if (anyFilterActive) {
-  //     const selection = {
-  //       type: key,
-  //       value: value,
-  //       label: value,
-  //     };
-  //     setSelection(selection);
-  //   }
-  // }, [
-  //   urlParams,
-  //   scopeLoaded,
-  //   searchFilter,
-  //   clusterFilter,
-  //   featureFilter,
-  //   columnFilter,
-  //   setAnyFilterActive,
-  // ]);
-
   // ==== DROPDOWN RELATED STATE ====
   // we need to manage this here because we need to re-open the dropdown whenever the query changes.
 
+  const [dropdownIsOpen, setDropdownIsOpen] = useState(false);
+  const selectRef = useRef(null);
   // Handle clicks outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -133,9 +73,6 @@ const Container = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  const [dropdownIsOpen, setDropdownIsOpen] = useState(false);
-  const selectRef = useRef(null);
 
   const handleSelect = (selection) => {
     setDropdownIsOpen(false);
@@ -210,25 +147,16 @@ const Container = () => {
           )}
         </div>
 
-        {/* Show SuggestionsPanel only when input is focused and there's no query */}
-        {filterQuery === '' && isInputFocused && (
-          <div className={styles.searchResults} ref={selectRef}>
-            <SuggestionsPanel onSelect={handleSuggestionSelect} />
-          </div>
-        )}
-
         {/* When a query exists, show the NN search result and filter options */}
-        {filterQuery !== '' && (
-          <div className={styles.searchResults} ref={selectRef}>
-            <div className={styles.searchResultsHeader}>
-              <SearchResults
-                query={filterQuery}
-                onSelect={handleSelect}
-                menuIsOpen={dropdownIsOpen}
-              />
-            </div>
+        <div className={styles.searchResults} ref={selectRef}>
+          <div className={styles.searchResultsHeader}>
+            <SearchResults
+              query={filterQuery}
+              onSelect={handleSelect}
+              menuIsOpen={dropdownIsOpen || isInputFocused}
+            />
           </div>
-        )}
+        </div>
       </div>
       <SearchResultsMetadata filterConfig={filterConfig} />
     </div>
