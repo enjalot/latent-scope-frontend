@@ -1,62 +1,31 @@
 import { useState, useCallback, useEffect } from 'react';
 import { apiService } from '../lib/apiService';
 
-export default function useNearestNeighborsSearch({
-  userId,
-  datasetId,
-  scope,
-  deletedIndices,
-  urlParams,
-  scopeLoaded,
-  setFilteredIndices,
-}) {
+const LIMIT = 20;
+
+export default function useNearestNeighborsSearch({ userId, datasetId, scope, deletedIndices }) {
   const [searchText, setSearchText] = useState('');
   const [distances, setDistances] = useState([]);
-  const [active, setActive] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  const search = useCallback(
-    async (query) => {
-      setLoading(true);
-      apiService.searchNearestNeighbors(userId, datasetId, scope, query).then((data) => {
-        const inds = data.indices.filter((d) => {
-          return !deletedIndices.includes(d);
-        });
-        setDistances(data.distances);
-        const limit = 20;
-        // TODO: make the # of results configurable
-        setFilteredIndices(inds.slice(0, limit));
-        setLoading(false);
-        // onSearchEmbedding?.(data.search_embedding[0]);
-      });
-    },
-    [datasetId, scope]
-  );
+  const filter = async () => {
+    const data = await apiService.searchNearestNeighbors(userId, datasetId, scope, searchText);
+    const inds = data.indices.filter((d) => {
+      return !deletedIndices.includes(d);
+    });
+    setDistances(data.distances);
+    return inds.slice(0, LIMIT);
+  };
 
-  const clearSearch = useCallback(() => {
+  const clear = () => {
     setSearchText('');
-    setFilteredIndices([]);
     setDistances([]);
-    setActive(false);
-  }, []);
-
-  // Trigger search when searchText changes
-  useEffect(() => {
-    if (searchText) {
-      search(searchText);
-      setActive(true);
-    } else {
-      setActive(false);
-    }
-  }, [searchText, search]);
+  };
 
   return {
     searchText,
     setSearchText,
-    setDistances,
     distances,
-    clearSearch,
-    active,
-    loading,
+    filter,
+    clear,
   };
 }

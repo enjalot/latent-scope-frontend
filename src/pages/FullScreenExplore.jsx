@@ -52,8 +52,8 @@ function ExploreContent() {
   } = useScope();
 
   // Get filter-related state from FilterContext
-  const { searchFilter, featureFilter, filterLoading, dataTableIndices, setFilterQuery } =
-    useFilter();
+  // const { searchFilter, featureFilter, filterLoading, dataTableIndices, setFilterQuery } =
+  const { filterLoading, shownIndices, setFilterQuery } = useFilter();
 
   // Keep visualization-specific state
   const [scatter, setScatter] = useState({});
@@ -63,7 +63,6 @@ function ExploreContent() {
   const [hoverAnnotations, setHoverAnnotations] = useState([]);
   const [dataTableRows, setDataTableRows] = useState([]);
   const [selectedAnnotations, setSelectedAnnotations] = useState([]);
-  // const [page, setPage] = useState(0);
 
   // Hover text hydration with debouncing
   const hydrateHoverText = useCallback(
@@ -242,13 +241,13 @@ function ExploreContent() {
 
   // Add this CSS-in-JS style object near the top of the component
 
-  const handleFeatureClick = useCallback(
-    (featIdx, activation, label) => {
-      setFilterQuery(label);
-      featureFilter.setFeature(featIdx);
-    },
-    [featureFilter.setFeature, setFilterQuery]
-  );
+  // const handleFeatureClick = useCallback(
+  //   (featIdx, activation, label) => {
+  //     setFilterQuery(label);
+  //     featureFilter.setFeature(featIdx);
+  //   },
+  //   [featureFilter.setFeature, setFilterQuery]
+  // );
 
   if (!dataset)
     return (
@@ -294,18 +293,21 @@ function ExploreContent() {
                 userId={userId}
                 dataset={dataset}
                 scope={scope}
-                filteredIndices={dataTableIndices}
+                filteredIndices={shownIndices}
                 deletedIndices={deletedIndices}
-                distances={searchFilter.distances}
+                // distances={searchFilter.distances}
+                distances={[]}
                 clusterMap={clusterMap}
                 clusterLabels={clusterLabels}
                 onDataTableRows={setDataTableRows}
                 sae_id={sae?.id}
-                feature={featureFilter.feature}
+                feature={-1}
+                // feature={featureFilter.feature}
                 features={features}
                 onHover={handleHover}
                 onClick={handleClicked}
-                handleFeatureClick={handleFeatureClick}
+                // handleFeatureClick={handleFeatureClick}
+                handleFeatureClick={() => {}}
                 filterLoading={filterLoading}
               />
             </div>

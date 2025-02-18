@@ -63,7 +63,8 @@ function VisualizationPane({
   const { sae: { max_activations = [] } = {} } = scope || {};
 
   // only show the hull if we are filtering by cluster
-  const showHull = activeFilterTab === filterConstants.CLUSTER;
+  // const showHull = activeFilterTab === filterConstants.CLUSTER;
+  const showHull = true;
 
   const [xDomain, setXDomain] = useState([-1, 1]);
   const [yDomain, setYDomain] = useState([-1, 1]);

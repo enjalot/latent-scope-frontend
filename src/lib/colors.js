@@ -13,7 +13,7 @@ export const baseColor = '#b87333';
 export const baseColorDark = '#E0EFFF';
 
 export const mapSelectionColorsLight = [
-  baseColor, // normal
+  baseColor, // normaimage.pngl
   baseColor, // selected
   baseColor, // not selected
   '#8bcf66', // hovered

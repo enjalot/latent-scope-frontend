@@ -26,12 +26,13 @@ const Container = () => {
     searchFilter,
     featureFilter,
     clusterFilter,
-    setAnyFilterActive,
     filterQuery,
     setFilterQuery,
     columnFilter,
-    selection,
-    setSelection,
+    filterConfig,
+    setFilterConfig,
+    filterActive,
+    setFilterActive,
   } = useFilter();
 
   // Handle updates to the search query from the input field
@@ -63,59 +64,59 @@ const Container = () => {
 
   // need to initialize the filter state from the url params on first render
   // maybe this should be done in the FilterProvider?
-  useEffect(() => {
-    if (!scopeLoaded) return;
+  // useEffect(() => {
+  //   if (!scopeLoaded) return;
 
-    // let's just grab the first key for now
-    const key = urlParams.keys().next().value;
-    const value = urlParams.get(key);
+  //   // let's just grab the first key for now
+  //   const key = urlParams.keys().next().value;
+  //   const value = urlParams.get(key);
 
-    if (key === filterConstants.SEARCH) {
-      const { setSearchText } = searchFilter;
-      setSearchText(value);
-      setFilterQuery(value);
-    } else if (key === filterConstants.CLUSTER) {
-      const { setCluster } = clusterFilter;
-      const cluster = clusterLabels.find((cluster) => cluster.cluster === parseInt(value));
-      if (cluster) {
-        setCluster(cluster);
-        setFilterQuery(cluster.label);
-      }
-    } else if (key === filterConstants.FEATURE) {
-      const { setFeature } = featureFilter;
-      setFeature(value);
-    } else if (key === filterConstants.COLUMN) {
-      const { setColumnFiltersActive } = columnFilter;
-      // const
-      // setColumnFiltersActive({ [column]: value });
-    }
+  //   if (key === filterConstants.SEARCH) {
+  //     const { setSearchText } = searchFilter;
+  //     setSearchText(value);
+  //     setFilterQuery(value);
+  //   } else if (key === filterConstants.CLUSTER) {
+  //     const { setCluster } = clusterFilter;
+  //     const cluster = clusterLabels.find((cluster) => cluster.cluster === parseInt(value));
+  //     if (cluster) {
+  //       setCluster(cluster);
+  //       setFilterQuery(cluster.label);
+  //     }
+  //   } else if (key === filterConstants.FEATURE) {
+  //     const { setFeature } = featureFilter;
+  //     setFeature(value);
+  //   } else if (key === filterConstants.COLUMN) {
+  //     const { setColumnFiltersActive } = columnFilter;
+  //     // const
+  //     // setColumnFiltersActive({ [column]: value });
+  //   }
 
-    const anyFilterActive = [
-      filterConstants.CLUSTER,
-      filterConstants.FEATURE,
-      filterConstants.COLUMN,
-      filterConstants.SEARCH,
-    ].some((filter) => key === filter);
+  //   const anyFilterActive = [
+  //     filterConstants.CLUSTER,
+  //     filterConstants.FEATURE,
+  //     filterConstants.COLUMN,
+  //     filterConstants.SEARCH,
+  //   ].some((filter) => key === filter);
 
-    setAnyFilterActive(anyFilterActive);
+  //   setAnyFilterActive(anyFilterActive);
 
-    if (anyFilterActive) {
-      const selection = {
-        type: key,
-        value: value,
-        label: value,
-      };
-      setSelection(selection);
-    }
-  }, [
-    urlParams,
-    scopeLoaded,
-    searchFilter,
-    clusterFilter,
-    featureFilter,
-    columnFilter,
-    setAnyFilterActive,
-  ]);
+  //   if (anyFilterActive) {
+  //     const selection = {
+  //       type: key,
+  //       value: value,
+  //       label: value,
+  //     };
+  //     setSelection(selection);
+  //   }
+  // }, [
+  //   urlParams,
+  //   scopeLoaded,
+  //   searchFilter,
+  //   clusterFilter,
+  //   featureFilter,
+  //   columnFilter,
+  //   setAnyFilterActive,
+  // ]);
 
   // ==== DROPDOWN RELATED STATE ====
   // we need to manage this here because we need to re-open the dropdown whenever the query changes.
@@ -138,28 +139,10 @@ const Container = () => {
 
   const handleSelect = (selection) => {
     setDropdownIsOpen(false);
-    setAnyFilterActive(true);
-    setSelection(selection);
+    setFilterConfig(selection);
+    setFilterActive(true);
 
-    const { type, value, label, column } = selection;
-    setFilterQuery(label);
-
-    if (type === filterConstants.CLUSTER) {
-      const { setCluster } = clusterFilter;
-      const cluster = clusterLabels[value];
-      if (cluster) {
-        setCluster(cluster);
-      }
-    } else if (type === filterConstants.FEATURE) {
-      const { setFeature } = featureFilter;
-      setFeature(value);
-    } else if (type === filterConstants.SEARCH) {
-      const { setSearchText } = searchFilter;
-      setSearchText(value);
-    } else if (type === filterConstants.COLUMN) {
-      const { setColumnFiltersActive } = columnFilter;
-      setColumnFiltersActive({ [column]: value });
-    }
+    const { type, value, column } = selection;
 
     setUrlParams((prev) => {
       if (type === filterConstants.COLUMN) {
@@ -173,17 +156,22 @@ const Container = () => {
   };
 
   const handleClear = () => {
-    const { type } = selection;
+    const { type } = filterConfig;
     if (type === filterConstants.SEARCH) {
-      const { setSearchText, setDistances } = searchFilter;
-      setSearchText('');
-      setDistances([]);
+      const { clear } = searchFilter;
+      clear();
+    } else if (type === filterConstants.CLUSTER) {
+      const { clear } = clusterFilter;
+      clear();
+    } else if (type === filterConstants.FEATURE) {
+      const { clear } = featureFilter;
+      clear();
     }
 
     setFilterQuery('');
     setDropdownIsOpen(false);
-    setAnyFilterActive(false);
-    setSelection(null);
+    setFilterActive(false);
+    setFilterConfig(null);
 
     // delete all filter params from the url
     setUrlParams((prev) => {
@@ -210,7 +198,7 @@ const Container = () => {
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
           />
-          {selection !== null && (
+          {filterConfig !== null && (
             <Button
               color="secondary"
               className={styles.searchButton}
@@ -242,16 +230,16 @@ const Container = () => {
           </div>
         )}
       </div>
-      <SearchResultsMetadata selection={selection} />
+      <SearchResultsMetadata filterConfig={filterConfig} />
     </div>
   );
 };
 
-const SearchResultsMetadata = ({ selection }) => {
-  const { shownIndices, allFilteredIndices } = useFilter();
+const SearchResultsMetadata = ({ filterConfig }) => {
+  const { shownIndices, filteredIndices } = useFilter();
 
   // if no selection, show the default metadata
-  if (!selection) {
+  if (!filterConfig) {
     return (
       <div className={styles.searchResultsMetadata}>
         <div className={styles.searchResultsMetadataItem}>
@@ -266,9 +254,9 @@ const SearchResultsMetadata = ({ selection }) => {
     );
   }
 
-  const { type, label } = selection;
+  const { type, label } = filterConfig;
 
-  const totalResults = allFilteredIndices.length;
+  const totalResults = filteredIndices.length;
   const headerLabel = type === 'cluster' ? 'Cluster' : type === 'feature' ? 'Feature' : 'Search';
 
   return (

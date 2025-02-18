@@ -1,62 +1,52 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiService } from '../lib/apiService';
 
-export default function useFeatureFilter({
-  userId,
-  datasetId,
-  scope,
-  urlParams,
-  scopeLoaded,
-  setFilteredIndices,
-}) {
-  const [feature, setFeature] = useState(-1);
-  const [threshold, setThreshold] = useState(0.1);
-  const [featureIndicesLoaded, setFeatureIndicesLoaded] = useState(false);
-  const [active, setActive] = useState(false);
-  const [loading, setLoading] = useState(false);
+const MIN_THRESHOLD = 0.1;
+const MAX_THRESHOLD = 0.2;
 
-  // Handle URL initialization
-  useEffect(() => {
-    if (scopeLoaded && urlParams.has('feature')) {
-      const featureParam = parseInt(urlParams.get('feature'));
-      setFeature(featureParam);
-    }
-  }, [scopeLoaded, urlParams]);
+const DEFAULT_FEATURE = -1;
+
+export default function useFeatureFilter({ userId, datasetId, scope, scopeLoaded }) {
+  const [feature, setFeature] = useState(DEFAULT_FEATURE);
+  const [threshold, setThreshold] = useState(MIN_THRESHOLD);
 
   useEffect(() => {
     if (feature >= 0) {
       const maxActivation = scope?.sae?.max_activations[feature] || 0;
-      let t = maxActivation < 0.2 ? maxActivation / 2 : 0.1;
+      let t =
+        maxActivation < MIN_THRESHOLD
+          ? MIN_THRESHOLD
+          : maxActivation > MAX_THRESHOLD
+            ? MAX_THRESHOLD
+            : maxActivation;
       setThreshold(t);
-      setActive(true);
-    } else {
-      setActive(false);
     }
   }, [feature, scope, setThreshold]);
 
-  // Update feature indices and URL params when feature changes
-  useEffect(() => {
+  const filter = async (feature) => {
     if (feature >= 0) {
-      setFeatureIndicesLoaded(false);
-      setLoading(true);
-      apiService.searchSaeFeature(userId, datasetId, scope?.id, feature, threshold).then((data) => {
-        // setFilteredIndices(data);
-        setFeatureIndicesLoaded(true);
-        setLoading(false);
-      });
-    } else {
-      // setFilteredIndices([]);
-      setLoading(false);
+      const data = await apiService.searchSaeFeature(
+        userId,
+        datasetId,
+        scope?.id,
+        feature,
+        threshold
+      );
+      return data;
     }
-  }, [userId, datasetId, scope, feature, threshold, setFilteredIndices, scopeLoaded]);
+    return [];
+  };
+
+  const clear = () => {
+    setFeature(DEFAULT_FEATURE);
+    setThreshold(MIN_THRESHOLD);
+  };
 
   return {
     feature,
     setFeature,
     threshold,
-    setThreshold,
-    featureIndicesLoaded,
-    active,
-    loading,
+    filter,
+    clear,
   };
 }
