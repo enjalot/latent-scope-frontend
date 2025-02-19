@@ -38,8 +38,10 @@ export const mapSelectionOpacity = [
 ];
 export const mapPointSizeRange = [
   3, // normal
-  12, // selected
+  6, // selected
   2, // not selected
-  12,
+  12.5, // hovered
   0, // hidden
 ];
+
+export const contrastColor = '#2ecc71';

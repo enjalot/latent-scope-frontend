@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { select } from 'd3-selection';
 import styles from './PointLabel.module.scss';
-
+import { contrastColor } from '../../lib/colors';
 function PointLabel({
   selectedPoints, // array of {x, y, index} objects
   xDomain,
@@ -42,16 +42,39 @@ function PointLabel({
   useEffect(() => {
     const svg = select(svgRef.current);
 
-    // Remove label backgrounds
-    svg.selectAll('rect.point-label-bg').remove();
-
-    // Handle labels
-    let labelSel = svg.selectAll('text.point-label').data(selectedPoints);
-    labelSel.exit().remove();
+    // Remove existing elements
+    svg.selectAll('circle.point-label-circle').remove();
+    svg.selectAll('text.point-label').remove();
 
     if (!xDomain || !yDomain || !selectedPoints?.length) return;
 
     const fontSize = calculateScaledFontSize(width, height);
+
+    // Add circles first (so they appear under text)
+    let circleSel = svg.selectAll('circle.point-label-circle').data(selectedPoints);
+
+    circleSel.exit().remove();
+
+    circleSel
+      .enter()
+      .append('circle')
+      .attr('class', 'point-label-circle')
+      .merge(circleSel)
+      .attr('cx', (d) => {
+        const coord = pointToSvgCoordinate(d, xDomain, yDomain, width, height);
+        return coord.x;
+      })
+      .attr('cy', (d) => {
+        const coord = pointToSvgCoordinate(d, xDomain, yDomain, width, height);
+        return coord.y;
+      })
+      .attr('r', 8)
+      .attr('fill', contrastColor); // Bright green
+
+    // Add text labels (same as before)
+    let labelSel = svg.selectAll('text.point-label').data(selectedPoints);
+
+    labelSel.exit().remove();
 
     labelSel
       .enter()
@@ -67,7 +90,7 @@ function PointLabel({
         return coord.y;
       })
       .attr('text-anchor', 'middle')
-      .attr('fill', 'white') // Use white text color
+      .attr('fill', textColor)
       .attr('font-family', 'monospace')
       .attr('dominant-baseline', 'middle')
       .attr('font-size', fontSize)
