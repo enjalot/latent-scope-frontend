@@ -14,6 +14,9 @@
 .resultContent {
   color: var(--text-color-text-main);
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .searchIcon {
@@ -99,3 +102,18 @@
     color: var(--text-color-text-subtle);
     font-size: 12px;
   }
+
+
+  .resultButton {
+    background-color: var(--neutrals-color-neutral-1) !important;
+    border-radius: 12px !important;
+    padding: 4px !important;
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .resultButton:hover {
+    background-color: var(--neutrals-color-neutral-2) !important;
+  }
+  
+  

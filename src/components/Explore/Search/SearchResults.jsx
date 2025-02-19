@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Select, { components } from 'react-select';
 import styles from './SearchResults.module.scss';
+import { Button } from 'react-element-forge';
 import { useScope } from '../../../contexts/ScopeContext';
 import { filterConstants, findFeaturesByQuery, findClustersByQuery } from './utils';
 import useColumnFilter from '../../../hooks/useColumnFilter';
@@ -26,7 +27,7 @@ const underlineText = (text, query) => {
   );
 };
 
-// Custom Option component
+// Custom Option component that includes an icon
 const Option = (props) => {
   const { data, selectProps } = props;
   const { onSelect, inputValue, setFilterQuery } = selectProps;
@@ -34,7 +35,7 @@ const Option = (props) => {
   const handleClick = (e) => {
     e.preventDefault();
     const groupType = props.options.find((group) =>
-      group.options?.some((opt) => opt.value === data.value)
+      group.options?.some((opt) => opt.value === data.value && opt.label === data.label)
     )?.label;
 
     if (groupType === COLUMNS) {
@@ -51,22 +52,43 @@ const Option = (props) => {
       const label = `Cluster ${data.value}`;
       setFilterQuery(label);
     } else if (groupType === FEATURES) {
-      console.log('feature group');
       onSelect({ type: filterConstants.FEATURE, value: data.value, label: data.label });
       setFilterQuery(data.label);
     }
   };
 
-  // Get the group type
+  // Get the group type to determine which icon to show
   const groupType = props.options.find((group) =>
-    group.options?.some((opt) => opt.value === data.value)
+    group.options?.some((opt) => opt.value === data.value && opt.label === data.label)
   )?.label;
+
+  // Choose icon based on group type
+  const getIcon = (type) => {
+    switch (type) {
+      case 'Clusters':
+        return 'cloud';
+      case 'Features':
+        return 'compass';
+      case 'Columns':
+        return 'columns';
+      default:
+        return 'search';
+    }
+  };
 
   if (groupType === COLUMNS) {
     return (
       <div onClick={handleClick}>
         <components.Option {...props}>
           <div className={styles.columnResultContent}>
+            <Button
+              onClick={handleClick}
+              icon={getIcon(groupType)}
+              color="primary"
+              variant="clear"
+              size="small"
+              className={styles.resultButton}
+            />
             <span>{underlineText(data.label, inputValue)}</span>
             <span className={styles.columnLabel}>{data.column}</span>
           </div>
@@ -78,7 +100,16 @@ const Option = (props) => {
   return (
     <div onClick={handleClick}>
       <components.Option {...props}>
-        <div className={styles.resultContent}>{underlineText(data.label, inputValue)}</div>
+        <div className={styles.resultContent}>
+          <Button
+            icon={getIcon(groupType)}
+            color="primary"
+            variant="clear"
+            size="small"
+            className={styles.resultButton}
+          />
+          {underlineText(data.label, inputValue)}
+        </div>
       </components.Option>
     </div>
   );

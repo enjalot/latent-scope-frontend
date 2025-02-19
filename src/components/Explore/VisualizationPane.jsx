@@ -52,12 +52,12 @@ function VisualizationPane({
 }) {
   const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
 
-  const { featureFilter, clusterFilter, dataTableIndices } = useFilter();
+  const { featureFilter, clusterFilter, shownIndices, filterConfig } = useFilter();
 
   const { sae: { max_activations = [] } = {} } = scope || {};
 
   // only show the hull if we are filtering by cluster
-  const showHull = true;
+  const showHull = filterConfig?.type === filterConstants.CLUSTER;
 
   const [xDomain, setXDomain] = useState([-1, 1]);
   const [yDomain, setYDomain] = useState([-1, 1]);
@@ -80,7 +80,7 @@ function VisualizationPane({
 
   // Add new memoized feature activation lookup
   const featureActivationMap = useMemo(() => {
-    if (!featureIsSelected || !dataTableRows || !dataTableIndices) {
+    if (!featureIsSelected || !dataTableRows || !shownIndices) {
       return new Map();
     }
 
@@ -102,7 +102,7 @@ function VisualizationPane({
   const drawingPoints = useMemo(() => {
     return scopeRows.map((p, i) => {
       if (featureIsSelected) {
-        if (dataTableIndices?.includes(i)) {
+        if (shownIndices?.includes(i)) {
           const activation = featureActivationMap.get(p.ls_index);
           return activation !== undefined
             ? [p.x, p.y, mapSelectionKey.selected, activation]
@@ -115,15 +115,15 @@ function VisualizationPane({
         return [-10, -10, mapSelectionKey.hidden, 0.0];
         //   } else if (hoveredIndex === i) {
         //     return [p.x, p.y, mapSelectionKey.hovered, 0.0];
-      } else if (dataTableIndices?.includes(i)) {
+      } else if (shownIndices?.includes(i)) {
         return [p.x, p.y, mapSelectionKey.selected, 0.0];
-      } else if (dataTableIndices?.length) {
+      } else if (shownIndices?.length) {
         return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
       } else {
         return [p.x, p.y, mapSelectionKey.normal, 0.0];
       }
     });
-  }, [scopeRows, dataTableIndices, featureActivationMap, featureIsSelected]);
+  }, [scopeRows, shownIndices, featureActivationMap, featureIsSelected]);
 
   const points = useMemo(() => {
     return scopeRows
@@ -238,9 +238,9 @@ function VisualizationPane({
   // they appear in filteredIndices. this is used to draw the point labels
   const selectedPoints = useMemo(() => {
     return scopeRows
-      .filter((p) => dataTableIndices?.includes(p.ls_index))
+      .filter((p) => shownIndices?.includes(p.ls_index))
       .map((p, i) => ({ ...p, x: p.x, y: p.y, index: i }));
-  }, [dataTableIndices, scopeRows]);
+  }, [shownIndices, scopeRows]);
 
   return (
     // <div style={{ width, height }} ref={umapRef}>
@@ -306,7 +306,7 @@ function VisualizationPane({
             strokeWidth={2.5}
             // if there are selected indices already, that means other points will be less visible
             // so we can make the hull a bit more transparent
-            opacity={dataTableIndices?.length ? 0.15 : 0.5}
+            opacity={shownIndices?.length ? 0.15 : 0.5}
             duration={0}
             xDomain={xDomain}
             yDomain={yDomain}
