@@ -55,7 +55,8 @@ function ExploreContent() {
 
   // Get filter-related state from FilterContext
   const {
-    filterLoading,
+    // filterLoading,
+    loading: filterLoading,
     shownIndices,
     setFilterQuery,
     featureFilter,

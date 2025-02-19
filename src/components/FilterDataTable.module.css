@@ -324,3 +324,23 @@
   font-size: 10px;
   color: #fff;
 }
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);  /* semi-transparent white */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;  /* ensure it's above the grid */
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .loadingOverlay {
+    background-color: rgba(0, 0, 0, 0.7);  /* semi-transparent black for dark mode */
+  }
+}

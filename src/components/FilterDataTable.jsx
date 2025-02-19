@@ -66,7 +66,8 @@ function FilterDataTable({
 }) {
   const [rows, setRows] = useState([]);
 
-  const { page, setPage, totalPages, filterConfig, filterActive, loading } = useFilter();
+  const { page, setPage, totalPages, filterConfig, filterActive, loading, setLoading } =
+    useFilter();
 
   // page count is the total number of pages available
   // const [pageCount, setPageCount] = useState(0);
@@ -81,12 +82,11 @@ function FilterDataTable({
 
   console.log({ filteredIndices, filterConfig, filterActive });
 
-  const [rowsLoading, setRowsLoading] = useState(false);
   const hydrateIndices = useCallback(
     (indices, setRowsTarget) => {
-      console.log('==== hydrateIndices ==== ', { indices, filterConfig, filterActive, loading });
+      console.log('==== hydrateIndices ==== ', { indices, filterConfig, loading });
       if (dataset && scope && indices.length) {
-        setRowsLoading(true);
+        setLoading(true);
         if (indices.length) {
           apiService.getRowsByIndices(userId, dataset.id, scope.id, indices).then((rows) => {
             const rowsWithIdx = rows.map((row, idx) => ({
@@ -96,20 +96,20 @@ function FilterDataTable({
             }));
             setRowsTarget(rowsWithIdx);
             onDataTableRows(rowsWithIdx);
-            setRowsLoading(false);
+            setLoading(false);
           });
         } else {
           setRowsTarget([]);
           onDataTableRows && onDataTableRows([]);
-          setRowsLoading(false);
+          setLoading(false);
         }
       } else {
         setRowsTarget([]);
         onDataTableRows && onDataTableRows([]);
-        setRowsLoading(false);
+        setLoading(false);
       }
     },
-    [dataset, page, sae_id, setRowsLoading]
+    [dataset, page, sae_id, setLoading]
   );
 
   useEffect(() => {
@@ -280,83 +280,82 @@ function FilterDataTable({
 
   return (
     <div
-      className={`${styles.filterDataTable} ${rowsLoading ? styles.loading : ''}`}
+      className={`${styles.filterDataTable} ${loading ? styles.loading : ''}`}
       // style={{ visibility: indices.length ? 'visible' : 'hidden' }}
     >
-      {rowsLoading || filterLoading ? (
+      {filterLoading && (
         <div className={styles.loadingOverlay}>
           <div className={styles.loadingContainer}>
             <div className={styles.loadingSpinner}></div>
             <div>Loading</div>
           </div>
         </div>
-      ) : (
-        <div className={`${styles.filterTableScrollableBody} ${styles.tableBody}`}>
-          <Tooltip
-            id="feature-tooltip"
-            place="bottom"
-            effect="solid"
-            content={featureTooltipContent?.content || ''}
-            className={styles.featureTooltip}
-            float={true}
-            isOpen={!!featureTooltipContent}
-            // float={true}
-            position="fixed"
-            style={{
-              zIndex: 9999,
-              maxWidth: 'none',
-              whiteSpace: 'nowrap',
-              backgroundColor: '#D3965E',
-              position: 'fixed',
-              marginTop: 10,
-              top: -200,
-              // left: featureTooltipContent?.x || 0,
-              // top: (featureTooltipContent?.y || 0) - 30,
-            }}
-          />
-          <DataGrid
-            rows={rows}
-            columns={formattedColumns}
-            rowClass={(row, index) => {
-              if (row.ls_index === 0) {
-                return 'test';
-              }
-              return '';
-            }}
-            rowGetter={(i) => rows[i]}
-            rowHeight={sae_id ? 50 : 35}
-            style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
-            renderers={{ renderRow: renderRowWithHover }}
-            className={styles.dataGrid}
-          />
-
-          <Tooltip
-            id="feature-column-info-tooltip"
-            className={styles.featureColumnInfoTooltip}
-            place="top"
-            effect="solid"
-            clickable={true}
-            delayHide={500} // give the user a chance to click the tooltip links
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              The vertical bars represent activations for different{' '}
-              <a
-                href="https://enjalot.github.io/latent-taxonomy/articles/about"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Sparse Autoencoder (SAE)
-              </a>{' '}
-              features corresponding to each embedding. Higher activations indicate that the feature
-              captures an important semantic element of the embedding.
-              <br />
-              <br />
-              Click each cell to see the labels for each feature and to filter rows by a particular
-              feature.
-            </div>
-          </Tooltip>
-        </div>
       )}
+      <div className={`${styles.filterTableScrollableBody} ${styles.tableBody}`}>
+        <Tooltip
+          id="feature-tooltip"
+          place="bottom"
+          effect="solid"
+          content={featureTooltipContent?.content || ''}
+          className={styles.featureTooltip}
+          float={true}
+          isOpen={!!featureTooltipContent}
+          // float={true}
+          position="fixed"
+          style={{
+            zIndex: 9999,
+            maxWidth: 'none',
+            whiteSpace: 'nowrap',
+            backgroundColor: '#D3965E',
+            position: 'fixed',
+            marginTop: 10,
+            top: -200,
+            // left: featureTooltipContent?.x || 0,
+            // top: (featureTooltipContent?.y || 0) - 30,
+          }}
+        />
+        <DataGrid
+          rows={rows}
+          columns={formattedColumns}
+          rowClass={(row, index) => {
+            if (row.ls_index === 0) {
+              return 'test';
+            }
+            return '';
+          }}
+          rowGetter={(i) => rows[i]}
+          rowHeight={sae_id ? 50 : 35}
+          style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
+          renderers={{ renderRow: renderRowWithHover }}
+          className={styles.dataGrid}
+        />
+
+        <Tooltip
+          id="feature-column-info-tooltip"
+          className={styles.featureColumnInfoTooltip}
+          place="top"
+          effect="solid"
+          clickable={true}
+          delayHide={500} // give the user a chance to click the tooltip links
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            The vertical bars represent activations for different{' '}
+            <a
+              href="https://enjalot.github.io/latent-taxonomy/articles/about"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Sparse Autoencoder (SAE)
+            </a>{' '}
+            features corresponding to each embedding. Higher activations indicate that the feature
+            captures an important semantic element of the embedding.
+            <br />
+            <br />
+            Click each cell to see the labels for each feature and to filter rows by a particular
+            feature.
+          </div>
+        </Tooltip>
+      </div>
       {showNavigation && page > 0 && (
         <div className={styles.filterDataTablePageControls}>
           <button onClick={() => setPage(0)} disabled={page === 0}>

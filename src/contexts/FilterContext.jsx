@@ -58,6 +58,8 @@ export function FilterProvider({ children }) {
     const numericValue = parseInt(value);
 
     if (key === filterConstants.SEARCH) {
+      const { setSearchText } = searchFilter;
+      setSearchText(value);
       setFilterQuery(value);
       setFilterConfig({ type: filterConstants.SEARCH, value, label: value });
     } else if (key === filterConstants.CLUSTER) {
@@ -185,6 +187,7 @@ export function FilterProvider({ children }) {
     ROWS_PER_PAGE,
 
     loading,
+    setLoading,
     filterActive,
     setFilterActive,
 
