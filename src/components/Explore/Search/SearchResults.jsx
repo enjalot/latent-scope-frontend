@@ -108,7 +108,7 @@ const Option = (props) => {
             size="small"
             className={styles.resultButton}
           />
-          {underlineText(data.label, inputValue)}
+          <div>{underlineText(data.label, inputValue)}</div>
         </div>
       </components.Option>
     </div>
