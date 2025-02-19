@@ -101,6 +101,9 @@ function ScatterGL({
   const { setFilteredIndices, anyFilterActive, setCenteredIndices } = useFilter();
   const { clusterMap } = useScope();
 
+  const minZoom = 0.75;
+  const maxZoom = 13;
+
   // debounce the filtered indices update
   // const debouncedSetFilteredIndices = useDebounce(setFilteredIndices, 50);
   const debouncedSetCenteredIndices = useDebounce(setCenteredIndices, 50);
@@ -168,33 +171,41 @@ function ScatterGL({
       pixelRatio: pixelRatio,
     });
 
-    const blendParams = isDarkMode
-      ? {
-          srcRGB: 'src alpha',
-          srcAlpha: 'src alpha',
-          dstRGB: 'one',
-          dstAlpha: 'one',
-        }
-      : {
-          srcRGB: 'one',
-          srcAlpha: 'one',
-          dstRGB: 'one minus src alpha',
-          dstAlpha: 'one minus src alpha',
-        };
+    // Create buffers only once per points change.
+    const positionBuffer = reglRef.current.buffer(points.map((p) => [p[0], p[1]]));
+    const colorBuffer = reglRef.current.buffer(
+      points.map(([, , valueA]) => {
+        const colorHex = calculatePointColor(valueA);
+        const rgbColor = rgb(colorHex);
+        return [rgbColor.r / 255, rgbColor.g / 255, rgbColor.b / 255];
+      })
+    );
+    const opacityBuffer = reglRef.current.buffer(
+      points.map(([, , valueA, activation]) =>
+        calculatePointOpacity(featureIsSelected, valueA, activation)
+      )
+    );
+    const sizeBuffer = reglRef.current.buffer(
+      points.map(([, , valueA]) => calculatePointSize(valueA))
+    );
 
-    // Create draw command
+    // Redefine your drawPoints command to take these buffers as attributes.
     drawPointsRef.current = reglRef.current({
       vert: `
         precision mediump float;
         attribute vec2 position;
         attribute vec3 color;
         attribute float opacity;
-        attribute float size;  // New attribute for point size
+        attribute float size;
         
-        uniform float pointScale;
+        // Instead of separate translate/scale uniforms, we pass in a single transform matrix.
+        // uniform mat3 uMatrix;
         uniform vec2 uTranslate;
         uniform float uScale;
         uniform vec2 uScreenSize;
+        
+        uniform float pointScale;
+        uniform float dotScaleFactor;
         
         varying vec3 v_color;
         varying float v_opacity;
@@ -203,6 +214,9 @@ function ScatterGL({
           v_color = color;
           v_opacity = opacity;
           
+          // Multiply the original position (in 2D) by the transformation matrix.
+          // vec3 pos = uMatrix * vec3(position, 1.0);
+
           // First map from [-1,1] to screen coordinates
           vec2 screen = vec2(
             (position.x + 1.0) * 0.5 * uScreenSize.x,
@@ -217,79 +231,67 @@ function ScatterGL({
             (transformed.x / uScreenSize.x) * 2.0 - 1.0,
             -(transformed.y / uScreenSize.y) * 2.0 + 1.0
           );
-          
+
           gl_Position = vec4(clip, 0, 1);
-          gl_PointSize = pointScale * size * uScale;  // Modified to use per-point size
+          
+          gl_PointSize = pointScale * size * dotScaleFactor;
         }
       `,
       frag: `
         precision mediump float;
         varying vec3 v_color;
         varying float v_opacity;
+        uniform float edgeExp;
         
         void main() {
-          // Calculate distance from center of point
           float dist = length(gl_PointCoord.xy - 0.5) * 2.0;
-          
-          // Only discard if completely outside the circle
-          if (dist > 1.0) {
-            discard;
-          }
-          
-          // Make the falloff much sharper with pow()
-          float alpha = v_opacity * (1.0 - pow(dist, 4.0));
+          if (dist > 1.0) discard;
+          float alpha = v_opacity * (1.0 - pow(dist, edgeExp));
           vec3 color = v_color * 0.95;
           gl_FragColor = vec4(color * alpha, alpha);
         }
       `,
       attributes: {
-        position: (context, props) => reglRef.current.buffer(props.points.map((p) => [p[0], p[1]])),
-        color: (context, props) =>
-          reglRef.current.buffer(
-            props.points.map(([, , valueA]) => {
-              const colorHex = calculatePointColor(valueA);
-              const rgbColor = rgb(colorHex);
-              return [rgbColor.r / 255, rgbColor.g / 255, rgbColor.b / 255];
-            })
-          ),
-        opacity: (context, props) =>
-          reglRef.current.buffer(
-            props.points.map(([, , valueA, activation]) =>
-              calculatePointOpacity(props.featureIsSelected, valueA, activation)
-            )
-          ),
-        size: (context, props) =>
-          reglRef.current.buffer(props.points.map(([, , valueA]) => calculatePointSize(valueA))),
+        position: positionBuffer,
+        color: colorBuffer,
+        opacity: opacityBuffer,
+        size: sizeBuffer,
       },
       uniforms: {
         pointScale: (context, props) => props.pointScale,
+        // Compute a single 3x3 matrix that converts your point (in data space)
+        // into clip space. This matrix encapsulates the conversion from [-1,1] to pixel coordinates,
+        // the zoom transform and the conversion from screen to clip space.
+        // uMatrix: (context, props) =>
+        //   computeTransformMatrix(props.width, props.height, props.transform),
         uTranslate: (context, props) => [props.transform.x, props.transform.y],
         uScale: (context, props) => props.transform.k,
         uScreenSize: (context, props) => [props.width, props.height],
+        dotScaleFactor: (context, props) => {
+          const minScaleFactor = 3;
+          return 1 - ((props.transform.k - 1) / (maxZoom - 1)) * (1 - minScaleFactor);
+        },
+        edgeExp: (context, props) => {
+          return 2 + ((props.transform.k - 1) / (maxZoom - 1)) * 6;
+        },
       },
-
-      count: (context, props) => props.points.length,
+      count: points.length,
       primitive: 'points',
       blend: {
         enable: true,
-        func: blendParams,
+        func: (context, props) => {
+          return props.blendParams;
+        },
       },
-      depth: {
-        enable: false, // Explicitly disable depth testing
-      },
+      depth: { enable: false },
     });
 
     const zoomBehavior = zoom()
-      .scaleExtent([0.1, 12])
+      .scaleExtent([minZoom, maxZoom])
       .on('zoom', (event) => {
         setTransform(event.transform);
         const newXScale = event.transform.rescaleX(xScaleRef.current);
         const newYScale = event.transform.rescaleY(yScaleRef.current);
-
-        // update data center and find nearest point on hover
-        // if (event.sourceEvent) {
-        //   updateCenteredIndices(event.transform);
-        // }
 
         if (onView) {
           onView(newXScale.domain(), newYScale.domain());
@@ -333,6 +335,20 @@ function ScatterGL({
     const pointsToRender = points;
     const dynamicScale = calculateDynamicPointScale(pointsToRender.length, width, height);
 
+    const blendParams = isDarkMode
+      ? {
+          srcRGB: 'src alpha',
+          srcAlpha: 'src alpha',
+          dstRGB: 'one',
+          dstAlpha: 'one',
+        }
+      : {
+          srcRGB: 'one',
+          srcAlpha: 'one',
+          dstRGB: 'one minus src alpha',
+          dstAlpha: 'one minus src alpha',
+        };
+
     drawPointsRef.current({
       points: pointsToRender,
       pointScale: dynamicScale * pointScale,
@@ -340,6 +356,7 @@ function ScatterGL({
       transform,
       width,
       height,
+      blendParams,
     });
   }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
 

@@ -291,7 +291,7 @@ function VisualizationPane({
             // stroke={'#E0EFFF'}
             fill="none"
             duration={200}
-            strokeWidth={0.15}
+            strokeWidth={0.75}
             xDomain={xDomain}
             yDomain={yDomain}
             width={width}
@@ -339,7 +339,7 @@ function VisualizationPane({
           points={hoverAnnotations}
           stroke="black"
           fill="#8bcf66"
-          size="26"
+          size="16"
           xDomain={xDomain}
           yDomain={yDomain}
           width={width}
@@ -369,6 +369,7 @@ function VisualizationPane({
         )}
         <PointLabel
           selectedPoints={selectedPoints}
+          hovered={hovered}
           xDomain={xDomain}
           yDomain={yDomain}
           width={width}

@@ -4,6 +4,7 @@ import styles from './PointLabel.module.scss';
 import { contrastColor } from '../../lib/colors';
 function PointLabel({
   selectedPoints, // array of {x, y, index} objects
+  hovered,
   xDomain,
   yDomain,
   width,
@@ -68,8 +69,10 @@ function PointLabel({
         const coord = pointToSvgCoordinate(d, xDomain, yDomain, width, height);
         return coord.y;
       })
-      .attr('r', 8)
-      .attr('fill', contrastColor); // Bright green
+      .attr('r', (d) => (hovered && d.ls_index === hovered.index ? 10 : 8))
+      .attr('fill', contrastColor)
+      .attr('stroke', (d) => (hovered && d.ls_index === hovered.index ? '#111' : 'none'))
+      .attr('stroke-width', 2);
 
     // Add text labels (same as before)
     let labelSel = svg.selectAll('text.point-label').data(selectedPoints);
@@ -95,7 +98,7 @@ function PointLabel({
       .attr('dominant-baseline', 'middle')
       .attr('font-size', fontSize)
       .text((d) => d.index + 1);
-  }, [selectedPoints, xDomain, yDomain, width, height, textColor]);
+  }, [selectedPoints, xDomain, yDomain, width, height, textColor, hovered]);
 
   return (
     <svg ref={svgRef} className={styles.pointLabelPlot} width={width} height={height}>
