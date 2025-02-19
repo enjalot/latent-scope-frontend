@@ -1,5 +1,5 @@
 // FilterContext.js
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useScope } from './ScopeContext'; // Assuming this provides scopeRows, deletedIndices, etc.
 import useColumnFilter from '../hooks/useColumnFilter';
@@ -188,12 +188,26 @@ export function FilterProvider({ children }) {
 
   const [latestTime, setLatestTime] = useState(0);
 
+  // Keep track of the latest request
+  const lastRequestRef = useRef('');
+
   useEffect(() => {
     if (shownIndices.length) {
       console.log('==== getting rows api ==== ', { shownIndices });
       const nonDeletedIndices = shownIndices.filter((index) => !deletedIndices.includes(index));
       setLoading(true);
+
+      // Use a timestamp in ms as a unique key for this request.
+      const requestTimestamp = Date.now();
+      lastRequestRef.current = requestTimestamp;
+
       apiService.getRowsByIndices(userId, datasetId, scope.id, nonDeletedIndices).then((rows) => {
+        // Only update state if this is the latest request.
+        if (lastRequestRef.current !== requestTimestamp) {
+          // Discard stale result.
+          console.log('Stale result discarded, timestamp mismatch');
+          return;
+        }
         const rowsWithIdx = rows.map((row, idx) => ({
           ...row,
           idx,
@@ -203,7 +217,7 @@ export function FilterProvider({ children }) {
         setLoading(false);
       });
     }
-  }, [shownIndices, deletedIndices]);
+  }, [shownIndices, deletedIndices, userId, datasetId, scope]);
 
   // The context exposes only the state and setters that consumer components need.
   const value = {

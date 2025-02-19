@@ -49,7 +49,6 @@ function FilterDataTable({
   features = [],
   onHover = () => {},
 }) {
-  console.log('about to call useFilter in FilterDataTable');
   const { dataTableRows, page, setPage, totalPages, filterConfig, filterActive, loading } =
     useFilter();
 

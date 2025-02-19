@@ -53,8 +53,6 @@ function ExploreContent() {
     sae,
   } = useScope();
 
-  console.log('about to call useFilter in FullScreenExplore');
-
   // Get filter-related state from FilterContext
   const {
     // filterLoading,
