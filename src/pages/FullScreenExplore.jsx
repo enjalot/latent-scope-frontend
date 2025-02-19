@@ -59,6 +59,7 @@ function ExploreContent() {
     shownIndices,
     setFilterQuery,
     featureFilter,
+    searchFilter,
     setFilterConfig,
     setFilterActive,
     setUrlParams,
@@ -318,8 +319,7 @@ function ExploreContent() {
                 scope={scope}
                 filteredIndices={shownIndices}
                 deletedIndices={deletedIndices}
-                // distances={searchFilter.distances}
-                distances={[]}
+                distances={searchFilter.distances}
                 clusterMap={clusterMap}
                 clusterLabels={clusterLabels}
                 onDataTableRows={setDataTableRows}
