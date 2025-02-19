@@ -66,7 +66,7 @@ function FilterDataTable({
 }) {
   const [rows, setRows] = useState([]);
 
-  const { ROWS_PER_PAGE: rowsPerPage, page, setPage, totalPages } = useFilter();
+  const { page, setPage, totalPages, filterConfig, filterActive, loading } = useFilter();
 
   // page count is the total number of pages available
   // const [pageCount, setPageCount] = useState(0);
@@ -79,9 +79,12 @@ function FilterDataTable({
   // feature tooltip content
   const [featureTooltipContent, setFeatureTooltipContent] = useState(null);
 
+  console.log({ filteredIndices, filterConfig, filterActive });
+
   const [rowsLoading, setRowsLoading] = useState(false);
   const hydrateIndices = useCallback(
     (indices, setRowsTarget) => {
+      console.log('==== hydrateIndices ==== ', { indices, filterConfig, filterActive, loading });
       if (dataset && scope && indices.length) {
         setRowsLoading(true);
         if (indices.length) {
@@ -354,7 +357,7 @@ function FilterDataTable({
           </Tooltip>
         </div>
       )}
-      {showNavigation && (
+      {showNavigation && page > 0 && (
         <div className={styles.filterDataTablePageControls}>
           <button onClick={() => setPage(0)} disabled={page === 0}>
             First

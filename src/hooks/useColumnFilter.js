@@ -31,10 +31,15 @@ const useColumnFilter = (userId, datasetId, scope) => {
     return res.map((r) => r.index);
   };
 
+  const clear = () => {
+    setColumnToValue({});
+  };
+
   return {
     columnToValue,
     columnFilters,
     filter,
+    clear,
   };
 };
 
