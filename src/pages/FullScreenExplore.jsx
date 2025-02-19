@@ -73,11 +73,18 @@ function ExploreContent() {
   const [dataTableRows, setDataTableRows] = useState([]);
   const [selectedAnnotations, setSelectedAnnotations] = useState([]);
 
-  // Hover text hydration with debouncing
+  // Add a ref to track the latest requested index
+  const latestHoverIndexRef = useRef(null);
+
+  // Modify the hover text hydration with debouncing
   const hydrateHoverText = useCallback(
     (index, setter) => {
+      latestHoverIndexRef.current = index;
       apiService.getHoverText(userId, datasetId, scope?.id, index).then((data) => {
-        setter(data);
+        // Only update if this is still the latest requested index
+        if (latestHoverIndexRef.current === index) {
+          setter(data);
+        }
       });
     },
     [userId, datasetId, scope]
@@ -100,6 +107,7 @@ function ExploreContent() {
       });
     } else {
       setHovered(null);
+      latestHoverIndexRef.current = null; // Reset the ref when hover is cleared
     }
   }, [hoveredIndex, deletedIndices, clusterMap, debouncedHydrateHoverText]);
 
