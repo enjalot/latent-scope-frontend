@@ -130,6 +130,15 @@ const Container = () => {
             type="text"
             value={filterQuery}
             onChange={(e) => handleInputChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && filterQuery) {
+                handleSelect({
+                  type: filterConstants.SEARCH,
+                  value: filterQuery,
+                  label: filterQuery,
+                });
+              }
+            }}
             placeholder="Search dataset for..."
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
