@@ -6,6 +6,7 @@ import useColumnFilter from '../hooks/useColumnFilter';
 import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
 import useClusterFilter from '../hooks/useClusterFilter';
 import useFeatureFilter from '../hooks/useFeatureFilter';
+import { apiService } from '../lib/apiService';
 
 import {
   filterConstants,
@@ -48,9 +49,18 @@ export function FilterProvider({ children }) {
   const clusterFilter = useClusterFilter({ scopeRows, scope, scopeLoaded });
   const searchFilter = useNearestNeighborsSearch({ userId, datasetId, scope, deletedIndices });
 
+  const hasFilterInUrl = useMemo(() => {
+    return (
+      urlParams.has('column') ||
+      urlParams.has('cluster') ||
+      urlParams.has('feature') ||
+      urlParams.has('search')
+    );
+  }, [urlParams]);
+
   // Populate filter state from url params
   useEffect(() => {
-    if (!scopeLoaded) return;
+    if (!scopeLoaded || !hasFilterInUrl) return;
 
     // let's just grab the first key for now
     const key = urlParams.keys().next().value;
@@ -58,8 +68,7 @@ export function FilterProvider({ children }) {
     const numericValue = parseInt(value);
 
     if (key === filterConstants.SEARCH) {
-      const { setSearchText } = searchFilter;
-      setSearchText(value);
+      console.log('==== search filter url param ==== ', { value });
       setFilterQuery(value);
       setFilterConfig({ type: filterConstants.SEARCH, value, label: value });
     } else if (key === filterConstants.CLUSTER) {
@@ -109,7 +118,8 @@ export function FilterProvider({ children }) {
       setLoading(true);
       let indices = [];
       // If no filter is active, use the full baseIndices.
-      if (!filterConfig) {
+      if (!filterConfig && !hasFilterInUrl) {
+        console.log('==== no filter config ==== ', { baseIndices });
         indices = baseIndices;
       } else {
         const { type, value } = filterConfig;
@@ -125,9 +135,9 @@ export function FilterProvider({ children }) {
             break;
           }
           case filterConstants.SEARCH: {
-            const { setSearchText, filter } = searchFilter;
-            setSearchText(value);
-            indices = await filter();
+            const { filter } = searchFilter;
+            console.log('==== search filter ==== ', { value });
+            indices = await filter(value);
             break;
           }
           case filterConstants.FEATURE: {
@@ -159,6 +169,10 @@ export function FilterProvider({ children }) {
     }
   }, [filterConfig, baseIndices, scopeRows, deletedIndices, userId, datasetId, scope, scopeLoaded]);
 
+  // === Fetch Data Table Rows Logic
+
+  const [dataTableRows, setDataTableRows] = useState([]);
+
   // === Pagination ===
   const ROWS_PER_PAGE = 20;
   const totalPages = useMemo(
@@ -166,9 +180,30 @@ export function FilterProvider({ children }) {
     [filteredIndices]
   );
   const shownIndices = useMemo(() => {
+    console.log('==== getting shownIndices ==== ', { filteredIndices, page, deletedIndices });
     const start = page * ROWS_PER_PAGE;
-    return filteredIndices.slice(start, start + ROWS_PER_PAGE);
-  }, [filteredIndices, page]);
+    const nonDeletedIndices = filteredIndices.filter((index) => !deletedIndices.includes(index));
+    return nonDeletedIndices.slice(start, start + ROWS_PER_PAGE);
+  }, [filteredIndices, page, deletedIndices]);
+
+  const [latestTime, setLatestTime] = useState(0);
+
+  useEffect(() => {
+    if (shownIndices.length) {
+      console.log('==== getting rows api ==== ', { shownIndices });
+      const nonDeletedIndices = shownIndices.filter((index) => !deletedIndices.includes(index));
+      setLoading(true);
+      apiService.getRowsByIndices(userId, datasetId, scope.id, nonDeletedIndices).then((rows) => {
+        const rowsWithIdx = rows.map((row, idx) => ({
+          ...row,
+          idx,
+          ls_index: row.index,
+        }));
+        setDataTableRows(rowsWithIdx);
+        setLoading(false);
+      });
+    }
+  }, [shownIndices, deletedIndices]);
 
   // The context exposes only the state and setters that consumer components need.
   const value = {
@@ -209,6 +244,9 @@ export function FilterProvider({ children }) {
     // columnIndices
 
     setUrlParams,
+
+    // Data Table Rows
+    dataTableRows,
   };
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;

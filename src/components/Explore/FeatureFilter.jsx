@@ -133,7 +133,6 @@ export default function FeatureFilter() {
   );
 
   const handleThresholdChanged = useCallback(() => {
-    console.log('threshold', threshold);
     setThreshold(threshold);
   }, [threshold, setThreshold]);
 

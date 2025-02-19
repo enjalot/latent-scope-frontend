@@ -53,6 +53,8 @@ function ExploreContent() {
     sae,
   } = useScope();
 
+  console.log('about to call useFilter in FullScreenExplore');
+
   // Get filter-related state from FilterContext
   const {
     // filterLoading,
@@ -318,19 +320,15 @@ function ExploreContent() {
                 userId={userId}
                 dataset={dataset}
                 scope={scope}
-                filteredIndices={shownIndices}
-                deletedIndices={deletedIndices}
                 distances={searchFilter.distances}
                 clusterMap={clusterMap}
                 clusterLabels={clusterLabels}
-                onDataTableRows={setDataTableRows}
                 sae_id={sae?.id}
                 feature={featureFilter.feature}
                 features={features}
                 onHover={handleHover}
                 onClick={handleClicked}
                 handleFeatureClick={handleFeatureClick}
-                filterLoading={filterLoading}
               />
             </div>
           </div>

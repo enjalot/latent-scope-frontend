@@ -15,15 +15,8 @@ import styles from './FilterDataTable.module.css';
 FilterDataTable.propTypes = {
   height: PropTypes.string,
   dataset: PropTypes.object.isRequired,
-  userId: PropTypes.string.isRequired,
-  scope: PropTypes.object,
-  filteredIndices: PropTypes.array.isRequired,
   distances: PropTypes.array,
   clusterMap: PropTypes.object,
-  // clusterLabels: PropTypes.array,
-  tagset: PropTypes.object,
-  onTagset: PropTypes.func,
-  onScope: PropTypes.func,
   onHover: PropTypes.func,
   onClick: PropTypes.func,
 };
@@ -45,77 +38,23 @@ function RowWithHover({ props, onHover }) {
   );
 }
 
-
-
 function FilterDataTable({
   handleFeatureClick,
   dataset,
-  scope,
-  userId,
-  filteredIndices = [],
   distances = [],
   clusterMap = {},
-  onDataTableRows,
   showNavigation = true,
   sae_id = null,
   feature = -1,
   features = [],
   onHover = () => {},
-  deletedIndices = [],
-  filterLoading = false,
 }) {
-  const [rows, setRows] = useState([]);
-
-  const { page, setPage, totalPages, filterConfig, filterActive, loading, setLoading } =
+  console.log('about to call useFilter in FilterDataTable');
+  const { dataTableRows, page, setPage, totalPages, filterConfig, filterActive, loading } =
     useFilter();
-
-  // page count is the total number of pages available
-  // const [pageCount, setPageCount] = useState(0);
-  // useEffect(() => {
-  //   let inds = filteredIndices.length;
-  //   const count = Math.ceil(inds / rowsPerPage);
-  //   setPageCount(count);
-  // }, [filteredIndices]);
 
   // feature tooltip content
   const [featureTooltipContent, setFeatureTooltipContent] = useState(null);
-
-  console.log({ filteredIndices, filterConfig, filterActive });
-
-  const hydrateIndices = useCallback(
-    (indices, setRowsTarget) => {
-      console.log('==== hydrateIndices ==== ', { indices, filterConfig, loading });
-      if (dataset && scope && indices.length) {
-        setLoading(true);
-        if (indices.length) {
-          apiService.getRowsByIndices(userId, dataset.id, scope.id, indices).then((rows) => {
-            const rowsWithIdx = rows.map((row, idx) => ({
-              ...row,
-              idx,
-              ls_index: row.index,
-            }));
-            setRowsTarget(rowsWithIdx);
-            onDataTableRows(rowsWithIdx);
-            setLoading(false);
-          });
-        } else {
-          setRowsTarget([]);
-          onDataTableRows && onDataTableRows([]);
-          setLoading(false);
-        }
-      } else {
-        setRowsTarget([]);
-        onDataTableRows && onDataTableRows([]);
-        setLoading(false);
-      }
-    },
-    [dataset, page, sae_id, setLoading]
-  );
-
-  useEffect(() => {
-    const filteredWithoutDeleted = filteredIndices.filter((i) => !deletedIndices.includes(i));
-    hydrateIndices(filteredWithoutDeleted, setRows);
-  }, [filteredIndices, deletedIndices, page, hydrateIndices]);
 
   const formattedColumns = useMemo(() => {
     // Add index circle column as the first column
@@ -283,7 +222,7 @@ function FilterDataTable({
       className={`${styles.filterDataTable} ${loading ? styles.loading : ''}`}
       // style={{ visibility: indices.length ? 'visible' : 'hidden' }}
     >
-      {filterLoading && (
+      {loading && (
         <div className={styles.loadingOverlay}>
           <div className={styles.loadingContainer}>
             <div className={styles.loadingSpinner}></div>
@@ -315,7 +254,7 @@ function FilterDataTable({
           }}
         />
         <DataGrid
-          rows={rows}
+          rows={dataTableRows}
           columns={formattedColumns}
           rowClass={(row, index) => {
             if (row.ls_index === 0) {
@@ -323,7 +262,7 @@ function FilterDataTable({
             }
             return '';
           }}
-          rowGetter={(i) => rows[i]}
+          rowGetter={(i) => dataTableRows[i]}
           rowHeight={sae_id ? 50 : 35}
           style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
           renderers={{ renderRow: renderRowWithHover }}

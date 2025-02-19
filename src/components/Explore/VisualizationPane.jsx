@@ -52,6 +52,7 @@ function VisualizationPane({
 }) {
   const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
 
+  console.log('about to call useFilter in vizPane');
   const { featureFilter, clusterFilter, shownIndices, filterConfig } = useFilter();
 
   const { sae: { max_activations = [] } = {} } = scope || {};
