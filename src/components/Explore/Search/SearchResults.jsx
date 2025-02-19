@@ -27,13 +27,20 @@ const underlineText = (text, query) => {
   );
 };
 
-// Custom Option component that includes an icon
+// Custom Option component that includes an icon. Note the added branch for NN options.
 const Option = (props) => {
   const { data, selectProps } = props;
   const { onSelect, inputValue, setFilterQuery } = selectProps;
 
   const handleClick = (e) => {
     e.preventDefault();
+    if (data.isNN) {
+      // Call the onSelect for NN search
+      onSelect({ type: filterConstants.SEARCH, value: data.value, label: data.value });
+      setFilterQuery(data.value);
+      return;
+    }
+    // Determine which group this option belongs to
     const groupType = props.options.find((group) =>
       group.options?.some((opt) => opt.value === data.value && opt.label === data.label)
     )?.label;
@@ -57,12 +64,32 @@ const Option = (props) => {
     }
   };
 
+  // If this is our nearest-neighbors option, render it specially.
+  if (data.isNN) {
+    return (
+      <div onClick={handleClick}>
+        <components.Option {...props}>
+          <div className={styles.resultContent}>
+            <Button
+              onClick={handleClick}
+              icon="search"
+              color="primary"
+              variant="clear"
+              size="small"
+              className={styles.resultButton}
+            />
+            <span>Search for nearest neighbors to: "{data.value}"</span>
+          </div>
+        </components.Option>
+      </div>
+    );
+  }
+
   // Get the group type to determine which icon to show
   const groupType = props.options.find((group) =>
     group.options?.some((opt) => opt.value === data.value && opt.label === data.label)
   )?.label;
 
-  // Choose icon based on group type
   const getIcon = (type) => {
     switch (type) {
       case 'Clusters':
@@ -120,74 +147,11 @@ const Group = ({ children, ...props }) => {
   return <components.Group {...props}>{children}</components.Group>;
 };
 
-const customStyles = {
-  control: () => ({
-    display: 'none',
-  }),
-  menu: (base) => ({
-    ...base,
-    border: 'none',
-    boxShadow: 'none',
-    backgroundColor: 'transparent',
-    position: 'static',
-  }),
-  group: (base) => ({
-    ...base,
-    padding: '8px 0',
-  }),
-  groupHeading: (base) => ({
-    ...base,
-    color: 'var(--text-color-text-subtle)',
-    fontSize: '0.9em',
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    padding: '0 10px',
-    marginBottom: '8px',
-  }),
-  option: (base, state) => ({
-    ...base,
-    padding: '8px 16px',
-    backgroundColor: state.isFocused ? 'var(--neutrals-color-neutral-1)' : 'transparent',
-    cursor: 'pointer',
-    '&:hover': {
-      backgroundColor: 'var(--neutrals-color-neutral-1)',
-    },
-  }),
-  menuList: (base) => ({
-    ...base,
-    padding: 0,
-    overflowY: 'visible',
-    maxHeight: 'none',
-  }),
-};
-
-// Custom Menu component with NN search
-const MenuWithNNSearch = ({ children, ...props }) => {
-  const { selectProps } = props;
-  const { query, onSelect, options, setFilterQuery } = selectProps;
-
-  // Check if there are any matches in the cluster / feature options
-  const hasMatches = options.some((group) => group.options && group.options.length > 0);
-
-  const handleNNSubmit = (e) => {
-    e.preventDefault();
-    onSelect({ type: filterConstants.SEARCH, value: query, label: query });
-    setFilterQuery(query);
-  };
-
+// A simplified custom Menu component (only for styling)
+const CustomMenu = ({ children, ...props }) => {
   return (
     <components.Menu {...props}>
-      <div className={styles.resultsList}>
-        {query === '' ? null : (
-          <div className={styles.resultRow} onClick={handleNNSubmit}>
-            <div className={styles.searchResultContent}>
-              <span className={styles.searchIcon}>🔍</span>
-              <span>Search for nearest neighbors to: "{query}"</span>
-            </div>
-          </div>
-        )}
-        {hasMatches && children}
-      </div>
+      <div className={styles.resultsList}>{children}</div>
     </components.Menu>
   );
 };
@@ -232,13 +196,27 @@ const SearchResults = ({ query, menuIsOpen, onSelect, setFilterQuery }) => {
       .slice(0, NUM_SEARCH_RESULTS);
   }, [columnFilters, query]);
 
-  // Group options by type
-  const groupedOptions = [
-    {
-      label: CLUSTERS,
-      options: clusterOptions,
-    },
-  ];
+  // Build grouped options.
+  // First, if the user has typed something, add a NN option.
+  const groupedOptions = [];
+  if (query.trim() !== '') {
+    groupedOptions.push({
+      label: 'Nearest Neighbors',
+      options: [
+        {
+          value: query,
+          label: query,
+          isNN: true, // flag so Option knows to render the NN option
+        },
+      ],
+    });
+  }
+
+  // Then add the other group(s).
+  groupedOptions.push({
+    label: CLUSTERS,
+    options: clusterOptions,
+  });
 
   if (featureOptions.length > 0) {
     groupedOptions.push({
@@ -273,9 +251,48 @@ const SearchResults = ({ query, menuIsOpen, onSelect, setFilterQuery }) => {
       components={{
         Option,
         Group,
-        Menu: MenuWithNNSearch,
+        Menu: CustomMenu, // using our simplified custom Menu just to wrap the children
       }}
-      styles={customStyles}
+      styles={{
+        control: () => ({
+          display: 'none',
+        }),
+        menu: (base) => ({
+          ...base,
+          border: 'none',
+          boxShadow: 'none',
+          backgroundColor: 'transparent',
+          position: 'static',
+        }),
+        group: (base) => ({
+          ...base,
+          padding: '8px 0',
+        }),
+        groupHeading: (base) => ({
+          ...base,
+          color: 'var(--text-color-text-subtle)',
+          fontSize: '0.9em',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          padding: '0 10px',
+          marginBottom: '8px',
+        }),
+        option: (base, state) => ({
+          ...base,
+          padding: '8px 16px',
+          backgroundColor: state.isFocused ? 'var(--neutrals-color-neutral-1)' : 'transparent',
+          cursor: 'pointer',
+          '&:hover': {
+            backgroundColor: 'var(--neutrals-color-neutral-1)',
+          },
+        }),
+        menuList: (base) => ({
+          ...base,
+          padding: 0,
+          overflowY: 'visible',
+          maxHeight: 'none',
+        }),
+      }}
       query={query}
       setFilterQuery={setFilterQuery}
       onMenuOpen={() => true}
