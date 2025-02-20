@@ -120,7 +120,8 @@ export function FilterProvider({ children }) {
       // If no filter is active, use the full baseIndices.
       if (!filterConfig && !hasFilterInUrl) {
         indices = baseIndices;
-      } else {
+      } else if (filterConfig) {
+        console.log('FILTER CONFIG', filterConfig);
         const { type, value } = filterConfig;
 
         switch (type) {

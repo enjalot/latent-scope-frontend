@@ -1,12 +1,6 @@
 import { useEffect, useRef } from 'react';
-// import { scaleLinear } from 'd3-scale';
-import { line, curveLinearClosed, curveCatmullRomClosed } from 'd3-shape';
-import { select } from 'd3-selection';
-import { baseColor, baseColorDark } from '../lib/colors';
-import { transition } from 'd3-transition';
-import { easeExpOut, easeExpIn, easeCubicInOut } from 'd3-ease';
-// import { interpolate } from 'flubber';
-
+import { baseColor } from '../lib/colors';
+import { useColorMode } from '../hooks/useColorMode';
 import './HullPlot.css';
 
 function calculateCentroid(points) {
@@ -52,9 +46,13 @@ const HullPlot = ({
   width,
   height,
   label = undefined,
+  k = 1,
+  maxZoom = 40,
 }) => {
   const canvasRef = useRef();
   const prevHulls = useRef();
+
+  const { isDark: isDarkMode } = useColorMode();
 
   const textColor = baseColor;
 
@@ -108,9 +106,8 @@ const HullPlot = ({
 
     // Draw hulls
     hulls.forEach((hullPoints) => {
+      ctx.globalAlpha = opacity * Math.pow((maxZoom - k) / maxZoom, 2) + 0.05;
       ctx.beginPath();
-      ctx.globalAlpha = opacity;
-
       // Move to first point
       const start = hullToCanvasCoordinate(hullPoints[0], xDomain, yDomain, width, height);
       ctx.moveTo(start.x, start.y);

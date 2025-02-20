@@ -311,13 +311,15 @@ function VisualizationPane({
             strokeWidth={2.5}
             // if there are selected indices already, that means other points will be less visible
             // so we can make the hull a bit more transparent
-            opacity={shownIndices?.length ? 0.15 : 0.5}
+            opacity={0.2}
             duration={0}
             xDomain={xDomain}
             yDomain={yDomain}
             width={width}
             height={height}
             label={scope.cluster_labels_lookup[hoveredCluster.cluster]}
+            k={transform.k}
+            maxZoom={maxZoom}
           />
         )}
         {/* Cluster is selected via filter */}

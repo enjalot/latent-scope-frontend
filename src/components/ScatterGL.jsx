@@ -60,11 +60,11 @@ const calculateDynamicPointScale = (pointCount, width, height) => {
 
   // Apply non-linear scaling to make points grow faster with fewer points
   // Using a power less than 1 creates this effect
-  const scalingPower = 1.0; // Adjust this value to control growth rate
+  const scalingPower = 0.9; // Adjust this value to control growth rate
   const scaledSize = Math.pow(baseSize, scalingPower);
 
   // Apply scaling factor and constraints
-  const size = Math.min(Math.max(scaledSize * 0.4, 1), 30);
+  const size = Math.min(Math.max(scaledSize * 0.3, 1), 10);
 
   return size;
 };
@@ -249,7 +249,7 @@ function ScatterGL({
           if (dist > 1.0) discard;
           float alpha;
           if(isDarkMode) {
-            alpha = v_opacity * (1.0 - pow(dist, uScale));
+            alpha = v_opacity * (1.0 - pow(dist, uScale * dotScaleFactor));
           } else {
             alpha = v_opacity * (1.0 - pow(dist, uScale * dotScaleFactor * 2.0));
           }
@@ -278,7 +278,7 @@ function ScatterGL({
         dotScaleFactor: (context, props) => {
           const minScaleFactor = 6;
           let sf = 1.25 + (props.transform.k / maxZoom) * 4; // (maxZoom - 1);
-          console.log('dotScaleFactor', props.transform.k, sf);
+          // console.log('dotScaleFactor', props.transform.k, sf);
           return sf;
         },
         // edgeExp: (context, props) => {
@@ -338,7 +338,7 @@ function ScatterGL({
 
   const dynamicSize = useMemo(() => {
     let size = calculateDynamicPointScale(points.length, width, height);
-    console.log('dynamicSize', size, points.length);
+    // console.log('dynamicSize', size, points.length);
     return size;
   }, [points, width, height]);
 
@@ -493,7 +493,7 @@ function ScatterGL({
       return false;
     });
     // debugger;
-    console.log('closestPoints', closestPoints);
+    // console.log('closestPoints', closestPoints);
 
     return closestPoints.map(({ point }) =>
       points.findIndex((p) => p[0] === point[0] && p[1] === point[1])
