@@ -11,6 +11,8 @@ function PointLabel({
   height,
   fill = '#7baf5a', // same as HullPlot default
   textColor = 'white',
+  k,
+  maxZoom,
 }) {
   const svgRef = useRef();
 
@@ -43,13 +45,15 @@ function PointLabel({
   useEffect(() => {
     const svg = select(svgRef.current);
 
+    let sf = 1.25 + (k / maxZoom) * 4;
+
     // Remove existing elements
     svg.selectAll('circle.point-label-circle').remove();
     svg.selectAll('text.point-label').remove();
 
     if (!xDomain || !yDomain || !selectedPoints?.length) return;
 
-    const fontSize = calculateScaledFontSize(width, height);
+    const fontSize = calculateScaledFontSize(width, height) * sf;
 
     // Add circles first (so they appear under text)
     let circleSel = svg.selectAll('circle.point-label-circle').data(selectedPoints);
@@ -69,7 +73,7 @@ function PointLabel({
         const coord = pointToSvgCoordinate(d, xDomain, yDomain, width, height);
         return coord.y;
       })
-      .attr('r', (d) => (hovered && d.ls_index === hovered.index ? 10 : 8))
+      .attr('r', (d) => (hovered && d.ls_index === hovered.index ? 10 * sf : 8 * sf))
       .attr('fill', contrastColor)
       .attr('stroke', (d) => (hovered && d.ls_index === hovered.index ? '#111' : 'none'))
       .attr('stroke-width', 2);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { select } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
 import { zoom, zoomIdentity } from 'd3-zoom';
@@ -23,6 +23,7 @@ import { reSplitAlphaNumeric } from '@tanstack/react-table';
 ScatterGL.propTypes = {
   points: PropTypes.array.isRequired, // an array of [x,y] points
   width: PropTypes.number.isRequired,
+  maxZoom: PropTypes.number,
   pointScale: PropTypes.number,
   quadtreeRadius: PropTypes.number,
   ignoreNotSelected: PropTypes.bool,
@@ -57,9 +58,13 @@ const calculateDynamicPointScale = (pointCount, width, height) => {
   // Using sqrt because area is squared
   const baseSize = Math.sqrt(areaPerPoint);
 
-  // Apply some constraints and scaling
-  // Min size of 2, max size of 20
-  const size = Math.min(Math.max(baseSize * 0.2, 2), 20);
+  // Apply non-linear scaling to make points grow faster with fewer points
+  // Using a power less than 1 creates this effect
+  const scalingPower = 1.0; // Adjust this value to control growth rate
+  const scaledSize = Math.pow(baseSize, scalingPower);
+
+  // Apply scaling factor and constraints
+  const size = Math.min(Math.max(scaledSize * 0.4, 1), 30);
 
   return size;
 };
@@ -91,6 +96,8 @@ function ScatterGL({
   height,
   pointScale = 1,
   quadtreeRadius = 10,
+  minZoom = 0.75,
+  maxZoom = 40,
   onView,
   onSelect,
   onHover,
@@ -100,9 +107,6 @@ function ScatterGL({
   const { isDark: isDarkMode } = useColorMode();
   const { setFilteredIndices, anyFilterActive, setCenteredIndices } = useFilter();
   const { clusterMap } = useScope();
-
-  const minZoom = 0.75;
-  const maxZoom = 13;
 
   // debounce the filtered indices update
   // const debouncedSetFilteredIndices = useDebounce(setFilteredIndices, 50);
@@ -199,7 +203,6 @@ function ScatterGL({
         attribute float size;
         
         // Instead of separate translate/scale uniforms, we pass in a single transform matrix.
-        // uniform mat3 uMatrix;
         uniform vec2 uTranslate;
         uniform float uScale;
         uniform vec2 uScreenSize;
@@ -213,9 +216,6 @@ function ScatterGL({
         void main() {
           v_color = color;
           v_opacity = opacity;
-          
-          // Multiply the original position (in 2D) by the transformation matrix.
-          // vec3 pos = uMatrix * vec3(position, 1.0);
 
           // First map from [-1,1] to screen coordinates
           vec2 screen = vec2(
@@ -241,14 +241,22 @@ function ScatterGL({
         precision mediump float;
         varying vec3 v_color;
         varying float v_opacity;
-        uniform float edgeExp;
-        
+        uniform float uScale;
+        uniform bool isDarkMode;
+        uniform float dotScaleFactor;
         void main() {
           float dist = length(gl_PointCoord.xy - 0.5) * 2.0;
           if (dist > 1.0) discard;
-          float alpha = v_opacity * (1.0 - pow(dist, edgeExp));
+          float alpha;
+          if(isDarkMode) {
+            alpha = v_opacity * (1.0 - pow(dist, uScale));
+          } else {
+            alpha = v_opacity * (1.0 - pow(dist, uScale * dotScaleFactor * 2.0));
+          }
           vec3 color = v_color * 0.95;
-          gl_FragColor = vec4(color * alpha, alpha);
+          
+          gl_FragColor = vec4(color * alpha*1.25, alpha);
+          
         }
       `,
       attributes: {
@@ -268,12 +276,17 @@ function ScatterGL({
         uScale: (context, props) => props.transform.k,
         uScreenSize: (context, props) => [props.width, props.height],
         dotScaleFactor: (context, props) => {
-          const minScaleFactor = 3;
-          return 1 - ((props.transform.k - 1) / (maxZoom - 1)) * (1 - minScaleFactor);
+          const minScaleFactor = 6;
+          let sf = 1.25 + (props.transform.k / maxZoom) * 4; // (maxZoom - 1);
+          console.log('dotScaleFactor', props.transform.k, sf);
+          return sf;
         },
-        edgeExp: (context, props) => {
-          return 2 + ((props.transform.k - 1) / (maxZoom - 1)) * 6;
-        },
+        // edgeExp: (context, props) => {
+        //   let v = 1 + (props.transform.k - 1); // / (maxZoom - 1)) * 12;
+        //   // console.log('edgeExp', v, Math.pow(0.01, v), Math.pow(0.99, v));
+        //   return v;
+        // },
+        isDarkMode: (context, props) => isDarkMode,
       },
       count: points.length,
       primitive: 'points',
@@ -294,7 +307,7 @@ function ScatterGL({
         const newYScale = event.transform.rescaleY(yScaleRef.current);
 
         if (onView) {
-          onView(newXScale.domain(), newYScale.domain());
+          onView(newXScale.domain(), newYScale.domain(), event.transform);
         }
       });
 
@@ -323,6 +336,12 @@ function ScatterGL({
     };
   }, [width, height]);
 
+  const dynamicSize = useMemo(() => {
+    let size = calculateDynamicPointScale(points.length, width, height);
+    console.log('dynamicSize', size, points.length);
+    return size;
+  }, [points, width, height]);
+
   // Draw points when they change
   useEffect(() => {
     if (!reglRef.current || !drawPointsRef.current) return;
@@ -333,7 +352,6 @@ function ScatterGL({
     });
 
     const pointsToRender = points;
-    const dynamicScale = calculateDynamicPointScale(pointsToRender.length, width, height);
 
     const blendParams = isDarkMode
       ? {
@@ -347,18 +365,22 @@ function ScatterGL({
           srcAlpha: 'one',
           dstRGB: 'one minus src alpha',
           dstAlpha: 'one minus src alpha',
+          // srcRGB: 'src alpha',
+          // srcAlpha: 'src alpha',
+          // dstRGB: 'one',
+          // dstAlpha: 'one',
         };
 
     drawPointsRef.current({
       points: pointsToRender,
-      pointScale: dynamicScale * pointScale,
+      pointScale: dynamicSize * pointScale,
       featureIsSelected,
       transform,
       width,
       height,
       blendParams,
     });
-  }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
+  }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode, dynamicSize]);
 
   // Update useEffect to rebuild quadtree when points change
   useEffect(() => {
@@ -392,8 +414,9 @@ function ScatterGL({
       let minDistance = Infinity;
 
       // Search radius in data coordinates
+      const zoomFactor = Math.pow(transform.k, 0.5); // Square root provides a more moderate scaling
       const radius =
-        ((quadtreeRadius / transform.k) *
+        (((quadtreeRadius * (1 + zoomFactor)) / transform.k) *
           (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
         width;
 

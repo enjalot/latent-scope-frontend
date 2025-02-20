@@ -59,12 +59,16 @@ function VisualizationPane({
   // only show the hull if we are filtering by cluster
   const showHull = filterConfig?.type === filterConstants.CLUSTER;
 
+  const maxZoom = 40;
+
   const [xDomain, setXDomain] = useState([-1, 1]);
   const [yDomain, setYDomain] = useState([-1, 1]);
+  const [transform, setTransform] = useState({ k: 1, x: 0, y: 0 });
   const handleView = useCallback(
-    (xDomain, yDomain) => {
+    (xDomain, yDomain, transform) => {
       setXDomain(xDomain);
       setYDomain(yDomain);
+      setTransform(transform);
     },
     [setXDomain, setYDomain]
   );
@@ -278,6 +282,7 @@ function VisualizationPane({
             onHover={onHover}
             featureIsSelected={featureIsSelected}
             ignoreNotSelected={featureIsSelected}
+            maxZoom={maxZoom}
           />
         )}
         {/* show all the hulls */}
@@ -374,6 +379,8 @@ function VisualizationPane({
           yDomain={yDomain}
           width={width}
           height={height}
+          k={transform.k}
+          maxZoom={maxZoom}
         />
         {/* <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} /> */}
       </div>
