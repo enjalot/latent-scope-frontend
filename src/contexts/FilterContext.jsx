@@ -119,7 +119,6 @@ export function FilterProvider({ children }) {
       let indices = [];
       // If no filter is active, use the full baseIndices.
       if (!filterConfig && !hasFilterInUrl) {
-        console.log('==== no filter config ==== ', { baseIndices });
         indices = baseIndices;
       } else {
         const { type, value } = filterConfig;
@@ -136,7 +135,6 @@ export function FilterProvider({ children }) {
           }
           case filterConstants.SEARCH: {
             const { filter } = searchFilter;
-            console.log('==== search filter ==== ', { value });
             indices = await filter(value);
             break;
           }
@@ -180,20 +178,19 @@ export function FilterProvider({ children }) {
     [filteredIndices]
   );
   const shownIndices = useMemo(() => {
-    console.log('==== getting shownIndices ==== ', { filteredIndices, page, deletedIndices });
     const start = page * ROWS_PER_PAGE;
     const nonDeletedIndices = filteredIndices.filter((index) => !deletedIndices.includes(index));
     return nonDeletedIndices.slice(start, start + ROWS_PER_PAGE);
   }, [filteredIndices, page, deletedIndices]);
 
-  const [latestTime, setLatestTime] = useState(0);
-
   // Keep track of the latest request
   const lastRequestRef = useRef('');
 
+  // Create a cache Map to store API responses for default requests.
+  const rowsCache = useRef(new Map());
+
   useEffect(() => {
     if (shownIndices.length) {
-      console.log('==== getting rows api ==== ', { shownIndices });
       const nonDeletedIndices = shownIndices.filter((index) => !deletedIndices.includes(index));
       setLoading(true);
 
@@ -201,11 +198,21 @@ export function FilterProvider({ children }) {
       const requestTimestamp = Date.now();
       lastRequestRef.current = requestTimestamp;
 
+      const cacheKey = `${JSON.stringify(nonDeletedIndices)}-${page}`;
+
+      if (!filterConfig) {
+        const cachedResult = rowsCache.current.get(cacheKey);
+        if (cachedResult) {
+          setDataTableRows(cachedResult);
+          setLoading(false);
+          return;
+        }
+      }
+
       apiService.getRowsByIndices(userId, datasetId, scope.id, nonDeletedIndices).then((rows) => {
         // Only update state if this is the latest request.
         if (lastRequestRef.current !== requestTimestamp) {
           // Discard stale result.
-          console.log('Stale result discarded, timestamp mismatch');
           return;
         }
         const rowsWithIdx = rows.map((row, idx) => ({
@@ -215,6 +222,13 @@ export function FilterProvider({ children }) {
         }));
         setDataTableRows(rowsWithIdx);
         setLoading(false);
+
+        // only cache the result if there is no filter config
+        // i.e. we are showing the default set of rows
+
+        if (!filterConfig) {
+          rowsCache.current.set(cacheKey, rowsWithIdx);
+        }
       });
     }
   }, [shownIndices, deletedIndices, userId, datasetId, scope]);
