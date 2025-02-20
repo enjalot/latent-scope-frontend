@@ -231,6 +231,8 @@ export function FilterProvider({ children }) {
           rowsCache.current.set(cacheKey, rowsWithIdx);
         }
       });
+    } else {
+      setDataTableRows([]);
     }
   }, [shownIndices, deletedIndices, userId, datasetId, scope]);
 
