@@ -7,6 +7,7 @@ import { Button } from 'react-element-forge';
 import { useScope } from '../../../contexts/ScopeContext';
 import { filterConstants, findFeaturesByQuery, findClustersByQuery } from './utils';
 import useColumnFilter from '../../../hooks/useColumnFilter';
+import ClusterIcon from './ClusterIcon';
 
 const COLUMNS = 'Columns';
 const CLUSTERS = 'Clusters';
@@ -128,13 +129,18 @@ const Option = (props) => {
     <div onClick={handleClick}>
       <components.Option {...props}>
         <div className={styles.resultContent}>
-          <Button
-            icon={getIcon(groupType)}
-            color="primary"
-            variant="clear"
-            size="small"
-            className={styles.resultButton}
-          />
+          {groupType === 'Clusters' ? (
+            <ClusterIcon />
+          ) : (
+            <Button
+              onClick={handleClick}
+              icon={getIcon(groupType)}
+              color="primary"
+              variant="clear"
+              size="small"
+              className={styles.resultButton}
+            />
+          )}
           <div>{underlineText(data.label, inputValue)}</div>
         </div>
       </components.Option>

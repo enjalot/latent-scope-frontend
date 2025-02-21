@@ -12,7 +12,6 @@ export default function useNearestNeighborsSearch({ userId, datasetId, scope, de
       return !deletedIndices.includes(d);
     });
     setDistances(data.distances);
-    console.log('==== nnsearch fetch ==== ', { query, inds });
     return inds.slice(0, LIMIT);
   };
 
