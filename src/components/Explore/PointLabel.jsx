@@ -31,7 +31,7 @@ function PointLabel({
 
   // Reuse HullPlot's font size calculation
   const calculateScaledFontSize = (width, height) => {
-    const baseFontSize = 6;
+    const baseFontSize = 2;
     const FACTOR = 900;
     const scaleFactor = Math.min(width, height) / FACTOR;
     return Math.max(baseFontSize * scaleFactor, 8);
@@ -73,7 +73,7 @@ function PointLabel({
         const coord = pointToSvgCoordinate(d, xDomain, yDomain, width, height);
         return coord.y;
       })
-      .attr('r', (d) => (hovered && d.ls_index === hovered.index ? 10 * sf : 8 * sf))
+      .attr('r', (d) => (hovered && d.ls_index === hovered.index ? 8 * sf : 6 * sf))
       .attr('fill', contrastColor)
       .attr('stroke', (d) => (hovered && d.ls_index === hovered.index ? '#111' : 'none'))
       .attr('stroke-width', 2);

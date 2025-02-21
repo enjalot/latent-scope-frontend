@@ -238,13 +238,28 @@ function VisualizationPane({
     return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
   }, [vizConfig.pointOpacity]);
 
-  // the x,y coordinates of the filtered points, maintained in the order
-  // they appear in filteredIndices. this is used to draw the point labels
+  // ensure the order of selectedPoints
+  // exactly matches the ordering of indexes in shownIndices.
   const selectedPoints = useMemo(() => {
-    return scopeRows
-      .filter((p) => shownIndices?.includes(p.ls_index))
-      .map((p, i) => ({ ...p, x: p.x, y: p.y, index: i }));
+    if (!shownIndices || !scopeRows) return [];
+    return shownIndices
+      .map((ls_index, i) => {
+        // Find the point in scopeRows with matching ls_index
+        const point = scopeRows.find((p) => p.ls_index === ls_index);
+        return point ? { ...point, index: i } : null;
+      })
+      .filter((point) => point !== null);
   }, [shownIndices, scopeRows]);
+
+  console.log({
+    shownIndices,
+    selectedPoints: selectedPoints.map((p) => {
+      return {
+        index: p.index,
+        ls_index: p.ls_index,
+      };
+    }),
+  });
 
   return (
     // <div style={{ width, height }} ref={umapRef}>
