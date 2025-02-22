@@ -396,7 +396,7 @@ function VisualizationPane({
           k={transform.k}
           maxZoom={maxZoom}
         />
-        {/* <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} /> */}
+        <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
       </div>
 
       {/* Hover information display */}

@@ -43,7 +43,6 @@ function FilterDataTable({
   dataset,
   distances = [],
   clusterMap = {},
-  showNavigation = true,
   sae_id = null,
   feature = -1,
   features = [],
