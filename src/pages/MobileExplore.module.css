@@ -1,0 +1,29 @@
+.mobileExploreLayout {
+  position: relative;
+  width: 100%;
+  /* height: 100%; */
+  height: 100%;
+  /* display: flex;
+  flex-direction: column; */
+  overflow: hidden; /* Prevent any potential scrolling of the main container */
+}
+
+.visualizationPaneContainer {
+  width: 100%;
+  height: 100%;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Overlay for the filter actions at the top */
+.filterActionsOverlay {
+  background: rgba(255, 255, 255, 0.8);
+  /* padding: 0.5rem; */
+  /* Optionally add box-shadow, border-bottom etc. */
+}
+
+.visualizationPane {
+  flex: 1;
+  overflow: hidden;
+}
