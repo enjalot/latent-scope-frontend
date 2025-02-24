@@ -278,7 +278,7 @@ function ExploreContent() {
 
   // Add this hook at the component level
   const SMALL_SCREEN_WIDTH = 1024;
-  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= SMALL_SCREEN_WIDTH);
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth >= SMALL_SCREEN_WIDTH);
 
   useEffect(() => {
     const handleResize = () => {
