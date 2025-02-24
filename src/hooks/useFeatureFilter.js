@@ -1,58 +1,55 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiService } from '../lib/apiService';
+import { useScope } from '../contexts/ScopeContext';
+const MIN_THRESHOLD = 0.01;
+const MAX_THRESHOLD = 0.2;
 
-export default function useFeatureFilter({ userId, datasetId, scope, urlParams, scopeLoaded }) {
-  const [feature, setFeature] = useState(-1);
-  const [threshold, setThreshold] = useState(0.1);
-  const [featureIndices, setFeatureIndices] = useState([]);
-  const [featureIndicesLoaded, setFeatureIndicesLoaded] = useState(false);
-  const [active, setActive] = useState(false);
-  const [loading, setLoading] = useState(false);
+const DEFAULT_FEATURE = -1;
 
-  // Handle URL initialization
-  useEffect(() => {
-    if (scopeLoaded && urlParams.has('feature')) {
-      const featureParam = parseInt(urlParams.get('feature'));
-      setFeature(featureParam);
-    }
-  }, [scopeLoaded, urlParams]);
+export default function useFeatureFilter({ userId, datasetId, scope, scopeLoaded }) {
+  const [feature, setFeature] = useState(DEFAULT_FEATURE);
+  const [threshold, setThreshold] = useState(MIN_THRESHOLD);
+  // const { features } = useScope();
+  // useEffect(() => {
+  //   if (feature >= 0) {
+  //     const maxActivation = features[feature]?.dataset_max || 0;
+  //     let t =
+  //       maxActivation < MIN_THRESHOLD
+  //         ? MIN_THRESHOLD
+  //         : maxActivation > MAX_THRESHOLD
+  //           ? MAX_THRESHOLD
+  //           : maxActivation;
+  //     console.log('SETTING THRESHOLD', t, maxActivation);
+  //     setThreshold(t);
+  //   }
+  // }, [feature, features, setThreshold]);
 
-  useEffect(() => {
+  const filter = async () => {
+    console.log('feature filter', threshold);
     if (feature >= 0) {
-      const maxActivation = scope?.sae?.max_activations[feature] || 0;
-      let t = maxActivation < 0.2 ? maxActivation / 2 : 0.1;
-      setThreshold(t);
-      setActive(true);
-    } else {
-      setActive(false);
+      const data = await apiService.searchSaeFeature(
+        userId,
+        datasetId,
+        scope?.id,
+        feature,
+        threshold
+      );
+      console.log('feature filter data', data);
+      return data;
     }
-  }, [feature, scope, setThreshold]);
+    return [];
+  };
 
-  // Update feature indices and URL params when feature changes
-  useEffect(() => {
-    if (feature >= 0) {
-      setFeatureIndicesLoaded(false);
-      setLoading(true);
-      apiService.searchSaeFeature(userId, datasetId, scope?.id, feature, threshold).then((data) => {
-        setFeatureIndices(data);
-        setFeatureIndicesLoaded(true);
-        setLoading(false);
-      });
-    } else {
-      setFeatureIndices([]);
-      setLoading(false);
-    }
-  }, [userId, datasetId, scope, feature, threshold, setFeatureIndices, scopeLoaded]);
+  const clear = () => {
+    setFeature(DEFAULT_FEATURE);
+    setThreshold(MIN_THRESHOLD);
+  };
 
   return {
     feature,
     setFeature,
     threshold,
-    setThreshold,
-    featureIndices,
-    setFeatureIndices,
-    featureIndicesLoaded,
-    active,
-    loading,
+    filter,
+    clear,
   };
 }

@@ -15,19 +15,11 @@ export default function ClusterFilter({ clusterLabels }) {
   const handleClusterChange = (selectedOption) => {
     if (!selectedOption) {
       setCluster(null);
-      setUrlParams((prev) => {
-        prev.delete('cluster');
-        return prev;
-      });
       return;
     }
     const cl = clusterLabels.find((cluster) => cluster.cluster === selectedOption.value);
     if (cl) {
       setCluster(cl);
-      setUrlParams((prev) => {
-        prev.set('cluster', cl.cluster);
-        return prev;
-      });
     }
   };
 

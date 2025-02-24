@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { select } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
 import { zoom, zoomIdentity } from 'd3-zoom';
@@ -12,14 +12,18 @@ import {
   mapPointSizeRange,
   mapSelectionKey,
 } from '../lib/colors';
+import { useFilter } from '../contexts/FilterContext';
 import { useColorMode } from '../hooks/useColorMode';
 import styles from './Scatter.module.css';
+import useDebounce from '../hooks/useDebounce';
+import { useScope } from '../contexts/ScopeContext';
 
 import PropTypes from 'prop-types';
 import { reSplitAlphaNumeric } from '@tanstack/react-table';
 ScatterGL.propTypes = {
   points: PropTypes.array.isRequired, // an array of [x,y] points
   width: PropTypes.number.isRequired,
+  maxZoom: PropTypes.number,
   pointScale: PropTypes.number,
   quadtreeRadius: PropTypes.number,
   ignoreNotSelected: PropTypes.bool,
@@ -54,11 +58,36 @@ const calculateDynamicPointScale = (pointCount, width, height) => {
   // Using sqrt because area is squared
   const baseSize = Math.sqrt(areaPerPoint);
 
-  // Apply some constraints and scaling
-  // Min size of 2, max size of 20
-  const size = Math.min(Math.max(baseSize * 0.2, 2), 20);
+  // Apply non-linear scaling to make points grow faster with fewer points
+  // Using a power less than 1 creates this effect
+  const scalingPower = 0.9; // Adjust this value to control growth rate
+  const scaledSize = Math.pow(baseSize, scalingPower);
+
+  // Apply scaling factor and constraints
+  const size = Math.min(Math.max(scaledSize * 0.3, 1), 10);
 
   return size;
+};
+
+// Converts a screen coordinate (e.g. width / 2, height / 2) to data coordinates
+const screenToDataCoordinates = (screenX, screenY, transform, xScale, yScale) => {
+  // First apply inverse zoom transform to get back to untransformed screen coordinates
+  const untransformedX = transform.invertX(screenX);
+  const untransformedY = transform.invertY(screenY);
+
+  // Then use scales to convert to data coordinates
+  const dataX = xScale.invert(untransformedX);
+  const dataY = yScale.invert(untransformedY);
+
+  return { x: dataX, y: dataY };
+};
+
+// Get the center coordinates of the screen in data coordinate space
+const getCenterCoordinates = (width, height, transform, xScale, yScale) => {
+  const screenCenterX = width / 2;
+  const screenCenterY = height / 2;
+
+  return screenToDataCoordinates(screenCenterX, screenCenterY, transform, xScale, yScale);
 };
 
 function ScatterGL({
@@ -67,6 +96,8 @@ function ScatterGL({
   height,
   pointScale = 1,
   quadtreeRadius = 10,
+  minZoom = 0.75,
+  maxZoom = 40,
   onView,
   onSelect,
   onHover,
@@ -74,6 +105,12 @@ function ScatterGL({
   ignoreNotSelected = true,
 }) {
   const { isDark: isDarkMode } = useColorMode();
+  const { setFilteredIndices, anyFilterActive, setCenteredIndices } = useFilter();
+  const { clusterMap } = useScope();
+
+  // debounce the filtered indices update
+  // const debouncedSetFilteredIndices = useDebounce(setFilteredIndices, 50);
+  const debouncedSetCenteredIndices = useDebounce(setCenteredIndices, 50);
 
   const canvasRef = useRef(null);
   const reglRef = useRef(null);
@@ -81,6 +118,34 @@ function ScatterGL({
   const xScaleRef = useRef(scaleLinear().domain([-1, 1]).range([0, width]));
   const yScaleRef = useRef(scaleLinear().domain([-1, 1]).range([height, 0]));
   const quadtreeRef = useRef(null);
+
+  const TOP_N_POINTS = 10;
+
+  // Set initial data center
+  // useEffect(() => {
+  //   if (quadtreeRef.current) {
+  //     // if (!anyFilterActive) {
+  //     const center = getCenterCoordinates(
+  //       width,
+  //       height,
+  //       transform,
+  //       xScaleRef.current,
+  //       yScaleRef.current
+  //     );
+  //     const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
+  //     setCenteredIndices(closest);
+  //     // }
+  //     // const closest = findNearestPointData(center.x, center.y);
+  //     // setFilteredIndices(closest);
+  //     // if (closest !== -1 && useDefaultIndices) {
+  //     //   setHoveredIndex(closest);
+  //     //   const cluster = clusterMap[closest];
+  //     //   if (cluster) {
+  //     //     setHoveredCluster(cluster);
+  //     //   }
+  //     // }
+  //   }
+  // }, [width, height]);
 
   // make xScaleRef and yScaleRef update when width and height change
   useEffect(() => {
@@ -110,33 +175,40 @@ function ScatterGL({
       pixelRatio: pixelRatio,
     });
 
-    const blendParams = isDarkMode
-      ? {
-          srcRGB: 'src alpha',
-          srcAlpha: 'src alpha',
-          dstRGB: 'one',
-          dstAlpha: 'one',
-        }
-      : {
-          srcRGB: 'one',
-          srcAlpha: 'one',
-          dstRGB: 'one minus src alpha',
-          dstAlpha: 'one minus src alpha',
-        };
+    // Create buffers only once per points change.
+    const positionBuffer = reglRef.current.buffer(points.map((p) => [p[0], p[1]]));
+    const colorBuffer = reglRef.current.buffer(
+      points.map(([, , valueA]) => {
+        const colorHex = calculatePointColor(valueA);
+        const rgbColor = rgb(colorHex);
+        return [rgbColor.r / 255, rgbColor.g / 255, rgbColor.b / 255];
+      })
+    );
+    const opacityBuffer = reglRef.current.buffer(
+      points.map(([, , valueA, activation]) =>
+        calculatePointOpacity(featureIsSelected, valueA, activation)
+      )
+    );
+    const sizeBuffer = reglRef.current.buffer(
+      points.map(([, , valueA]) => calculatePointSize(valueA))
+    );
 
-    // Create draw command
+    // Redefine your drawPoints command to take these buffers as attributes.
     drawPointsRef.current = reglRef.current({
       vert: `
         precision mediump float;
         attribute vec2 position;
         attribute vec3 color;
         attribute float opacity;
-        attribute float size;  // New attribute for point size
+        attribute float size;
         
-        uniform float pointScale;
+        // Instead of separate translate/scale uniforms, we pass in a single transform matrix.
         uniform vec2 uTranslate;
         uniform float uScale;
         uniform vec2 uScreenSize;
+        
+        uniform float pointScale;
+        uniform float dotScaleFactor;
         
         varying vec3 v_color;
         varying float v_opacity;
@@ -144,7 +216,7 @@ function ScatterGL({
         void main() {
           v_color = color;
           v_opacity = opacity;
-          
+
           // First map from [-1,1] to screen coordinates
           vec2 screen = vec2(
             (position.x + 1.0) * 0.5 * uScreenSize.x,
@@ -159,87 +231,98 @@ function ScatterGL({
             (transformed.x / uScreenSize.x) * 2.0 - 1.0,
             -(transformed.y / uScreenSize.y) * 2.0 + 1.0
           );
-          
+
           gl_Position = vec4(clip, 0, 1);
-          gl_PointSize = pointScale * size * uScale;  // Modified to use per-point size
+          
+          gl_PointSize = pointScale * size * dotScaleFactor;
         }
       `,
       frag: `
         precision mediump float;
         varying vec3 v_color;
         varying float v_opacity;
-        
+        uniform float uScale;
+        uniform bool isDarkMode;
+        uniform float dotScaleFactor;
         void main() {
-          // Calculate distance from center of point
           float dist = length(gl_PointCoord.xy - 0.5) * 2.0;
-          
-          // Only discard if completely outside the circle
-          if (dist > 1.0) {
-            discard;
+          if (dist > 1.0) discard;
+          float alpha;
+          if(isDarkMode) {
+            alpha = v_opacity * (1.0 - pow(dist, uScale * dotScaleFactor));
+          } else {
+            alpha = v_opacity * (1.0 - pow(dist, uScale * dotScaleFactor * 2.0));
           }
-          
-          // Make the falloff much sharper with pow()
-          float alpha = v_opacity * (1.0 - pow(dist, 4.0));
           vec3 color = v_color * 0.95;
-          gl_FragColor = vec4(color * alpha, alpha);
+          
+          gl_FragColor = vec4(color * alpha*1.25, alpha);
+          
         }
       `,
       attributes: {
-        position: (context, props) => reglRef.current.buffer(props.points.map((p) => [p[0], p[1]])),
-        color: (context, props) =>
-          reglRef.current.buffer(
-            props.points.map(([, , valueA]) => {
-              const colorHex = calculatePointColor(valueA);
-              const rgbColor = rgb(colorHex);
-              return [rgbColor.r / 255, rgbColor.g / 255, rgbColor.b / 255];
-            })
-          ),
-        opacity: (context, props) =>
-          reglRef.current.buffer(
-            props.points.map(([, , valueA, activation]) =>
-              calculatePointOpacity(props.featureIsSelected, valueA, activation)
-            )
-          ),
-        size: (context, props) =>
-          reglRef.current.buffer(props.points.map(([, , valueA]) => calculatePointSize(valueA))),
+        position: positionBuffer,
+        color: colorBuffer,
+        opacity: opacityBuffer,
+        size: sizeBuffer,
       },
       uniforms: {
         pointScale: (context, props) => props.pointScale,
+        // Compute a single 3x3 matrix that converts your point (in data space)
+        // into clip space. This matrix encapsulates the conversion from [-1,1] to pixel coordinates,
+        // the zoom transform and the conversion from screen to clip space.
+        // uMatrix: (context, props) =>
+        //   computeTransformMatrix(props.width, props.height, props.transform),
         uTranslate: (context, props) => [props.transform.x, props.transform.y],
         uScale: (context, props) => props.transform.k,
         uScreenSize: (context, props) => [props.width, props.height],
+        dotScaleFactor: (context, props) => {
+          const minScaleFactor = 6;
+          let sf = 1.25 + (props.transform.k / maxZoom) * 4; // (maxZoom - 1);
+          // console.log('dotScaleFactor', props.transform.k, sf);
+          return sf;
+        },
+        // edgeExp: (context, props) => {
+        //   let v = 1 + (props.transform.k - 1); // / (maxZoom - 1)) * 12;
+        //   // console.log('edgeExp', v, Math.pow(0.01, v), Math.pow(0.99, v));
+        //   return v;
+        // },
+        isDarkMode: (context, props) => isDarkMode,
       },
-
-      count: (context, props) => props.points.length,
+      count: points.length,
       primitive: 'points',
       blend: {
         enable: true,
-        func: blendParams,
+        func: (context, props) => {
+          return props.blendParams;
+        },
       },
-      depth: {
-        enable: false, // Explicitly disable depth testing
-      },
+      depth: { enable: false },
     });
 
     const zoomBehavior = zoom()
-      .scaleExtent([0.1, 12])
+      .scaleExtent([minZoom, maxZoom])
       .on('zoom', (event) => {
         setTransform(event.transform);
         const newXScale = event.transform.rescaleX(xScaleRef.current);
         const newYScale = event.transform.rescaleY(yScaleRef.current);
 
         if (onView) {
-          onView(newXScale.domain(), newYScale.domain());
+          onView(newXScale.domain(), newYScale.domain(), event.transform);
         }
       });
 
     const zoomSelection = select(canvas).call(zoomBehavior);
 
-    const zoomOutFactor = 0.8; // zoom out to 80% of original size
+    // Calculate initial transform to center the view
+    const zoomOutFactor = 0.8;
     const centerX = width / 2;
     const centerY = height / 2;
+
+    // First translate to center, then scale, then translate back
+    // This ensures the scaling happens around the center point
     const initialTransform = zoomIdentity
       .translate(centerX, centerY)
+      // .scale(1 / zoomOutFactor) // Use inverse of zoom factor to zoom out
       .scale(zoomOutFactor)
       .translate(-centerX, -centerY);
 
@@ -253,6 +336,12 @@ function ScatterGL({
     };
   }, [width, height]);
 
+  const dynamicSize = useMemo(() => {
+    let size = calculateDynamicPointScale(points.length, width, height);
+    // console.log('dynamicSize', size, points.length);
+    return size;
+  }, [points, width, height]);
+
   // Draw points when they change
   useEffect(() => {
     if (!reglRef.current || !drawPointsRef.current) return;
@@ -263,17 +352,35 @@ function ScatterGL({
     });
 
     const pointsToRender = points;
-    const dynamicScale = calculateDynamicPointScale(pointsToRender.length, width, height);
+
+    const blendParams = isDarkMode
+      ? {
+          srcRGB: 'src alpha',
+          srcAlpha: 'src alpha',
+          dstRGB: 'one',
+          dstAlpha: 'one',
+        }
+      : {
+          srcRGB: 'one',
+          srcAlpha: 'one',
+          dstRGB: 'one minus src alpha',
+          dstAlpha: 'one minus src alpha',
+          // srcRGB: 'src alpha',
+          // srcAlpha: 'src alpha',
+          // dstRGB: 'one',
+          // dstAlpha: 'one',
+        };
 
     drawPointsRef.current({
       points: pointsToRender,
-      pointScale: dynamicScale * pointScale,
+      pointScale: dynamicSize * pointScale,
       featureIsSelected,
       transform,
       width,
       height,
+      blendParams,
     });
-  }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode]);
+  }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode, dynamicSize]);
 
   // Update useEffect to rebuild quadtree when points change
   useEffect(() => {
@@ -307,12 +414,23 @@ function ScatterGL({
       let minDistance = Infinity;
 
       // Search radius in data coordinates
+      const zoomFactor = Math.pow(transform.k, 0.5); // Square root provides a more moderate scaling
       const radius =
-        ((quadtreeRadius / transform.k) *
+        (((quadtreeRadius * (1 + zoomFactor)) / transform.k) *
           (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
         width;
 
       quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
+        // First check if this node's bounding box is outside our search area
+        const isOutsideSearchArea =
+          x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius;
+
+        // If outside, stop traversing this branch
+        if (isOutsideSearchArea) {
+          return true;
+        }
+
+        // Only process points from nodes within our search area
         if (!node.length) {
           const dx = node.data[0] - dataX;
           const dy = node.data[1] - dataY;
@@ -323,9 +441,9 @@ function ScatterGL({
             nearest = node.data;
           }
         }
-        return (
-          x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius
-        );
+
+        // Continue traversing this branch's children
+        return false;
       });
 
       if (nearest && Math.sqrt(minDistance) <= radius) {
@@ -335,6 +453,52 @@ function ScatterGL({
     },
     [points, width, transform, quadtreeRadius]
   );
+
+  // Find the n closest points to the given data coordinates (dataX, dataY)
+  const findNClosestPoints = (dataX, dataY, n) => {
+    const closestPoints = [];
+
+    // Search radius in data coordinates
+    const radius = 0.05;
+    // ((quadtreeRadius / transform.k) *
+    //   (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
+    // width;
+
+    quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
+      // First check if this node's bounding box is outside our search area
+      const isOutsideSearchArea =
+        x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius;
+
+      // If outside, stop traversing this branch
+      if (isOutsideSearchArea) {
+        return true;
+      }
+
+      // Only process points from nodes within our search area
+      if (!node.length) {
+        const dx = node.data[0] - dataX;
+        const dy = node.data[1] - dataY;
+        const distance = dx * dx + dy * dy;
+
+        if (closestPoints.length < n) {
+          closestPoints.push({ point: node.data, distance });
+          closestPoints.sort((a, b) => a.distance - b.distance);
+        } else if (distance < closestPoints[closestPoints.length - 1].distance) {
+          closestPoints[closestPoints.length - 1] = { point: node.data, distance };
+          closestPoints.sort((a, b) => a.distance - b.distance);
+        }
+      }
+
+      // Continue traversing this branch's children
+      return false;
+    });
+    // debugger;
+    // console.log('closestPoints', closestPoints);
+
+    return closestPoints.map(({ point }) =>
+      points.findIndex((p) => p[0] === point[0] && p[1] === point[1])
+    );
+  };
 
   const handleMouseMove = useCallback(
     (event) => {
@@ -366,6 +530,34 @@ function ScatterGL({
     },
     [points, onSelect, findNearestPoint]
   );
+
+  const updateCenteredIndices = (transform) => {
+    const newCenter = getCenterCoordinates(
+      width,
+      height,
+      transform,
+      xScaleRef.current,
+      yScaleRef.current
+    );
+    const closest = findNClosestPoints(newCenter.x, newCenter.y, TOP_N_POINTS);
+    debouncedSetCenteredIndices(closest);
+
+    // if (useDefaultIndices) {
+    //   const closest = findNearestPoint(newCenter.x, newCenter.y);
+    //   if (closest !== -1) {
+    //     setHoveredIndex(closest);
+    //     const cluster = clusterMap[closest];
+    //     if (cluster) {
+    //       setHoveredCluster(cluster);
+    //     }
+
+    //     if (isSmallScreen) {
+    //       debouncedSetFilteredIndices([closest]);
+    //     } else {
+    //     }
+    //   }
+    // }
+  };
 
   return (
     <canvas

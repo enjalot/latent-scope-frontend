@@ -8,7 +8,11 @@ import AnnotationPlot from '../AnnotationPlot';
 import HullPlot from '../HullPlot';
 import TilePlot from '../TilePlot';
 import { Tooltip } from 'react-tooltip';
+import CrossHair from '../Crosshair';
 import { processHulls } from '../../utils';
+import PointLabel from './PointLabel';
+import { filterConstants } from './Search/utils';
+
 // import { useColorMode } from '../../hooks/useColorMode';
 
 import { useScope } from '../../contexts/ScopeContext';
@@ -46,28 +50,23 @@ function VisualizationPane({
   hoveredCluster,
   dataTableRows,
 }) {
-  const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
+  const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope, features } = useScope();
 
-  const {
-    activeFilterTab,
-    filteredIndices,
-    selectedIndices,
-    filterConstants,
-    featureFilter,
-    clusterFilter,
-  } = useFilter();
-
-  const { sae: { max_activations = [] } = {} } = scope || {};
+  const { featureFilter, clusterFilter, shownIndices, filterConfig } = useFilter();
 
   // only show the hull if we are filtering by cluster
-  const showHull = activeFilterTab === filterConstants.CLUSTER;
+  const showHull = filterConfig?.type === filterConstants.CLUSTER;
+
+  const maxZoom = 40;
 
   const [xDomain, setXDomain] = useState([-1, 1]);
   const [yDomain, setYDomain] = useState([-1, 1]);
+  const [transform, setTransform] = useState({ k: 1, x: 0, y: 0 });
   const handleView = useCallback(
-    (xDomain, yDomain) => {
+    (xDomain, yDomain, transform) => {
       setXDomain(xDomain);
       setYDomain(yDomain);
+      setTransform(transform);
     },
     [setXDomain, setYDomain]
   );
@@ -79,12 +78,11 @@ function VisualizationPane({
 
   const size = [width, height];
 
-  const featureIsSelected =
-    featureFilter.feature !== -1 && activeFilterTab === filterConstants.FEATURE;
+  const featureIsSelected = featureFilter.feature !== -1;
 
   // Add new memoized feature activation lookup
   const featureActivationMap = useMemo(() => {
-    if (!featureIsSelected || !dataTableRows || !filteredIndices) {
+    if (!featureIsSelected || !dataTableRows || !shownIndices) {
       return new Map();
     }
 
@@ -95,18 +93,18 @@ function VisualizationPane({
         const activatedFeature = data.sae_acts[activatedIdx];
         // normalize the activation to be between 0 and 1
         const min = 0.0;
-        const max = max_activations[featureFilter.feature];
+        const max = features[featureFilter.feature].dataset_max;
         const normalizedActivation = (activatedFeature - min) / (max - min);
         lookup.set(data.ls_index, normalizedActivation);
       }
     });
     return lookup;
-  }, [featureIsSelected, dataTableRows, featureFilter.feature, max_activations]);
+  }, [featureIsSelected, dataTableRows, featureFilter.feature, features]);
 
   const drawingPoints = useMemo(() => {
     return scopeRows.map((p, i) => {
       if (featureIsSelected) {
-        if (filteredIndices?.includes(i)) {
+        if (shownIndices?.includes(i)) {
           const activation = featureActivationMap.get(p.ls_index);
           return activation !== undefined
             ? [p.x, p.y, mapSelectionKey.selected, activation]
@@ -119,15 +117,15 @@ function VisualizationPane({
         return [-10, -10, mapSelectionKey.hidden, 0.0];
         //   } else if (hoveredIndex === i) {
         //     return [p.x, p.y, mapSelectionKey.hovered, 0.0];
-      } else if (filteredIndices?.includes(i)) {
+      } else if (shownIndices?.includes(i)) {
         return [p.x, p.y, mapSelectionKey.selected, 0.0];
-      } else if (filteredIndices?.length) {
+      } else if (shownIndices?.length) {
         return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
       } else {
         return [p.x, p.y, mapSelectionKey.normal, 0.0];
       }
     });
-  }, [scopeRows, filteredIndices, featureActivationMap, featureIsSelected]);
+  }, [scopeRows, shownIndices, featureActivationMap, featureIsSelected]);
 
   const points = useMemo(() => {
     return scopeRows
@@ -238,6 +236,28 @@ function VisualizationPane({
     return mapSelectionOpacity.map((d) => d * vizConfig.pointOpacity);
   }, [vizConfig.pointOpacity]);
 
+  // ensure the order of selectedPoints
+  // exactly matches the ordering of indexes in shownIndices.
+  const selectedPoints = useMemo(() => {
+    if (!shownIndices || !scopeRows) return [];
+    return shownIndices
+      .map((ls_index, i) => {
+        // Find the point in scopeRows with matching ls_index
+        const point = scopeRows.find((p) => p.ls_index === ls_index);
+        return point ? { ...point, index: i } : null;
+      })
+      .filter((point) => point !== null);
+  }, [shownIndices, scopeRows]);
+
+  // console.log({
+  //   shownIndices,
+  //   selectedPoints: selectedPoints.map((p) => {
+  //     return {
+  //       index: p.index,
+  //       ls_index: p.ls_index,
+  //     };
+  //   }),
+  // });
 
   return (
     // <div style={{ width, height }} ref={umapRef}>
@@ -274,10 +294,8 @@ function VisualizationPane({
             onSelect={onSelect}
             onHover={onHover}
             featureIsSelected={featureIsSelected}
-            ignoreNotSelected={
-              activeFilterTab === filterConstants.SEARCH ||
-              activeFilterTab === filterConstants.FEATURE
-            }
+            ignoreNotSelected={featureIsSelected}
+            maxZoom={maxZoom}
           />
         )}
         {/* show all the hulls */}
@@ -291,7 +309,7 @@ function VisualizationPane({
             // stroke={'#E0EFFF'}
             fill="none"
             duration={200}
-            strokeWidth={0.15}
+            strokeWidth={0.75}
             xDomain={xDomain}
             yDomain={yDomain}
             width={width}
@@ -306,13 +324,15 @@ function VisualizationPane({
             strokeWidth={2.5}
             // if there are selected indices already, that means other points will be less visible
             // so we can make the hull a bit more transparent
-            opacity={filteredIndices?.length ? 0.15 : 0.5}
+            opacity={0.2}
             duration={0}
             xDomain={xDomain}
             yDomain={yDomain}
             width={width}
             height={height}
             label={scope.cluster_labels_lookup[hoveredCluster.cluster]}
+            k={transform.k}
+            maxZoom={maxZoom}
           />
         )}
         {/* Cluster is selected via filter */}
@@ -339,7 +359,7 @@ function VisualizationPane({
           points={hoverAnnotations}
           stroke="black"
           fill="#8bcf66"
-          size="26"
+          size="16"
           xDomain={xDomain}
           yDomain={yDomain}
           width={width}
@@ -367,6 +387,17 @@ function VisualizationPane({
             // stroke="black"
           />
         )}
+        <PointLabel
+          selectedPoints={selectedPoints}
+          hovered={hovered}
+          xDomain={xDomain}
+          yDomain={yDomain}
+          width={width}
+          height={height}
+          k={transform.k}
+          maxZoom={maxZoom}
+        />
+        {/* <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} /> */}
       </div>
 
       {/* Hover information display */}

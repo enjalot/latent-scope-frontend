@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../lib/apiService';
 
 const useColumnFilter = (userId, datasetId, scope) => {
-  const [columnFiltersActive, setColumnFiltersActive] = useState({});
-  const [columnIndices, setColumnIndices] = useState([]);
-  const [active, setActive] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [columnToValue, setColumnToValue] = useState({});
 
   const dataset = useMemo(() => {
     return scope?.dataset;
@@ -22,48 +19,27 @@ const useColumnFilter = (userId, datasetId, scope) => {
       .filter((d) => d.counts && Object.keys(d.counts).length > 1);
   }, [dataset]);
 
-  const columnQuery = useCallback(
-    (filters) => {
-      setLoading(true);
-      let query = [];
-      Object.keys(filters).forEach((c) => {
-        let f = filters[c];
-        if (f) {
-          query.push({
-            column: c,
-            type: 'eq',
-            value: f,
-          });
-        }
-      });
-      apiService.columnFilter(userId, datasetId, scope?.id, query).then((indices) => {
-        setColumnIndices(indices.map((d) => d.index));
-        setLoading(false);
-      });
-    },
-    [userId, datasetId, scope]
-  );
+  const filter = async (column, value) => {
+    let query = [
+      {
+        column: column,
+        type: 'eq',
+        value: value,
+      },
+    ];
+    const res = await apiService.columnFilter(userId, datasetId, scope?.id, query);
+    return res.map((r) => r.index);
+  };
 
-  useEffect(() => {
-    let activeFilters = Object.values(columnFiltersActive).filter((d) => !!d).length;
-    // console.log("active filters", activeFilters, columnFiltersActive)
-    if (activeFilters > 0) {
-      columnQuery(columnFiltersActive);
-      setActive(true);
-    } else if (setColumnIndices) {
-      setColumnIndices([]);
-      setActive(false);
-    }
-  }, [columnFiltersActive, columnQuery, setColumnIndices]);
+  const clear = () => {
+    setColumnToValue({});
+  };
 
   return {
-    columnFiltersActive,
-    setColumnFiltersActive,
+    columnToValue,
     columnFilters,
-    columnIndices,
-    setColumnIndices,
-    active,
-    loading,
+    filter,
+    clear,
   };
 };
 

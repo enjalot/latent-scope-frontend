@@ -13,11 +13,11 @@ export const baseColor = '#b87333';
 export const baseColorDark = '#E0EFFF';
 
 export const mapSelectionColorsLight = [
-  baseColor,
-  baseColor,
-  baseColor,
-  '#8bcf66', // 3, hovered
-  '#fcfbfd', // 99, hidden
+  baseColor, // normaimage.pngl
+  baseColor, // selected
+  baseColor, // not selected
+  '#8bcf66', // hovered
+  '#fcfbfd', // hidden
 ];
 
 export const mapSelectionColorsDark = [
@@ -30,15 +30,18 @@ export const mapSelectionColorsDark = [
 
 export const mapSelectionOpacity = [
   0.75, // normal
-  0.95, // selected
-  0.25, // not selected
+  1,
+  // 0.25, // not selected
+  0.75, // not selected
   1, // hovered
   0, // hidden
 ];
 export const mapPointSizeRange = [
   3, // normal
-  6, // selected
+  3.5, // selected
   2, // not selected
   12.5, // hovered
   0, // hidden
 ];
+
+export const contrastColor = '#2ecc71';

@@ -4,14 +4,8 @@ import styles from './NearestNeighbor.module.scss';
 import { useFilter } from '../../contexts/FilterContext';
 
 export default function NearestNeighbor() {
-  const { searchFilter, setUrlParams } = useFilter();
-  const {
-    searchIndices,
-    loading,
-    setSearchText,
-    clearSearch,
-    searchText: defaultValue,
-  } = searchFilter;
+  const { allFilteredIndices, searchFilter, setUrlParams, shownIndices } = useFilter();
+  const { loading, setSearchText, clearSearch, searchText: defaultValue, active } = searchFilter;
   const [inputValue, setInputValue] = useState(defaultValue);
 
   useEffect(() => {
@@ -37,12 +31,12 @@ export default function NearestNeighbor() {
   };
 
   return (
-    <div className={`${styles.container} ${searchIndices.length ? styles.active : ''}`}>
+    <div className={`${styles.container} ${active ? styles.active : ''}`}>
       <div className={`${styles.searchInputContainer}`}>
         <Input
           className={styles.searchInput}
           value={inputValue}
-          placeholder="Filter by nearest neighbors to search query..."
+          placeholder="Search..."
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !loading) {
@@ -61,14 +55,14 @@ export default function NearestNeighbor() {
             disabled={loading}
             onClick={(e) => {
               e.preventDefault();
-              searchIndices.length ? handleClear() : handleSubmit(e);
+              active ? handleClear() : handleSubmit(e);
             }}
-            icon={loading ? 'pie-chart' : searchIndices.length ? 'x' : 'search'}
+            icon={loading ? 'pie-chart' : active ? 'x' : 'search'}
           />
         </div>
       </div>
       <div className={`${styles.count}`}>
-        {searchIndices.length ? <span>{searchIndices.length} rows</span> : null}
+        {active ? <span>{shownIndices.length} rows</span> : null}
       </div>
     </div>
   );

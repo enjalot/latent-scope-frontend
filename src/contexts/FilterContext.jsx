@@ -1,200 +1,283 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-
-import { useScope } from './ScopeContext';
+// FilterContext.js
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useScope } from './ScopeContext'; // Assuming this provides scopeRows, deletedIndices, etc.
 import useColumnFilter from '../hooks/useColumnFilter';
 import useNearestNeighborsSearch from '../hooks/useNearestNeighborsSearch';
 import useClusterFilter from '../hooks/useClusterFilter';
 import useFeatureFilter from '../hooks/useFeatureFilter';
-export const SEARCH = 'search';
-export const CLUSTER = 'filter';
-export const SELECT = 'select';
-export const COLUMN = 'column';
-export const FEATURE = 'feature';
+import { apiService } from '../lib/apiService';
+
+import {
+  filterConstants,
+  findFeatureLabel,
+  validateColumnAndValue,
+} from '../components/Explore/Search/utils';
 
 const FilterContext = createContext(null);
 
 export function FilterProvider({ children }) {
-  const [urlParams, setUrlParams] = useSearchParams();
-
-  const { scopeRows, deletedIndices, dataset, datasetId, userId, scope, scopeLoaded } = useScope();
-
-  const [activeFilterTab, setActiveFilterTab] = useState(CLUSTER);
+  // Global filter config: { type, value } or null when no filter is active.
+  const [filterConfig, setFilterConfig] = useState(null);
   const [filteredIndices, setFilteredIndices] = useState([]);
-  const [defaultIndices, setDefaultIndices] = useState([]);
-  const [selectedIndices, setSelectedIndices] = useState([]);
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [filterQuery, setFilterQuery] = useState(''); // Optional query string for UI
+  const [filterActive, setFilterActive] = useState(false);
 
-  const clusterFilter = useClusterFilter({
+  const [urlParams, setUrlParams] = useSearchParams();
+  // Pull shared data from a higher-level context.
+  const {
+    features,
     scopeRows,
-    scope,
-    scopeLoaded,
-    urlParams,
-  });
-  const columnFilter = useColumnFilter(userId, datasetId, scope);
-  const searchFilter = useNearestNeighborsSearch({
-    userId,
-    datasetId,
-    scope,
     deletedIndices,
-    urlParams,
-    scopeLoaded,
-  });
-  const featureFilter = useFeatureFilter({
     userId,
     datasetId,
     scope,
-    urlParams,
     scopeLoaded,
-  });
+    clusterLabels,
+  } = useScope();
 
-  // Toggle functions
-  const toggleSearch = () => setActiveFilterTab((prev) => (prev === SEARCH ? null : SEARCH));
-  const toggleFilter = () => setActiveFilterTab((prev) => (prev === CLUSTER ? null : CLUSTER));
-  const toggleSelect = () => setActiveFilterTab((prev) => (prev === SELECT ? null : SELECT));
-  const toggleColumn = () => setActiveFilterTab((prev) => (prev === COLUMN ? null : COLUMN));
-  const toggleFeature = () => setActiveFilterTab((prev) => (prev === FEATURE ? null : FEATURE));
-
-  // Update defaultIndices when scopeRows changes
-  useEffect(() => {
-    if (scopeRows?.length) {
-      const indexes = scopeRows
-        .filter((row) => !deletedIndices.includes(row.ls_index))
-        .map((row) => row.ls_index);
-      setDefaultIndices(indexes);
-      setFilteredIndices([]);
-    }
+  // Base set of non-deleted indices from the dataset.
+  const baseIndices = useMemo(() => {
+    return scopeRows.map((row) => row.ls_index).filter((index) => !deletedIndices.includes(index));
   }, [scopeRows, deletedIndices]);
 
-  // Update filtered indices based on active filter
+  // Column filter
+  const columnFilter = useColumnFilter(userId, datasetId, scope);
+  const featureFilter = useFeatureFilter({ userId, datasetId, scope, scopeLoaded });
+  const clusterFilter = useClusterFilter({ scopeRows, scope, scopeLoaded });
+  const searchFilter = useNearestNeighborsSearch({ userId, datasetId, scope, deletedIndices });
+
+  const hasFilterInUrl = useMemo(() => {
+    return (
+      urlParams.has('column') ||
+      urlParams.has('cluster') ||
+      urlParams.has('feature') ||
+      urlParams.has('search')
+    );
+  }, [urlParams]);
+
+  // Populate filter state from url params
   useEffect(() => {
-    switch (activeFilterTab) {
-      case CLUSTER:
-        setFilteredIndices(clusterFilter.clusterIndices);
-        break;
-      case SEARCH:
-        setFilteredIndices(searchFilter.searchIndices);
-        break;
-      case SELECT:
-        setFilteredIndices(selectedIndices);
-        break;
-      case COLUMN:
-        setFilteredIndices(columnFilter.columnIndices);
-        break;
-      case FEATURE:
-        setFilteredIndices(featureFilter.featureIndices);
-        break;
-      default:
-        setFilteredIndices(defaultIndices);
-    }
-  }, [
-    activeFilterTab,
-    clusterFilter.clusterIndices,
-    searchFilter.searchIndices,
-    selectedIndices,
-    columnFilter.columnIndices,
-    featureFilter.featureIndices,
-    defaultIndices,
-  ]);
+    if (!scopeLoaded || !hasFilterInUrl) return;
 
-  // Update active tab based on URL params, but only on first load.
-  // We only do this on first load to prevent us from switching tabs unintentionally when the URL params are removed
-  // (e.g. when a filter is removed through the UI)
+    // let's just grab the first key for now
+    const key = urlParams.keys().next().value;
+    const value = urlParams.get(key);
+    const numericValue = parseInt(value);
+
+    if (key === filterConstants.SEARCH) {
+      console.log('==== search filter url param ==== ', { value });
+      setFilterQuery(value);
+      setFilterConfig({ type: filterConstants.SEARCH, value, label: value });
+    } else if (key === filterConstants.CLUSTER) {
+      const cluster = clusterLabels.find((cluster) => cluster.cluster === numericValue);
+      if (cluster) {
+        const { setCluster } = clusterFilter;
+        setCluster(cluster);
+        setFilterQuery(cluster.label);
+        setFilterConfig({
+          type: filterConstants.CLUSTER,
+          value: numericValue,
+          label: cluster.label,
+        });
+      }
+    } else if (key === filterConstants.FEATURE) {
+      const featureLabel = findFeatureLabel(features, numericValue);
+      if (featureLabel) {
+        const { setFeature } = featureFilter;
+        setFeature(numericValue);
+        setFilterQuery(featureLabel);
+        setFilterConfig({
+          type: filterConstants.FEATURE,
+          value: numericValue,
+          label: featureLabel,
+        });
+      }
+    } else if (urlParams.has('column') && urlParams.has('value')) {
+      const value = urlParams.get('value');
+      const column = urlParams.get('column');
+      const { columnFilters } = columnFilter;
+      if (validateColumnAndValue(column, value, columnFilters)) {
+        setFilterQuery(`${column}: ${value}`);
+        setFilterConfig({
+          type: filterConstants.COLUMN,
+          value,
+          column,
+          label: `${column}: ${value}`,
+        });
+      }
+    }
+  }, [features, urlParams, scopeLoaded]);
+
+  // ==== Filtering ====
+  // compute filteredIndices based on the active filter.
   useEffect(() => {
-    if (urlParams.has('cluster')) {
-      setActiveFilterTab(CLUSTER);
-    } else if (urlParams.has('feature')) {
-      setActiveFilterTab(FEATURE);
-    } else if (urlParams.has('search')) {
-      setActiveFilterTab(SEARCH);
+    async function applyFilter() {
+      setLoading(true);
+      let indices = [];
+      // If no filter is active, use the full baseIndices.
+      if (!filterConfig && !hasFilterInUrl) {
+        indices = baseIndices;
+      } else if (filterConfig) {
+        console.log('FILTER CONFIG', filterConfig);
+        const { type, value } = filterConfig;
+
+        switch (type) {
+          case filterConstants.CLUSTER: {
+            const { setCluster, filter } = clusterFilter;
+            const cluster = clusterLabels.find((cluster) => cluster.cluster === value);
+            if (cluster) {
+              setCluster(cluster);
+              indices = filter(cluster);
+            }
+            break;
+          }
+          case filterConstants.SEARCH: {
+            const { filter } = searchFilter;
+            indices = await filter(value);
+            break;
+          }
+          case filterConstants.FEATURE: {
+            const { setFeature, filter } = featureFilter;
+            const featureLabel = findFeatureLabel(features, parseInt(value));
+            if (featureLabel) {
+              setFeature(value);
+              indices = await filter();
+            }
+            break;
+          }
+          case filterConstants.COLUMN: {
+            const { filter } = columnFilter;
+            const { column } = filterConfig;
+            indices = await filter(column, value);
+            break;
+          }
+          default: {
+            indices = baseIndices;
+          }
+        }
+      }
+      setFilteredIndices(indices);
+      setPage(0); // Reset to first page when filter changes.
+      setLoading(false);
     }
-  }, []);
-
-  const useDefaultIndices = useMemo(() => {
-    if (activeFilterTab === CLUSTER) {
-      return urlParams.get('cluster') === null && clusterFilter.cluster === null;
-    } else if (activeFilterTab === FEATURE) {
-      return urlParams.get('feature') === null && !featureFilter.active;
-    } else if (activeFilterTab === SEARCH) {
-      return urlParams.get('search') === null && searchFilter.searchText === '';
-    } else if (activeFilterTab === SELECT) {
-      return urlParams.get('select') === null && selectedIndices.length === 0;
-    } else if (activeFilterTab === COLUMN) {
-      return urlParams.get('column') === null && columnFilter.columnIndices.length === 0;
+    if (scopeLoaded) {
+      applyFilter();
     }
+  }, [filterConfig, baseIndices, scopeRows, deletedIndices, userId, datasetId, scope, scopeLoaded]);
 
-    return false;
-  }, [
-    activeFilterTab,
-    urlParams,
-    clusterFilter.clusterIndices,
-    featureFilter.featureIndices,
-    searchFilter.searchIndices,
-    selectedIndices,
-    columnFilter.columnIndices,
-  ]);
+  // === Fetch Data Table Rows Logic
 
-  const filterLoading = useMemo(() => {
-    if (activeFilterTab === CLUSTER) {
-      return clusterFilter.loading;
-    } else if (activeFilterTab === FEATURE) {
-      return featureFilter.loading;
-    } else if (activeFilterTab === SEARCH) {
-      return searchFilter.loading;
-    } else if (activeFilterTab === COLUMN) {
-      return columnFilter.loading;
+  const [dataTableRows, setDataTableRows] = useState([]);
+
+  // === Pagination ===
+  const ROWS_PER_PAGE = 20;
+  const totalPages = useMemo(
+    () => Math.ceil(filteredIndices.length / ROWS_PER_PAGE),
+    [filteredIndices]
+  );
+  const shownIndices = useMemo(() => {
+    const start = page * ROWS_PER_PAGE;
+    const nonDeletedIndices = filteredIndices.filter((index) => !deletedIndices.includes(index));
+    return nonDeletedIndices.slice(start, start + ROWS_PER_PAGE);
+  }, [filteredIndices, page, deletedIndices]);
+
+  // Keep track of the latest request
+  const lastRequestRef = useRef('');
+
+  // Create a cache Map to store API responses for default requests.
+  const rowsCache = useRef(new Map());
+
+  useEffect(() => {
+    if (shownIndices.length) {
+      const nonDeletedIndices = shownIndices.filter((index) => !deletedIndices.includes(index));
+      setLoading(true);
+
+      // Use a timestamp in ms as a unique key for this request.
+      const requestTimestamp = Date.now();
+      lastRequestRef.current = requestTimestamp;
+
+      const cacheKey = `${JSON.stringify(nonDeletedIndices)}-${page}`;
+
+      if (!filterConfig) {
+        const cachedResult = rowsCache.current.get(cacheKey);
+        if (cachedResult) {
+          setDataTableRows(cachedResult);
+          setLoading(false);
+          return;
+        }
+      }
+
+      apiService.getRowsByIndices(userId, datasetId, scope.id, nonDeletedIndices).then((rows) => {
+        // Only update state if this is the latest request.
+        if (lastRequestRef.current !== requestTimestamp) {
+          // Discard stale result.
+          return;
+        }
+        const rowsWithIdx = rows.map((row, idx) => ({
+          ...row,
+          idx,
+          ls_index: row.index,
+        }));
+        setDataTableRows(rowsWithIdx);
+        setLoading(false);
+
+        // only cache the result if there is no filter config
+        // i.e. we are showing the default set of rows
+
+        if (!filterConfig) {
+          rowsCache.current.set(cacheKey, rowsWithIdx);
+        }
+      });
+    } else {
+      setDataTableRows([]);
     }
-    return false;
-  }, [featureFilter.loading, searchFilter.loading, columnFilter.loading, clusterFilter.loading]);
+  }, [shownIndices, deletedIndices, userId, datasetId, scope]);
 
+  // The context exposes only the state and setters that consumer components need.
   const value = {
-    activeFilterTab,
-    setActiveFilterTab,
-    filteredIndices,
-    setFilteredIndices,
-    defaultIndices,
-    setDefaultIndices,
-    selectedIndices,
-    setSelectedIndices,
+    // Filter configuration state.
+    filterConfig,
+    setFilterConfig,
+    filterQuery,
+    setFilterQuery,
 
-    featureFilter,
-    // featureIndices,
-    // setFeatureIndices,
-    // feature,
-    // setFeature,
-    // threshold,
-    // setThreshold,
+    // Filtered indices and pagination state.
+    filteredIndices, // Complete set of indices after filtering.
+    shownIndices, // Paginated indices for table views.
+    page,
+    setPage,
+    totalPages,
+    ROWS_PER_PAGE,
+
+    loading,
+    setLoading,
+    filterActive,
+    setFilterActive,
 
     searchFilter,
-    // searchIndices,
-    // searchLoading,
-    // distances,
-    // clearSearch,
+    // distances
+    // searchText (shouldn't need this)
 
     clusterFilter,
-    // setCluster,
+    // cluster
+
+    featureFilter,
+    // feature
+    // setFeature (needed by the Feature modal)
+    // threshold
 
     columnFilter,
-    // columnFiltersActive,
-    // setColumnFiltersActive,
-    // columnFilters,
-    // columnIndices,
+    // columnToValue
+    // columnFilters
+    // columnIndices
 
-    filterLoading,
-
-    toggleSearch,
-    toggleFilter,
-    toggleSelect,
-    toggleColumn,
-    toggleFeature,
-    filterConstants: {
-      SEARCH,
-      CLUSTER,
-      SELECT,
-      COLUMN,
-      FEATURE,
-    },
-    useDefaultIndices,
     setUrlParams,
+
+    // Data Table Rows
+    dataTableRows,
   };
 
   return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;

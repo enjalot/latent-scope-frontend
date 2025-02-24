@@ -155,111 +155,6 @@
   font-size: 12px;
 }
 
-.featureModalContent {
-  padding: 20px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.featureCellButton {
-  padding: 2px;
-  color: var(--neutrals-color-neutral-3) !important;
-}
-
-.featureModalItemFilterLink:hover {
-  color: var(--interactions---primary-color-interaction-primary) !important;
-}
-
-.featureCellButtonContainer {
-  display: flex;
-  justify-content: center;
-}
-
-.featureModal {
-  padding: 0px;
-  width: 800px !important;
-
-  @media (prefers-color-scheme: dark) {
-    background-color: #111 !important;
-  }
-}
-
-.featureModalClose {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.featureModalText {
-  font-weight: bold;
-  font-size: 1.25rem;
-}
-
-.featureModalItemFilterLink {
-  /* font-size: 14px; */
-  /* color: var(--neutrals-color-neutral-3); */
-  margin: 0px 4px;
-  cursor: pointer;
-}
-
-.featureModalItem {
-  margin-bottom: 4px;
-  position: relative;
-  /* cursor: pointer; */
-  padding: 2px 4px;
-  border-radius: 4px;
-  /* margin: 2px 0; */
-  /* width: 100%; */
-  height: 24px;
-}
-
-.featureModalItemBackground {
-  position: absolute;
-  z-index: 0;
-  height: 100%;
-  background-color: var(--interactions---primary-color-interaction-primary);
-  opacity: 0.25;
-  border-radius: 4px;
-}
-/* .feature-label:hover {
-  color: var(--interactions---primary-color-interaction-primary-active);
-} */
-
-.featureLabel {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  position: absolute;
-  z-index: 1;
-  text-decoration: none;
-  color: inherit;
-  padding-left: 4px;
-}
-
-.featureModalItemFilterText {
-  font-size: 14px;
-  color: var(--neutrals-color-neutral-3);
-  margin-left: 4px;
-  display: none;
-  text-decoration: underline;
-}
-
-.featureModalItemFilterLink {
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--neutrals-color-neutral-3);
-}
-
-.featureModalItemFilterLink:hover {
-  text-decoration-color: var(--interactions---primary-color-interaction-primary);
-}
-
-.featureModalItem:hover .featureModalItemFilterText {
-  display: inline;
-  cursor: pointer;
-}
-
 .featureTooltip {
   /* background-color: white !important; */
   background-color: var(--interactions---primary-color-interaction-primary) !important;
@@ -302,4 +197,45 @@
 
 .featureColumnInfoTooltipIcon {
   margin-left: 4px;
+}
+
+/* Add these styles to your CSS module */
+.indexCircleContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.indexCircle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #2ecc71;
+  opacity: 0.75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);  /* semi-transparent white */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;  /* ensure it's above the grid */
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .loadingOverlay {
+    background-color: rgba(0, 0, 0, 0.7);  /* semi-transparent black for dark mode */
+  }
 }

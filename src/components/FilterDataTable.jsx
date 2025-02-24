@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import PropTypes from 'prop-types';
 import { Tooltip } from 'react-tooltip';
+import { useFilter } from '../contexts/FilterContext';
 // import DataTable from './DataTable';
 import 'react-data-grid/lib/styles.css';
 
@@ -14,16 +15,8 @@ import styles from './FilterDataTable.module.css';
 FilterDataTable.propTypes = {
   height: PropTypes.string,
   dataset: PropTypes.object.isRequired,
-  userId: PropTypes.string.isRequired,
-  scope: PropTypes.object,
-  filteredIndices: PropTypes.array.isRequired,
-  defaultIndices: PropTypes.array.isRequired,
   distances: PropTypes.array,
   clusterMap: PropTypes.object,
-  // clusterLabels: PropTypes.array,
-  tagset: PropTypes.object,
-  onTagset: PropTypes.func,
-  onScope: PropTypes.func,
   onHover: PropTypes.func,
   onClick: PropTypes.func,
 };
@@ -45,96 +38,33 @@ function RowWithHover({ props, onHover }) {
   );
 }
 
-function extent(activations) {
-  const min = Math.min(...activations);
-  const max = Math.max(...activations);
-  return [min, max];
-}
-
 function FilterDataTable({
   handleFeatureClick,
   dataset,
-  scope,
-  userId,
-  filteredIndices = [],
-  defaultIndices = [],
   distances = [],
   clusterMap = {},
-  onDataTableRows,
   showNavigation = true,
   sae_id = null,
   feature = -1,
   features = [],
   onHover = () => {},
-  deletedIndices = [],
-  page,
-  setPage,
-  useDefaultIndices = false,
-  filterLoading = false,
 }) {
-  const [rows, setRows] = useState([]);
-  const [defaultRows, setDefaultRows] = useState([]);
-
-  // page count is the total number of pages available
-  const rowsPerPage = 100;
-  const [pageCount, setPageCount] = useState(0);
-  useEffect(() => {
-    let inds = filteredIndices.length ? filteredIndices.length : defaultIndices.length;
-    const count = Math.ceil(inds / rowsPerPage);
-    setPageCount(count);
-  }, [filteredIndices]);
+  const { dataTableRows, page, setPage, totalPages, filterConfig, filterActive, loading } =
+    useFilter();
 
   // feature tooltip content
   const [featureTooltipContent, setFeatureTooltipContent] = useState(null);
 
-  const [rowsLoading, setRowsLoading] = useState(false);
-  const hydrateIndices = useCallback(
-    (indices, setRowsTarget) => {
-      if (dataset && scope && indices.length) {
-        setRowsLoading(true);
-        let paged = indices.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
-
-        if (paged.length) {
-          apiService.getRowsByIndices(userId, dataset.id, scope.id, paged).then((rows) => {
-            const rowsWithIdx = rows.map((row, idx) => ({
-              ...row,
-              idx,
-              ls_index: row.index,
-            }));
-            setRowsTarget(rowsWithIdx);
-            onDataTableRows(rowsWithIdx);
-            setRowsLoading(false);
-          });
-        } else {
-          setRowsTarget([]);
-          onDataTableRows && onDataTableRows([]);
-          setRowsLoading(false);
-        }
-      } else {
-        setRowsTarget([]);
-        onDataTableRows && onDataTableRows([]);
-        setRowsLoading(false);
-      }
-    },
-    [dataset, page, sae_id, setRowsLoading]
-  );
-
-  useEffect(() => {
-    hydrateIndices(defaultIndices, setDefaultRows);
-  }, [defaultIndices, page, hydrateIndices]);
-
-  useEffect(() => {
-    if (!useDefaultIndices) {
-      const filteredWithoutDeleted = filteredIndices.filter((i) => !deletedIndices.includes(i));
-      hydrateIndices(filteredWithoutDeleted, setRows);
-    }
-  }, [filteredIndices, deletedIndices, page, hydrateIndices, useDefaultIndices]);
-
-  const displayRows = useMemo(() => {
-    return useDefaultIndices ? defaultRows : rows;
-  }, [useDefaultIndices, defaultRows, rows]);
-
   const formattedColumns = useMemo(() => {
+    // Add index circle column as the first column
+    const indexColumn = {
+      key: 'index-circle',
+      name: '', // Empty header
+      width: 50,
+      renderCell: IndexCircleCell,
+      frozen: true, // Optional: keeps it visible during horizontal scroll
+    };
+
     const ls_features_column = 'ls_features';
     let columns = ['ls_index'];
     // Text column is always the first column (after index)
@@ -273,7 +203,10 @@ function FilterDataTable({
         renderCell,
       };
     });
-    return columnDefs;
+
+    // Add index column as first column
+    return [indexColumn, ...columnDefs];
+    // return columnDefs;
   }, [dataset, clusterMap, distances, features, feature, sae_id]);
 
   const renderRowWithHover = useCallback(
@@ -283,88 +216,85 @@ function FilterDataTable({
     [onHover]
   );
 
-  // console.log('==== FILTER DATA TABLE =====', { filteredIndices, defaultIndices, rows });
-
   return (
     <div
-      className={`${styles.filterDataTable} ${rowsLoading ? styles.loading : ''}`}
+      className={`${styles.filterDataTable} ${loading ? styles.loading : ''}`}
       // style={{ visibility: indices.length ? 'visible' : 'hidden' }}
     >
-      {rowsLoading || filterLoading ? (
+      {loading && (
         <div className={styles.loadingOverlay}>
           <div className={styles.loadingContainer}>
             <div className={styles.loadingSpinner}></div>
             <div>Loading</div>
           </div>
         </div>
-      ) : (
-        <div className={`${styles.filterTableScrollableBody} ${styles.tableBody}`}>
-          <Tooltip
-            id="feature-tooltip"
-            place="bottom"
-            effect="solid"
-            content={featureTooltipContent?.content || ''}
-            className={styles.featureTooltip}
-            float={true}
-            isOpen={!!featureTooltipContent}
-            // float={true}
-            position="fixed"
-            style={{
-              zIndex: 9999,
-              maxWidth: 'none',
-              whiteSpace: 'nowrap',
-              backgroundColor: '#D3965E',
-              position: 'fixed',
-              marginTop: 10,
-              top: -200,
-              // left: featureTooltipContent?.x || 0,
-              // top: (featureTooltipContent?.y || 0) - 30,
-            }}
-          />
-          <DataGrid
-            rows={displayRows}
-            columns={formattedColumns}
-            rowClass={(row, index) => {
-              if (row.ls_index === 0) {
-                return 'test';
-              }
-              return '';
-            }}
-            rowGetter={(i) => displayRows[i]}
-            rowHeight={sae_id ? 50 : 35}
-            style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
-            renderers={{ renderRow: renderRowWithHover }}
-            className={styles.dataGrid}
-          />
-
-          <Tooltip
-            id="feature-column-info-tooltip"
-            className={styles.featureColumnInfoTooltip}
-            place="top"
-            effect="solid"
-            clickable={true}
-            delayHide={500} // give the user a chance to click the tooltip links
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              The vertical bars represent activations for different{' '}
-              <a
-                href="https://enjalot.github.io/latent-taxonomy/articles/about"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Sparse Autoencoder (SAE)
-              </a>{' '}
-              features corresponding to each embedding. Higher activations indicate that the feature
-              captures an important semantic element of the embedding.
-              <br />
-              <br />
-              Click each cell to see the labels for each feature and to filter rows by a particular
-              feature.
-            </div>
-          </Tooltip>
-        </div>
       )}
-      {showNavigation && (
+      <div className={`${styles.filterTableScrollableBody} ${styles.tableBody}`}>
+        <Tooltip
+          id="feature-tooltip"
+          place="bottom"
+          effect="solid"
+          content={featureTooltipContent?.content || ''}
+          className={styles.featureTooltip}
+          float={true}
+          isOpen={!!featureTooltipContent}
+          // float={true}
+          position="fixed"
+          style={{
+            zIndex: 9999,
+            maxWidth: 'none',
+            whiteSpace: 'nowrap',
+            backgroundColor: '#D3965E',
+            position: 'fixed',
+            marginTop: 10,
+            top: -200,
+            // left: featureTooltipContent?.x || 0,
+            // top: (featureTooltipContent?.y || 0) - 30,
+          }}
+        />
+        <DataGrid
+          rows={dataTableRows}
+          columns={formattedColumns}
+          rowClass={(row, index) => {
+            if (row.ls_index === 0) {
+              return 'test';
+            }
+            return '';
+          }}
+          rowGetter={(i) => dataTableRows[i]}
+          rowHeight={sae_id ? 50 : 35}
+          style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
+          renderers={{ renderRow: renderRowWithHover }}
+          className={styles.dataGrid}
+        />
+
+        <Tooltip
+          id="feature-column-info-tooltip"
+          className={styles.featureColumnInfoTooltip}
+          place="top"
+          effect="solid"
+          clickable={true}
+          delayHide={500} // give the user a chance to click the tooltip links
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            The vertical bars represent activations for different{' '}
+            <a
+              href="https://enjalot.github.io/latent-taxonomy/articles/about"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Sparse Autoencoder (SAE)
+            </a>{' '}
+            features corresponding to each embedding. Higher activations indicate that the feature
+            captures an important semantic element of the embedding.
+            <br />
+            <br />
+            Click each cell to see the labels for each feature and to filter rows by a particular
+            feature.
+          </div>
+        </Tooltip>
+      </div>
+      {showNavigation && page > 0 && (
         <div className={styles.filterDataTablePageControls}>
           <button onClick={() => setPage(0)} disabled={page === 0}>
             First
@@ -373,15 +303,15 @@ function FilterDataTable({
             ←
           </button>
           <span>
-            Page {page + 1} of {pageCount || 1}
+            Page {page + 1} of {totalPages}
           </span>
           <button
-            onClick={() => setPage((old) => Math.min(pageCount - 1, old + 1))}
-            disabled={page === pageCount - 1}
+            onClick={() => setPage((old) => Math.min(totalPages - 1, old + 1))}
+            disabled={page === totalPages - 1}
           >
             →
           </button>
-          <button onClick={() => setPage(pageCount - 1)} disabled={page === pageCount - 1}>
+          <button onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1}>
             Last
           </button>
         </div>
@@ -389,4 +319,13 @@ function FilterDataTable({
     </div>
   );
 }
+
+const IndexCircleCell = ({ row }) => {
+  return (
+    <div className={styles.indexCircleContainer}>
+      <div className={styles.indexCircle}>{row.idx + 1}</div>
+    </div>
+  );
+};
+
 export default memo(FilterDataTable);

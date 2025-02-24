@@ -15,23 +15,25 @@ import { ScopeProvider } from '../contexts/ScopeContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { useScope } from '../contexts/ScopeContext';
 import { useFilter } from '../contexts/FilterContext';
+import useDebounce from '../hooks/useDebounce';
 
-// Add this custom hook near the top of the file
-const useDebounce = (callback, delay) => {
-  const timeoutRef = useRef(null);
+import { filterConstants } from '../components/Explore/Search/utils';
 
-  return useCallback(
-    (...args) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      timeoutRef.current = setTimeout(() => {
-        callback(...args);
-      }, delay);
+const styles = {
+  dragHandle: {
+    position: 'absolute',
+    right: -15,
+    top: 0,
+    bottom: 0,
+    width: 30,
+    cursor: 'ew-resize',
+    backgroundColor: 'transparent',
+    transition: 'background-color 0.2s',
+    '&:hover': {
+      backgroundColor: '#e0e0e0',
     },
-    [callback, delay]
-  );
+    zIndex: 10,
+  },
 };
 
 // Create a new component that wraps the main content
@@ -53,16 +55,15 @@ function ExploreContent() {
 
   // Get filter-related state from FilterContext
   const {
-    activeFilterTab,
-    filteredIndices,
-    defaultIndices,
+    // filterLoading,
+    loading: filterLoading,
+    shownIndices,
+    setFilterQuery,
     featureFilter,
-    setSelectedIndices,
-    filterConstants,
-    setActiveFilterTab,
-    distances,
-    useDefaultIndices,
-    filterLoading,
+    searchFilter,
+    setFilterConfig,
+    setFilterActive,
+    setUrlParams,
   } = useFilter();
 
   // Keep visualization-specific state
@@ -73,13 +74,19 @@ function ExploreContent() {
   const [hoverAnnotations, setHoverAnnotations] = useState([]);
   const [dataTableRows, setDataTableRows] = useState([]);
   const [selectedAnnotations, setSelectedAnnotations] = useState([]);
-  const [page, setPage] = useState(0);
 
-  // Hover text hydration with debouncing
+  // Add a ref to track the latest requested index
+  const latestHoverIndexRef = useRef(null);
+
+  // Modify the hover text hydration with debouncing
   const hydrateHoverText = useCallback(
     (index, setter) => {
+      latestHoverIndexRef.current = index;
       apiService.getHoverText(userId, datasetId, scope?.id, index).then((data) => {
-        setter(data);
+        // Only update if this is still the latest requested index
+        if (latestHoverIndexRef.current === index) {
+          setter(data);
+        }
       });
     },
     [userId, datasetId, scope]
@@ -102,6 +109,7 @@ function ExploreContent() {
       });
     } else {
       setHovered(null);
+      latestHoverIndexRef.current = null; // Reset the ref when hover is cleared
     }
   }, [hoveredIndex, deletedIndices, clusterMap, debouncedHydrateHoverText]);
 
@@ -133,21 +141,21 @@ function ExploreContent() {
     [deletedIndices]
   );
 
-  const handleSelected = useCallback(
-    (indices) => {
-      const nonDeletedIndices = indices.filter((index) => !deletedIndices.includes(index));
-      if (activeFilterTab === filterConstants.CLUSTER) {
-        let selected = scopeRows.filter((row) => nonDeletedIndices.includes(row.ls_index))?.[0];
-        if (selected) {
-          const selectedCluster = clusterLabels.find((d) => d.cluster === selected.cluster);
-          //   setCluster(selectedCluster);
-        }
-      } else {
-        setSelectedIndices(nonDeletedIndices);
-      }
-    },
-    [activeFilterTab, deletedIndices, scopeRows, clusterLabels, setSelectedIndices]
-  );
+  // const handleSelected = useCallback(
+  //   (indices) => {
+  //     const nonDeletedIndices = indices.filter((index) => !deletedIndices.includes(index));
+  //     if (activeFilterTab === filterConstants.CLUSTER) {
+  //       let selected = scopeRows.filter((row) => nonDeletedIndices.includes(row.ls_index))?.[0];
+  //       if (selected) {
+  //         const selectedCluster = clusterLabels.find((d) => d.cluster === selected.cluster);
+  //         //   setCluster(selectedCluster);
+  //       }
+  //     } else {
+  //       setSelectedIndices(nonDeletedIndices);
+  //     }
+  //   },
+  //   [activeFilterTab, deletedIndices, scopeRows, clusterLabels, setSelectedIndices]
+  // );
 
   const containerRef = useRef(null);
   const filtersContainerRef = useRef(null);
@@ -251,29 +259,19 @@ function ExploreContent() {
   };
 
   // Add this CSS-in-JS style object near the top of the component
-  const styles = {
-    dragHandle: {
-      position: 'absolute',
-      right: -15,
-      top: 0,
-      bottom: 0,
-      width: 30,
-      cursor: 'ew-resize',
-      backgroundColor: 'transparent',
-      transition: 'background-color 0.2s',
-      '&:hover': {
-        backgroundColor: '#e0e0e0',
-      },
-      zIndex: 10,
-    },
-  };
 
   const handleFeatureClick = useCallback(
-    (featIdx, activation) => {
-      setActiveFilterTab(filterConstants.FEATURE);
+    (featIdx, activation, label) => {
+      setFilterQuery(label);
+      setFilterConfig({ type: filterConstants.FEATURE, value: featIdx, label });
       featureFilter.setFeature(featIdx);
+      setFilterActive(true);
+      setUrlParams((prev) => {
+        prev.set('feature', featIdx);
+        return new URLSearchParams(prev);
+      });
     },
-    [setActiveFilterTab, featureFilter.setFeature]
+    [featureFilter.setFeature, setFilterQuery, setFilterConfig, setFilterActive, setUrlParams]
   );
 
   if (!dataset)
@@ -320,23 +318,15 @@ function ExploreContent() {
                 userId={userId}
                 dataset={dataset}
                 scope={scope}
-                filteredIndices={filteredIndices}
-                defaultIndices={defaultIndices}
-                deletedIndices={deletedIndices}
-                distances={activeFilterTab === filterConstants.SEARCH ? distances : []}
+                distances={searchFilter.distances}
                 clusterMap={clusterMap}
                 clusterLabels={clusterLabels}
-                onDataTableRows={setDataTableRows}
                 sae_id={sae?.id}
                 feature={featureFilter.feature}
                 features={features}
                 onHover={handleHover}
                 onClick={handleClicked}
-                page={page}
-                setPage={setPage}
                 handleFeatureClick={handleFeatureClick}
-                useDefaultIndices={useDefaultIndices}
-                filterLoading={filterLoading}
               />
             </div>
           </div>
@@ -348,7 +338,7 @@ function ExploreContent() {
               setHovered(null);
             }}
           >
-            {scopeRows?.length ? (
+            {scopeRows?.length && scopeLoaded ? (
               <VisualizationPane
                 width={width}
                 height={height}
@@ -356,7 +346,7 @@ function ExploreContent() {
                 hovered={hovered}
                 hoveredIndex={hoveredIndex}
                 onHover={handleHover}
-                onSelect={handleSelected}
+                onSelect={() => {}}
                 hoverAnnotations={hoverAnnotations}
                 selectedAnnotations={selectedAnnotations}
                 hoveredCluster={hoveredCluster}
