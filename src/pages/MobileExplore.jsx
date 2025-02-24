@@ -146,7 +146,7 @@ function MobileExplore() {
       {/* Overlay for Filter Actions at the top of the viz pane */}
 
       {/* Overlay for the Filter DataTable at the bottom */}
-      {/* <MobileFilterDataTable
+      <MobileFilterDataTable
         userId={userId}
         dataset={dataset}
         scope={scope}
@@ -161,7 +161,7 @@ function MobileExplore() {
         handleFeatureClick={handleFeatureClick}
         filteredIndices={shownIndices}
         deletedIndices={deletedIndices}
-      /> */}
+      />
     </div>
   );
 }
