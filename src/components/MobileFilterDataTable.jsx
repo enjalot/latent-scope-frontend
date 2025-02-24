@@ -19,7 +19,8 @@ const DataRow = memo(({ dataset, row, isHighlighted, onHover, onClick, clusterMa
       </div>
       <div className={styles.rowPreview}>
         <div className={styles.rowText}>
-          <p className={styles.textPreview}>{row[dataset.text_column]}</p>
+          {/* <p className={styles.textPreview}>{row[dataset.text_column]}</p> */}
+          {row[dataset.text_column]}
         </div>
         <div className={styles.rowCluster}>
           <p className={styles.textPreview}>{clusterMap[row.ls_index]?.label}</p>
@@ -65,8 +66,6 @@ function MobileFilterDataTable({
 
   const DEFAULT_HEIGHT = 100;
 
-  const [rows, setRows] = useState([]);
-  // const [defaultRows, setDefaultRows] = useState([]);
   const rowsPerPage = 10;
   const [pageCount, setPageCount] = useState(0);
   const [rowsLoading, setRowsLoading] = useState(false);

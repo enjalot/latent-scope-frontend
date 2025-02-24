@@ -1,7 +1,8 @@
 .mobileFilterDataTable {
-  min-height: 100px;
-  max-height: 800px;
-  overflow: hidden;
+  // min-height: 100px;
+  // max-height: 150px;
+  height: 150px;
+  overflow-x: hidden;
   transition: height 0.1s ease-out;
   background: white;
   border-top-left-radius: 12px;
@@ -10,11 +11,12 @@
   -webkit-tap-highlight-color: transparent;
   overflow-y: auto;
   margin: 8px;
+  margin-bottom: 0;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .dragHandle {
@@ -108,14 +110,17 @@
 }
 
 .indexCircle {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background-color: #eee;
+  // background-color: #eee;
+  background-color: #2ecc71;
+  opacity: 0.75;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 10px;
+  color: #fff;
 }
 
 .textPreviewContainer {
