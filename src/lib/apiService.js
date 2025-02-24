@@ -52,6 +52,25 @@ export const apiService = {
       });
     });
   },
+  getDatasetFeatures: async (userId, datasetId, saeId) => {
+    const url = `https://storage.googleapis.com/fun-data/latent-scope/demos/${userId}/${datasetId}/${saeId}_features.parquet?cachebust=1`;
+    const buffer = await asyncBufferFromUrl(url);
+    return new Promise((resolve) => {
+      parquetRead({
+        file: buffer,
+        rowFormat: 'object',
+        onComplete: (data) => {
+          data.forEach((row, i) => {
+            row.feature = parseInt(row.feature_id);
+            row.max_activation = parseFloat(row.max_activation);
+            row.avg_activation = parseFloat(row.avg_activation);
+            row.count = parseInt(row.count);
+          });
+          resolve(data);
+        },
+      });
+    });
+  },
   getSaeFeatures: async (saeMeta, callback) => {
     const buffer = await asyncBufferFromUrl(saeMeta.url);
     parquetRead({

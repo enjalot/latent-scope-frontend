@@ -34,7 +34,16 @@ export function ScopeProvider({ children }) {
 
   useEffect(() => {
     if (scope?.sae_id) {
-      apiService.getSaeFeatures(saeAvailable[scope.embedding?.model_id], setFeatures);
+      apiService.getSaeFeatures(saeAvailable[scope.embedding?.model_id], (fts) => {
+        apiService.getDatasetFeatures(userId, datasetId, scope.sae_id).then((dsfts) => {
+          dsfts.forEach((ft, i) => {
+            fts[i].dataset_max = ft.max_activation;
+            fts[i].dataset_avg = ft.avg_activation;
+            fts[i].dataset_count = ft.count;
+          });
+          setFeatures(fts);
+        });
+      });
     }
   }, [scope]);
 

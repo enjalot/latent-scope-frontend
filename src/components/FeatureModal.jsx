@@ -1,5 +1,6 @@
 import { Modal, Button } from 'react-element-forge';
 import { useCallback } from 'react';
+import styles from './FeatureModal.module.scss';
 
 function FeatureModal({
   isOpen,
@@ -34,48 +35,53 @@ function FeatureModal({
 
   return (
     <Modal
-      className="feature-modal"
+      className={styles.featureModal}
       isVisible={isOpen}
       onClose={onClose}
       title={`Features for Index ${rowIndex}`}
     >
-      <div className="feature-modal-close">
-        <span className="feature-modal-text">Top {TO_SHOW} Activated SAE Features</span>
+      <div className={styles.header}>
+        <span className={styles.headerText}>Top {TO_SHOW} Activated SAE Features</span>
         <Button onClick={onClose} icon="x" color="primary" variant="outline" size="small" />
       </div>
-      <div className="feature-modal-content">
-        {topIndices.slice(0, TO_SHOW).map((featIdx, i) => (
-          <div className="feature-modal-item" key={i} style={itemStyle(featIdx)}>
-            <div
-              className="feature-modal-item-background"
-              style={{
-                width: getWidth(topActs[i]),
-                borderBottom: hoveredIdx === i ? '2px solid #b87333' : 'none',
-                backgroundColor: hoveredIdx === i ? '#b87333' : '#aaa',
-              }}
-            />
-            <div className="feature-label">
-              <Button
-                className="feature-modal-item-filter-button"
-                icon="filter"
-                color="primary"
-                variant="outline"
-                size="small"
-                onClick={() => featureClick(featIdx, topActs[i])}
+      <div className={styles.content}>
+        {topIndices.slice(0, TO_SHOW).map((featIdx, i) => {
+          const feature = features?.[featIdx];
+          return (
+            <div className={styles.item} key={i} style={itemStyle(featIdx)}>
+              <div
+                className={styles.itemBackground}
+                style={{
+                  width: getWidth(topActs[i]),
+                  borderBottom: hoveredIdx === i ? '2px solid #b87333' : 'none',
+                  backgroundColor: hoveredIdx === i ? '#b87333' : '#aaa',
+                }}
               />
-              <span
-                title={`${baseUrl}${featIdx}`}
-                onClick={() => window.open(`${baseUrl}${featIdx}`, '_blank', 'noopener,noreferrer')}
-                className="feature-modal-item-filter-link"
-              >
-                {featIdx}:
-              </span>
-              <span className="feature-modal-item-filter-label">
-                {features?.[featIdx]?.label} ({topActs?.[i]?.toFixed(3)})
-              </span>
+              <div className={styles.featureLabel}>
+                <Button
+                  icon="filter"
+                  color="primary"
+                  variant="outline"
+                  size="small"
+                  onClick={() => featureClick(featIdx, topActs[i])}
+                />
+                <span
+                  title={`${baseUrl}${featIdx}`}
+                  onClick={() =>
+                    window.open(`${baseUrl}${featIdx}`, '_blank', 'noopener,noreferrer')
+                  }
+                  className={styles.filterLink}
+                >
+                  {featIdx}:
+                </span>
+                <span className={styles.filterLabel}>
+                  {feature?.label} [ activation: {topActs?.[i]?.toFixed(3)} /{' '}
+                  {feature?.dataset_max?.toFixed(3)}] [count: {feature?.dataset_count}]
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Modal>
   );

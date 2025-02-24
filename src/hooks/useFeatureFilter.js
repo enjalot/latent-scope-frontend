@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiService } from '../lib/apiService';
-
-const MIN_THRESHOLD = 0.1;
+import { useScope } from '../contexts/ScopeContext';
+const MIN_THRESHOLD = 0.01;
 const MAX_THRESHOLD = 0.2;
 
 const DEFAULT_FEATURE = -1;
@@ -9,22 +9,23 @@ const DEFAULT_FEATURE = -1;
 export default function useFeatureFilter({ userId, datasetId, scope, scopeLoaded }) {
   const [feature, setFeature] = useState(DEFAULT_FEATURE);
   const [threshold, setThreshold] = useState(MIN_THRESHOLD);
-
-  useEffect(() => {
-    if (feature >= 0) {
-      const maxActivation = scope?.sae?.max_activations[feature] || 0;
-      let t =
-        maxActivation < MIN_THRESHOLD
-          ? MIN_THRESHOLD
-          : maxActivation > MAX_THRESHOLD
-            ? MAX_THRESHOLD
-            : maxActivation;
-      setThreshold(t);
-    }
-  }, [feature, scope, setThreshold]);
+  // const { features } = useScope();
+  // useEffect(() => {
+  //   if (feature >= 0) {
+  //     const maxActivation = features[feature]?.dataset_max || 0;
+  //     let t =
+  //       maxActivation < MIN_THRESHOLD
+  //         ? MIN_THRESHOLD
+  //         : maxActivation > MAX_THRESHOLD
+  //           ? MAX_THRESHOLD
+  //           : maxActivation;
+  //     console.log('SETTING THRESHOLD', t, maxActivation);
+  //     setThreshold(t);
+  //   }
+  // }, [feature, features, setThreshold]);
 
   const filter = async () => {
-    console.log('feature filter');
+    console.log('feature filter', threshold);
     if (feature >= 0) {
       const data = await apiService.searchSaeFeature(
         userId,

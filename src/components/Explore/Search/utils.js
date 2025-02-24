@@ -1,10 +1,19 @@
 // find all features that match the query
+
+const featureLabel = (feature) => {
+  return `${feature.feature}: ${feature.label} (${feature.dataset_count})`;
+};
+
 export const findFeaturesByQuery = (features, query, top = 5) => {
   if (!query) {
-    return features.slice(0, top).map((feature) => ({
-      value: feature.feature,
-      label: `(${feature.feature}) ${feature.label}`,
-    }));
+    return features
+      .slice()
+      .sort((a, b) => b.dataset_avg - a.dataset_avg)
+      .slice(0, top)
+      .map((feature) => ({
+        value: feature.feature,
+        label: featureLabel(feature),
+      }));
   }
 
   const searchTerm = query.toLowerCase();
@@ -14,10 +23,12 @@ export const findFeaturesByQuery = (features, query, top = 5) => {
         feature.label.toLowerCase().includes(searchTerm) ||
         feature.feature.toString().includes(searchTerm)
     )
+    .slice()
+    .sort((a, b) => b.dataset_avg - a.dataset_avg)
     .slice(0, top)
     .map((feature) => ({
       value: feature.feature,
-      label: `(${feature.feature}) ${feature.label}`,
+      label: featureLabel(feature),
     }));
 };
 

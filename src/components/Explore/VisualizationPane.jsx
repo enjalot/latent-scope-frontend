@@ -50,11 +50,9 @@ function VisualizationPane({
   hoveredCluster,
   dataTableRows,
 }) {
-  const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope } = useScope();
+  const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope, features } = useScope();
 
   const { featureFilter, clusterFilter, shownIndices, filterConfig } = useFilter();
-
-  const { sae: { max_activations = [] } = {} } = scope || {};
 
   // only show the hull if we are filtering by cluster
   const showHull = filterConfig?.type === filterConstants.CLUSTER;
@@ -95,13 +93,13 @@ function VisualizationPane({
         const activatedFeature = data.sae_acts[activatedIdx];
         // normalize the activation to be between 0 and 1
         const min = 0.0;
-        const max = max_activations[featureFilter.feature];
+        const max = features[featureFilter.feature].dataset_max;
         const normalizedActivation = (activatedFeature - min) / (max - min);
         lookup.set(data.ls_index, normalizedActivation);
       }
     });
     return lookup;
-  }, [featureIsSelected, dataTableRows, featureFilter.feature, max_activations]);
+  }, [featureIsSelected, dataTableRows, featureFilter.feature, features]);
 
   const drawingPoints = useMemo(() => {
     return scopeRows.map((p, i) => {
@@ -251,15 +249,15 @@ function VisualizationPane({
       .filter((point) => point !== null);
   }, [shownIndices, scopeRows]);
 
-  console.log({
-    shownIndices,
-    selectedPoints: selectedPoints.map((p) => {
-      return {
-        index: p.index,
-        ls_index: p.ls_index,
-      };
-    }),
-  });
+  // console.log({
+  //   shownIndices,
+  //   selectedPoints: selectedPoints.map((p) => {
+  //     return {
+  //       index: p.index,
+  //       ls_index: p.ls_index,
+  //     };
+  //   }),
+  // });
 
   return (
     // <div style={{ width, height }} ref={umapRef}>

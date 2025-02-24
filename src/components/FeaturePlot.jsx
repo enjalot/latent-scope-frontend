@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { extent } from 'd3-array';
+import { extent, max } from 'd3-array';
 import { scalePow } from 'd3-scale';
 import FeatureModal from './FeatureModal';
 
@@ -21,11 +21,12 @@ function FeaturePlot({
   const height = 45;
   const padding = { left: 10, right: 20, top: 2.5, bottom: showTicks ? 15 : 1.5 };
 
-  const activations = row.sae_acts || [];
+  // const activations = row.sae_acts || [];
+  const dataset_max = useMemo(() => max(features, (f) => f.dataset_max), [features]);
 
   const logScale = scalePow()
     .exponent(2.5)
-    .domain(extent(activations))
+    .domain([0, dataset_max])
     .range([padding.left, width - padding.right]);
 
   // Prepare feature data
@@ -101,7 +102,7 @@ function FeaturePlot({
       ctx.fillStyle = '#666';
       ctx.textAlign = 'center';
 
-      extent(activations).forEach((tick) => {
+      [0, dataset_max].forEach((tick) => {
         const x = logScale(tick);
         ctx.fillText(tick.toFixed(2), x, height - padding.bottom + 10);
       });
@@ -115,7 +116,7 @@ function FeaturePlot({
     logScale,
     showTicks,
     padding,
-    activations,
+    dataset_max,
   ]);
 
   // Handle mouse interactions
