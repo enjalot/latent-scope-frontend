@@ -53,7 +53,6 @@ const DataRow = memo(({ dataset, row, isHighlighted, onHover, onClick, clusterMa
 
 function MobileFilterDataTable({
   dataset,
-  filteredIndices = [],
   onHover = () => {},
   page,
   setPage,
@@ -64,7 +63,7 @@ function MobileFilterDataTable({
 
   const { dataTableRows, totalPages, filterConfig, filterActive, loading } = useFilter();
 
-  const DEFAULT_HEIGHT = 100;
+  const DEFAULT_HEIGHT = 150;
 
   const rowsPerPage = 10;
   const [pageCount, setPageCount] = useState(0);
@@ -77,8 +76,8 @@ function MobileFilterDataTable({
 
   // Calculate page count - moved outside of useEffect
   const calculatePageCount = useCallback(() => {
-    return Math.ceil(filteredIndices.length / rowsPerPage);
-  }, [filteredIndices.length]);
+    return Math.ceil(dataTableRows.length / rowsPerPage);
+  }, [dataTableRows.length]);
 
   // Update page count
   useEffect(() => {
@@ -90,8 +89,6 @@ function MobileFilterDataTable({
       setPage(Math.max(0, newPageCount - 1));
     }
   }, [calculatePageCount, page, setPage]);
-
-  // Handle touch start
 
   // Handle touch start
   const handleTouchStart = (e) => {
@@ -116,13 +113,18 @@ function MobileFilterDataTable({
     setIsDragging(false);
   };
 
-  if (filteredIndices.length === 0) {
+  if (dataTableRows.length === 0) {
     return null;
   }
 
   return (
-    <div className={styles.mobileFilterDataTable}>
-      <div className={styles.dragHandle}>
+    <div className={styles.mobileFilterDataTable} style={{ height: containerHeight }}>
+      <div
+        className={styles.dragHandle}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className={styles.dragIndicator}>
           <button onClick={() => setPage(0)} disabled={page === 0}>
             First
@@ -176,7 +178,6 @@ MobileFilterDataTable.propTypes = {
   dataset: PropTypes.object.isRequired,
   userId: PropTypes.string.isRequired,
   scope: PropTypes.object,
-  filteredIndices: PropTypes.array.isRequired,
   distances: PropTypes.array,
   clusterMap: PropTypes.object,
   onDataTableRows: PropTypes.func,
