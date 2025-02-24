@@ -104,7 +104,7 @@ function FeaturePlot({
 
       [0, dataset_max].forEach((tick) => {
         const x = logScale(tick);
-        ctx.fillText(tick.toFixed(2), x, height - padding.bottom + 10);
+        ctx.fillText(tick?.toFixed(2), x, height - padding.bottom + 10);
       });
     }
   }, [
