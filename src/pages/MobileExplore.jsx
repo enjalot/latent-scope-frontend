@@ -106,6 +106,16 @@ function MobileExplore() {
               dataTableRows={dataTableRows}
             />
           ) : null}
+
+          {/* Loading overlay */}
+          {filterLoading && (
+            <div className={styles.loadingOverlay}>
+              <div className={styles.loadingContainer}>
+                <div className={styles.loadingSpinner}></div>
+                <div>Loading...</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -28,3 +28,52 @@
   flex: 1;
   overflow: hidden;
 }
+
+/* Add these styles to your MobileExplore.module.css */
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.25);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .loadingOverlay {
+    background: rgba(30, 30, 30, 0.25);
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  font-size: 0.75rem;
+  color: var(--interactions---primary-color-interaction-primary);
+}
+
+.loadingSpinner {
+  width: 24px;
+  height: 24px;
+  border: 4px solid var(--neutrals-color-neutral-1);
+  border-top: 4px solid var(--interactions---primary-color-interaction-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
