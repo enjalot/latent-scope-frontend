@@ -19,7 +19,8 @@
 /* Overlay for the filter actions at the top */
 .filterActionsOverlay {
   background: rgba(255, 255, 255, 0.8);
-  /* padding: 0.5rem; */
+  padding: 0.5rem;
+  font-size: 0.75rem;
   /* Optionally add box-shadow, border-bottom etc. */
 }
 
