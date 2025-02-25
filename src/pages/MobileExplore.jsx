@@ -32,35 +32,19 @@ function MobileExplore() {
   const [size, setSize] = useState([500, 500]);
   const vizContainerRef = useRef(null);
 
-  const [debugInfo, setDebugInfo] = useState({
-    windowInner: 0,
-    vizRef: 0,
-    computed: 0,
-  });
-
   // In your size update function
   function updateSize() {
     if (vizContainerRef.current) {
       const vizRect = vizContainerRef.current.getBoundingClientRect();
       const computedStyle = window.getComputedStyle(vizContainerRef.current);
 
-      setDebugInfo({
-        windowInner: window.innerHeight,
-        vizRef: vizRect.height,
-        computed: parseInt(computedStyle.height),
-      });
+      // 150 is the default height of filter data table
 
-      setSize([vizRect.width, vizRect.height]);
+      // i feel like this is a hack, but it works for now
+      setSize([vizRect.width, parseInt(computedStyle.height) - 150]);
       // setSize([window.innerWidth, window.innerHeight]);
     }
   }
-
-  // function updateSize() {
-  //   if (vizContainerRef.current) {
-  //     const vizRect = vizContainerRef.current.getBoundingClientRect();
-  //     setSize([vizRect.width, vizRect.height]);
-  //   }
-  // }
 
   useEffect(() => {
     const observer = new MutationObserver((mutations, obs) => {
@@ -96,24 +80,6 @@ function MobileExplore() {
 
   return (
     <div className={styles.mobileExploreLayout}>
-      {/* <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          background: 'rgba(0,0,0,0.7)',
-          color: 'white',
-          padding: '10px',
-          zIndex: 9999,
-          fontSize: '12px',
-        }}
-      >
-        Window: {debugInfo.windowInner}px
-        <br />
-        VizRef: {debugInfo.vizRef}px
-        <br />
-        Computed: {debugInfo.computed}px
-      </div> */}
       {/* Full screen visualization pane */}
       <div className={styles.visualizationPaneContainer}>
         <div className={styles.filterActionsOverlay}>
