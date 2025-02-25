@@ -102,7 +102,7 @@ function ScatterGL({
   onSelect,
   onHover,
   featureIsSelected,
-  ignoreNotSelected = true,
+  ignoreNotSelected = false,
 }) {
   const { isDark: isDarkMode } = useColorMode();
   const { setFilteredIndices, anyFilterActive, setCenteredIndices } = useFilter();

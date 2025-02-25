@@ -294,7 +294,6 @@ function VisualizationPane({
             onSelect={onSelect}
             onHover={onHover}
             featureIsSelected={featureIsSelected}
-            ignoreNotSelected={featureIsSelected}
             maxZoom={maxZoom}
           />
         )}
