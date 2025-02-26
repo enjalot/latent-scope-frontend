@@ -22,6 +22,7 @@ import { mapSelectionOpacity, mapPointSizeRange, mapSelectionKey } from '../../l
 import styles from './VisualizationPane.module.scss';
 import ConfigurationPanel from './ConfigurationPanel';
 import { Icon, Button } from 'react-element-forge';
+import { useSmallScreen } from '../../hooks/useSmallScreen';
 
 // VisualizationPane.propTypes = {
 //   hoverAnnotations: PropTypes.array.isRequired,
@@ -51,6 +52,8 @@ function VisualizationPane({
   dataTableRows,
 }) {
   const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope, features } = useScope();
+
+  const isSmallScreen = useSmallScreen();
 
   const { featureFilter, clusterFilter, shownIndices, filterConfig } = useFilter();
 
@@ -396,7 +399,9 @@ function VisualizationPane({
           k={transform.k}
           maxZoom={maxZoom}
         />
-        <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
+        {isSmallScreen && (
+          <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
+        )}
       </div>
 
       {/* Hover information display */}
@@ -442,58 +447,6 @@ function VisualizationPane({
           </div>
         </Tooltip>
       )}
-
-      {/* {!isMobileDevice() && (
-              <div className="hovered-point">
-                  {hoveredCluster && (
-                      <span>
-                          <span className="key">Cluster {hoveredCluster.cluster}:</span>
-                          <span className="value">{hoveredCluster.label}</span>
-                      </span>
-                  )}
-                  {hovered &&
-                      Object.keys(hovered).map((key, idx) => {
-                          let d = hovered[key];
-                if (typeof d === "object" && !Array.isArray(d)) {
-                    d = JSON.stringify(d);
-                }
-                let meta =
-                    dataset.column_metadata && dataset.column_metadata[key];
-                let value;
-                if (meta && meta.image) {
-                  value = (
-                      <span className="value" key={idx}>
-                          <img src={d} alt={key} height={64} />
-                      </span>
-                  );
-              } else if (meta && meta.url) {
-                  value = (
-                      <span className="value" key={idx}>
-                          <a href={d}>url</a>
-                      </span>
-                  );
-              } else if (meta && meta.type == "array") {
-                  value = (
-                      <span className="value" key={idx}>
-                          [{d.length}]
-                      </span>
-                  );
-              } else {
-                    value = (
-                        <span className="value" key={idx}>
-                            {d}
-                        </span>
-                    );
-                }
-                return (
-                    <span key={key}>
-                        <span className="key">{key}:</span>
-                        {value}
-                    </span>
-                );
-            })}
-              </div>
-          )} */}
     </div>
   );
 }

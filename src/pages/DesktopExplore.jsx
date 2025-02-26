@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import './Explore.css';
-import { isMobileDevice } from '../utils';
 import { apiService } from '../lib/apiService';
 
 import FilterActions from '../components/Explore/FilterActions';
@@ -286,9 +285,7 @@ function DesktopExplore() {
     <>
       <SubNav user={userId} dataset={dataset} scope={scope} />
       <div className="page-container">
-        {!isMobileDevice() && (
-          <LeftPane dataset={dataset} scope={scope} deletedIndices={deletedIndices} />
-        )}
+        <LeftPane dataset={dataset} scope={scope} deletedIndices={deletedIndices} />
         <div
           ref={containerRef}
           className="full-screen-explore-container"
