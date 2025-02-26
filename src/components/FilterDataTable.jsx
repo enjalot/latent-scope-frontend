@@ -293,7 +293,7 @@ function FilterDataTable({
           </div>
         </Tooltip>
       </div>
-      {showNavigation && page >= 0 && (
+      {page >= 0 && (
         <div className={styles.filterDataTablePageControls}>
           <button onClick={() => setPage(0)} disabled={page === 0}>
             First
