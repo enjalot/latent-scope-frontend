@@ -53,6 +53,8 @@ function ExploreContent() {
     sae,
   } = useScope();
 
+  console.log('====features====', features);
+
   // Get filter-related state from FilterContext
   const {
     // filterLoading,
