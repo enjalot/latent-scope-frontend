@@ -35,6 +35,8 @@ const Container = () => {
     setFilterActive,
   } = useFilter();
 
+  const inputRef = useRef(null);
+
   // Handle updates to the search query from the input field
   const handleInputChange = (val) => {
     setFilterQuery(val);
@@ -76,6 +78,11 @@ const Container = () => {
     setFilterActive(true);
 
     const { type, value, column } = selection;
+
+    // Blur the input to dismiss the keyboard on mobile
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
 
     setUrlParams((prev) => {
       if (type === filterConstants.COLUMN) {
@@ -126,6 +133,7 @@ const Container = () => {
         {/* SearchInput receives the current query and change handler */}
         <div className={styles.inputWrapper}>
           <input
+            ref={inputRef}
             className={styles.searchInput}
             type="text"
             value={filterQuery}
