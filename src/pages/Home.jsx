@@ -61,10 +61,10 @@ function Home() {
         <h2>Technical notes</h2>
         <p>
           These demos were prepared using the Latent Scope tool on an M2 Mac. After scopes were
-          created locally they are converted to{' '}
-          <a href="https://lancedb.com/">LanceDB and uploaded</a>. The API powering the nearest
-          neighbor search is hosted on <a href="https://modal.com">Modal</a>, embedding queries via
-          Sentence Transformers and querying the LanceDB vector search.
+          created locally they are converted to <a href="https://lancedb.com/">LanceDB</a> and
+          uploaded to <a href="https://modal.com">Modal</a>. The API powering the nearest neighbor
+          search is hosted on Modal, powering embedding queries via Sentence Transformers and
+          passing them to LanceDB's vector search.
         </p>
         <p>
           The frontend code for these demos lives in{' '}
@@ -75,8 +75,9 @@ function Home() {
       </div>
       <div className={styles.section}>
         <p>
-          Latent Scope is brought to you by <a href="https://latentui.com">Latent Interfaces</a>, an
-          applied research lab for advanced data visualization.
+          Latent Scope is brought to you by <a href="https://latentui.com">Latent Interfaces</a>, a
+          community for machine learning data visualization. Join our{' '}
+          <a href="https://discord.gg/x7NvpnM4pY">Discord</a> to get involved!
         </p>
       </div>
     </div>
