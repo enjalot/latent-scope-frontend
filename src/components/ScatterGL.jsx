@@ -31,6 +31,8 @@ ScatterGL.propTypes = {
   onView: PropTypes.func,
   onSelect: PropTypes.func,
   onHover: PropTypes.func,
+  centerOnShownIndices: PropTypes.bool,
+  centerMargin: PropTypes.number,
 };
 
 const calculatePointColor = (valueA) => {
@@ -103,13 +105,13 @@ function ScatterGL({
   onHover,
   featureIsSelected,
   ignoreNotSelected = false,
+  centerOnShownIndices = true,
+  centerMargin = 0.25,
 }) {
   const { isDark: isDarkMode } = useColorMode();
-  const { setFilteredIndices, anyFilterActive, setCenteredIndices } = useFilter();
+  const { setFilteredIndices, anyFilterActive, setCenteredIndices, shownIndices } = useFilter();
   const { clusterMap } = useScope();
 
-  // debounce the filtered indices update
-  // const debouncedSetFilteredIndices = useDebounce(setFilteredIndices, 50);
   const debouncedSetCenteredIndices = useDebounce(setCenteredIndices, 50);
 
   const canvasRef = useRef(null);
@@ -121,31 +123,7 @@ function ScatterGL({
 
   const TOP_N_POINTS = 10;
 
-  // Set initial data center
-  // useEffect(() => {
-  //   if (quadtreeRef.current) {
-  //     // if (!anyFilterActive) {
-  //     const center = getCenterCoordinates(
-  //       width,
-  //       height,
-  //       transform,
-  //       xScaleRef.current,
-  //       yScaleRef.current
-  //     );
-  //     const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
-  //     setCenteredIndices(closest);
-  //     // }
-  //     // const closest = findNearestPointData(center.x, center.y);
-  //     // setFilteredIndices(closest);
-  //     // if (closest !== -1 && useDefaultIndices) {
-  //     //   setHoveredIndex(closest);
-  //     //   const cluster = clusterMap[closest];
-  //     //   if (cluster) {
-  //     //     setHoveredCluster(cluster);
-  //     //   }
-  //     // }
-  //   }
-  // }, [width, height]);
+  const [transform, setTransform] = useState(zoomIdentity);
 
   // make xScaleRef and yScaleRef update when width and height change
   useEffect(() => {
@@ -153,7 +131,9 @@ function ScatterGL({
     yScaleRef.current = scaleLinear().domain([-1, 1]).range([height, 0]);
   }, [width, height]);
 
-  const [transform, setTransform] = useState(zoomIdentity);
+  // Create refs to store zoom behavior and zoom selection
+  const zoomBehaviorRef = useRef(null);
+  const zoomSelectionRef = useRef(null);
 
   // Setup regl and shaders
   useEffect(() => {
@@ -299,6 +279,7 @@ function ScatterGL({
       depth: { enable: false },
     });
 
+    // Initialize zoom behavior.
     const zoomBehavior = zoom()
       .scaleExtent([minZoom, maxZoom])
       .on('zoom', (event) => {
@@ -311,18 +292,19 @@ function ScatterGL({
         }
       });
 
+    // Call zoom on the canvas and store the selection in a ref.
     const zoomSelection = select(canvas).call(zoomBehavior);
 
-    // Calculate initial transform to center the view
+    // Store references so we can later call the transform method.
+    zoomBehaviorRef.current = zoomBehavior;
+    zoomSelectionRef.current = zoomSelection;
+
+    // Calculate an initial transform (your current logic)
     const zoomOutFactor = 0.8;
     const centerX = width / 2;
     const centerY = height / 2;
-
-    // First translate to center, then scale, then translate back
-    // This ensures the scaling happens around the center point
     const initialTransform = zoomIdentity
       .translate(centerX, centerY)
-      // .scale(1 / zoomOutFactor) // Use inverse of zoom factor to zoom out
       .scale(zoomOutFactor)
       .translate(-centerX, -centerY);
 
@@ -558,6 +540,70 @@ function ScatterGL({
     //   }
     // }
   };
+
+  // NEW: When the shownIndices (from FilterContext) change and if centering is enabled,
+  // compute a new transform to center (and optionally partially zoom in on) the shown points.
+  useEffect(() => {
+    if (!centerOnShownIndices) return;
+    if (!points || !points.length) return;
+    if (!shownIndices || shownIndices.length === 0) return;
+
+    // Compute bounding box in data space for the shown points.
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity;
+    shownIndices.forEach((idx) => {
+      const p = points[idx];
+      if (p) {
+        const [x, y] = p;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    });
+    if (minX === Infinity) return;
+
+    // Convert the data-space bounding box to the "initial screen coordinates" that your shader uses.
+    // (Recall that in the vertex shader we do:
+    //   screen.x = ((position.x + 1) * 0.5 * width)
+    //   screen.y = ((1 - position.y) * 0.5 * height))
+    const screenMinX = ((minX + 1) / 2) * width;
+    const screenMaxX = ((maxX + 1) / 2) * width;
+    const screenMinY = ((1 - maxY) / 2) * height;
+    const screenMaxY = ((1 - minY) / 2) * height;
+
+    const bboxWidth = screenMaxX - screenMinX;
+    const bboxHeight = screenMaxY - screenMinY;
+    const bboxCenterX = screenMinX + bboxWidth / 2;
+    const bboxCenterY = screenMinY + bboxHeight / 2;
+
+    // To avoid an extremely high scale (when only a single point is visible) use a minimal "pad"
+    const pad = 20; // minimal size (in pixels)
+    const boxWidthAdjusted = Math.max(bboxWidth, pad);
+    const boxHeightAdjusted = Math.max(bboxHeight, pad);
+
+    // Compute the maximum zoom scale that would fit the bounding box with the desired margin.
+    const scaleX = (width * centerMargin) / boxWidthAdjusted;
+    const scaleY = (height * centerMargin) / boxHeightAdjusted;
+    let fitScale = Math.min(scaleX, scaleY);
+    fitScale = Math.min(Math.max(fitScale, minZoom), maxZoom);
+
+    // Compute the translation so that the bounding box center is in the middle of the canvas.
+    const newTx = width / 2 - bboxCenterX * fitScale;
+    const newTy = height / 2 - bboxCenterY * fitScale;
+
+    const newTransform = zoomIdentity.translate(newTx, newTy).scale(fitScale);
+
+    // Update the view via a transition.
+    if (zoomSelectionRef.current && zoomBehaviorRef.current) {
+      zoomSelectionRef.current
+        .transition()
+        .duration(950)
+        .call(zoomBehaviorRef.current.transform, newTransform);
+    }
+  }, [shownIndices, points, width, height, minZoom, maxZoom, centerOnShownIndices, centerMargin]);
 
   return (
     <canvas
