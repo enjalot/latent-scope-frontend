@@ -179,14 +179,14 @@ const SearchResultsMetadata = ({ filterConfig }) => {
       <div className={styles.searchResultsMetadata}>
         <div className={styles.searchResultsMetadataItem}>
           <span className={styles.searchResultsMetadataLabel}>
-            Showing first {shownIndices.length} rows in dataset:
+            Showing {shownIndices.length} rows out of {filteredIndices.length}
           </span>
         </div>
-        <div className={styles.searchResultsMetadataItem}>
+        {/* <div className={styles.searchResultsMetadataItem}>
           <span className={styles.searchResultsMetadataValue}>
             {filteredIndices.length} results
           </span>
-        </div>
+        </div> */}
       </div>
     );
   }

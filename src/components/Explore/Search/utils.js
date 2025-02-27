@@ -1,7 +1,7 @@
 // find all features that match the query
 
 const featureLabel = (feature) => {
-  return `${feature.feature}: ${feature.label} (${feature.dataset_count})`;
+  return `${feature.feature}: ${feature.label}`; // (${feature.dataset_count})`;
 };
 
 export const findFeaturesByQuery = (features, query, top = 5) => {
@@ -13,6 +13,7 @@ export const findFeaturesByQuery = (features, query, top = 5) => {
       .map((feature) => ({
         value: feature.feature,
         label: featureLabel(feature),
+        count: feature.dataset_count,
       }));
   }
 
@@ -29,14 +30,17 @@ export const findFeaturesByQuery = (features, query, top = 5) => {
     .map((feature) => ({
       value: feature.feature,
       label: featureLabel(feature),
+      count: feature.dataset_count,
     }));
 };
 
 export const findClustersByQuery = (clusters, query, top = 5) => {
+  console.log('CLUSTERS', clusters);
   if (!query) {
     return clusters.slice(0, top).map((cluster) => ({
       value: cluster.cluster,
       label: cluster.label,
+      count: cluster.count,
     }));
   }
 
@@ -47,6 +51,7 @@ export const findClustersByQuery = (clusters, query, top = 5) => {
     .map((cluster) => ({
       value: cluster.cluster,
       label: cluster.label,
+      count: cluster.count,
     }));
 };
 

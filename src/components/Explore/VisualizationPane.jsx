@@ -298,6 +298,7 @@ function VisualizationPane({
             onHover={onHover}
             featureIsSelected={featureIsSelected}
             maxZoom={maxZoom}
+            isSmallScreen={isSmallScreen}
           />
         )}
         {/* show all the hulls */}
