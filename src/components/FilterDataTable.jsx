@@ -51,8 +51,19 @@ function FilterDataTable({
   const { dataTableRows, page, setPage, totalPages, filterConfig, filterActive, loading } =
     useFilter();
 
+  // Track expanded rows by index
+  const [expandedRows, setExpandedRows] = useState({});
+
   // feature tooltip content
   const [featureTooltipContent, setFeatureTooltipContent] = useState(null);
+
+  // Toggle row expansion
+  const handleRowExpand = useCallback((index) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  }, []);
 
   const formattedColumns = useMemo(() => {
     // Add index circle column as the first column
@@ -138,7 +149,19 @@ function FilterDataTable({
           width: 500,
           renderHeaderCell: () => <div className={styles.textColumn}>{dataset.text_column}</div>,
           renderCell: ({ row }) => {
-            return <span title={row[col]}>{row[col]}</span>;
+            const isExpanded = expandedRows[row.ls_index];
+            return (
+              <div
+                className={`${styles.textCell} ${isExpanded ? styles.expanded : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRowExpand(row.ls_index);
+                }}
+                title={isExpanded ? '' : row[col]}
+              >
+                {row[col]}
+              </div>
+            );
           },
         };
       }
@@ -206,7 +229,25 @@ function FilterDataTable({
     // Add index column as first column
     return [indexColumn, ...columnDefs];
     // return columnDefs;
-  }, [dataset, clusterMap, distances, features, feature, sae_id]);
+  }, [dataset, clusterMap, distances, features, feature, sae_id, expandedRows, handleRowExpand]);
+
+  // Row height calculation
+  const getRowHeight = useCallback(
+    (row) => {
+      if (expandedRows[row.ls_index]) {
+        // TODO: a more sophisticated way to do this would be better (measuring text content in DOM)
+        const text = row[dataset.text_column] || '';
+        // Use the text length to determine a reasonable height
+        if (text.length > 1000) return 400;
+        if (text.length > 500) return 300;
+        if (text.length > 200) return 200;
+        if (text.length > 100) return 100;
+        if (text.length > 50) return 60;
+      }
+      return sae_id ? 50 : 35;
+    },
+    [expandedRows, sae_id, dataset.text_column]
+  );
 
   const renderRowWithHover = useCallback(
     (key, props) => {
@@ -254,14 +295,10 @@ function FilterDataTable({
         <DataGrid
           rows={dataTableRows}
           columns={formattedColumns}
-          rowClass={(row, index) => {
-            if (row.ls_index === 0) {
-              return 'test';
-            }
-            return '';
-          }}
+          rowClass={(row) => (expandedRows[row.ls_index] ? styles.expandedRow : styles.rdgRow)}
           rowGetter={(i) => dataTableRows[i]}
-          rowHeight={sae_id ? 50 : 35}
+          rowHeight={getRowHeight}
+          rowHeightGetter={getRowHeight}
           style={{ height: '100%', color: 'var(--text-color-main-neutral)' }}
           renderers={{ renderRow: renderRowWithHover }}
           className={styles.dataGrid}
