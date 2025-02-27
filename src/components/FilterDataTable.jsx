@@ -43,7 +43,6 @@ function FilterDataTable({
   dataset,
   distances = [],
   clusterMap = {},
-  showNavigation = true,
   sae_id = null,
   feature = -1,
   features = [],
@@ -294,7 +293,7 @@ function FilterDataTable({
           </div>
         </Tooltip>
       </div>
-      {showNavigation && page >= 0 && (
+      {page >= 0 && (
         <div className={styles.filterDataTablePageControls}>
           <button onClick={() => setPage(0)} disabled={page === 0}>
             First

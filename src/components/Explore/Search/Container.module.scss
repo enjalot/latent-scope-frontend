@@ -58,3 +58,12 @@
     padding-top: 6px;
 }
 
+@media (max-width: 768px) {
+    .searchButton {
+        width: 32px;
+        height: 32px;
+    }
+    .searchInput {
+        width: 75%;
+    }
+}

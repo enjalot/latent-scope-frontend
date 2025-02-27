@@ -28,7 +28,7 @@ const underlineText = (text, query) => {
   );
 };
 
-// Custom Option component that includes an icon. Note the added branch for NN options.
+// Custom Option component that includes an icon and the count on the right.
 const Option = (props) => {
   const { data, selectProps } = props;
   const { onSelect, inputValue, setFilterQuery } = selectProps;
@@ -53,6 +53,7 @@ const Option = (props) => {
         value: data.value,
         column: data.column,
         label,
+        count: data.count,
       });
       setFilterQuery(label);
     } else if (groupType === CLUSTERS) {
@@ -65,7 +66,14 @@ const Option = (props) => {
     }
   };
 
-  // If this is our nearest-neighbors option, render it specially.
+  // Helper to render the count (if available)
+  const renderCount = () => {
+    if (data.count !== undefined && data.count !== null) {
+      return <span className={styles.optionCount}>{data.count}</span>;
+    }
+    return null;
+  };
+
   if (data.isNN) {
     return (
       <div onClick={handleClick}>
@@ -80,13 +88,13 @@ const Option = (props) => {
               className={styles.resultButton}
             />
             <span>Search for nearest neighbors to: "{data.value}"</span>
+            {renderCount()}
           </div>
         </components.Option>
       </div>
     );
   }
 
-  // Get the group type to determine which icon to show
   const groupType = props.options.find((group) =>
     group.options?.some((opt) => opt.value === data.value && opt.label === data.label)
   )?.label;
@@ -119,6 +127,7 @@ const Option = (props) => {
             />
             <span>{underlineText(data.label, inputValue)}</span>
             <span className={styles.columnLabel}>{data.column}</span>
+            {renderCount()}
           </div>
         </components.Option>
       </div>
@@ -142,6 +151,7 @@ const Option = (props) => {
             />
           )}
           <div>{underlineText(data.label, inputValue)}</div>
+          {renderCount()}
         </div>
       </components.Option>
     </div>
@@ -186,11 +196,13 @@ const SearchResults = ({ query, menuIsOpen, onSelect, setFilterQuery }) => {
     }
 
     // Flatten all column values into searchable options
+    console.log('COLUMN', columnFilters);
     const options = columnFilters.flatMap((column) =>
       column.categories.map((category) => ({
         value: category,
-        label: category, // Just the value
+        label: category,
         column: column.column, // Store column name for display
+        count: column.counts[category],
       }))
     );
 

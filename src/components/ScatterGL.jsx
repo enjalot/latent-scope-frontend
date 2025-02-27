@@ -31,6 +31,9 @@ ScatterGL.propTypes = {
   onView: PropTypes.func,
   onSelect: PropTypes.func,
   onHover: PropTypes.func,
+  isSmallScreen: PropTypes.bool,
+  centerOnShownIndices: PropTypes.bool,
+  centerMargin: PropTypes.number,
 };
 
 const calculatePointColor = (valueA) => {
@@ -103,13 +106,20 @@ function ScatterGL({
   onHover,
   featureIsSelected,
   ignoreNotSelected = false,
+  isSmallScreen = false,
+  centerOnShownIndices = true,
+  centerMargin = 0.25,
 }) {
   const { isDark: isDarkMode } = useColorMode();
-  const { setFilteredIndices, anyFilterActive, setCenteredIndices } = useFilter();
-  const { clusterMap } = useScope();
+  const { setCenteredIndices, shownIndices } = useFilter();
 
-  // debounce the filtered indices update
-  // const debouncedSetFilteredIndices = useDebounce(setFilteredIndices, 50);
+  // Add a ref to track if we're currently in a programmatic zoom operation
+  const isZoomingProgrammatically = useRef(false);
+  // Add a ref to track if user has manually zoomed/panned
+  const userHasManuallyZoomed = useRef(false);
+  // Add a ref to track the last centered indices
+  const lastCenteredIndicesRef = useRef([]);
+
   const debouncedSetCenteredIndices = useDebounce(setCenteredIndices, 50);
 
   const canvasRef = useRef(null);
@@ -121,31 +131,7 @@ function ScatterGL({
 
   const TOP_N_POINTS = 10;
 
-  // Set initial data center
-  // useEffect(() => {
-  //   if (quadtreeRef.current) {
-  //     // if (!anyFilterActive) {
-  //     const center = getCenterCoordinates(
-  //       width,
-  //       height,
-  //       transform,
-  //       xScaleRef.current,
-  //       yScaleRef.current
-  //     );
-  //     const closest = findNClosestPoints(center.x, center.y, TOP_N_POINTS);
-  //     setCenteredIndices(closest);
-  //     // }
-  //     // const closest = findNearestPointData(center.x, center.y);
-  //     // setFilteredIndices(closest);
-  //     // if (closest !== -1 && useDefaultIndices) {
-  //     //   setHoveredIndex(closest);
-  //     //   const cluster = clusterMap[closest];
-  //     //   if (cluster) {
-  //     //     setHoveredCluster(cluster);
-  //     //   }
-  //     // }
-  //   }
-  // }, [width, height]);
+  const [transform, setTransform] = useState(zoomIdentity);
 
   // make xScaleRef and yScaleRef update when width and height change
   useEffect(() => {
@@ -153,7 +139,9 @@ function ScatterGL({
     yScaleRef.current = scaleLinear().domain([-1, 1]).range([height, 0]);
   }, [width, height]);
 
-  const [transform, setTransform] = useState(zoomIdentity);
+  // Create refs to store zoom behavior and zoom selection
+  const zoomBehaviorRef = useRef(null);
+  const zoomSelectionRef = useRef(null);
 
   // Setup regl and shaders
   useEffect(() => {
@@ -299,9 +287,16 @@ function ScatterGL({
       depth: { enable: false },
     });
 
+    // Initialize zoom behavior.
     const zoomBehavior = zoom()
       .scaleExtent([minZoom, maxZoom])
       .on('zoom', (event) => {
+        // If the user is manually zooming/panning, cancel any programmatic zoom
+        if (event.sourceEvent) {
+          isZoomingProgrammatically.current = false;
+          userHasManuallyZoomed.current = true;
+        }
+
         setTransform(event.transform);
         const newXScale = event.transform.rescaleX(xScaleRef.current);
         const newYScale = event.transform.rescaleY(yScaleRef.current);
@@ -309,20 +304,24 @@ function ScatterGL({
         if (onView) {
           onView(newXScale.domain(), newYScale.domain(), event.transform);
         }
+      })
+      .on('end', (event) => {
+        updateCenteredIndices(event.transform);
       });
 
+    // Call zoom on the canvas and store the selection in a ref.
     const zoomSelection = select(canvas).call(zoomBehavior);
 
-    // Calculate initial transform to center the view
+    // Store references so we can later call the transform method.
+    zoomBehaviorRef.current = zoomBehavior;
+    zoomSelectionRef.current = zoomSelection;
+
+    // Calculate an initial transform (your current logic)
     const zoomOutFactor = 0.8;
     const centerX = width / 2;
     const centerY = height / 2;
-
-    // First translate to center, then scale, then translate back
-    // This ensures the scaling happens around the center point
     const initialTransform = zoomIdentity
       .translate(centerX, centerY)
-      // .scale(1 / zoomOutFactor) // Use inverse of zoom factor to zoom out
       .scale(zoomOutFactor)
       .translate(-centerX, -centerY);
 
@@ -455,50 +454,53 @@ function ScatterGL({
   );
 
   // Find the n closest points to the given data coordinates (dataX, dataY)
-  const findNClosestPoints = (dataX, dataY, n) => {
-    const closestPoints = [];
+  const findNClosestPoints = useCallback(
+    (dataX, dataY, n) => {
+      const closestPoints = [];
 
-    // Search radius in data coordinates
-    const radius = 0.05;
-    // ((quadtreeRadius / transform.k) *
-    //   (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
-    // width;
+      // Search radius in data coordinates
+      const radius = 0.05;
+      // ((quadtreeRadius / transform.k) *
+      //   (xScaleRef.current.domain()[1] - xScaleRef.current.domain()[0])) /
+      // width;
 
-    quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
-      // First check if this node's bounding box is outside our search area
-      const isOutsideSearchArea =
-        x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius;
+      quadtreeRef.current.visit((node, x1, y1, x2, y2) => {
+        // First check if this node's bounding box is outside our search area
+        const isOutsideSearchArea =
+          x1 > dataX + radius || x2 < dataX - radius || y1 > dataY + radius || y2 < dataY - radius;
 
-      // If outside, stop traversing this branch
-      if (isOutsideSearchArea) {
-        return true;
-      }
-
-      // Only process points from nodes within our search area
-      if (!node.length) {
-        const dx = node.data[0] - dataX;
-        const dy = node.data[1] - dataY;
-        const distance = dx * dx + dy * dy;
-
-        if (closestPoints.length < n) {
-          closestPoints.push({ point: node.data, distance });
-          closestPoints.sort((a, b) => a.distance - b.distance);
-        } else if (distance < closestPoints[closestPoints.length - 1].distance) {
-          closestPoints[closestPoints.length - 1] = { point: node.data, distance };
-          closestPoints.sort((a, b) => a.distance - b.distance);
+        // If outside, stop traversing this branch
+        if (isOutsideSearchArea) {
+          return true;
         }
-      }
 
-      // Continue traversing this branch's children
-      return false;
-    });
-    // debugger;
-    // console.log('closestPoints', closestPoints);
+        // Only process points from nodes within our search area
+        if (!node.length) {
+          const dx = node.data[0] - dataX;
+          const dy = node.data[1] - dataY;
+          const distance = dx * dx + dy * dy;
 
-    return closestPoints.map(({ point }) =>
-      points.findIndex((p) => p[0] === point[0] && p[1] === point[1])
-    );
-  };
+          if (closestPoints.length < n) {
+            closestPoints.push({ point: node.data, distance });
+            closestPoints.sort((a, b) => a.distance - b.distance);
+          } else if (distance < closestPoints[closestPoints.length - 1].distance) {
+            closestPoints[closestPoints.length - 1] = { point: node.data, distance };
+            closestPoints.sort((a, b) => a.distance - b.distance);
+          }
+        }
+
+        // Continue traversing this branch's children
+        return false;
+      });
+      // debugger;
+      // console.log('closestPoints', closestPoints);
+
+      return closestPoints.map(({ point }) =>
+        points.findIndex((p) => p[0] === point[0] && p[1] === point[1])
+      );
+    },
+    [points]
+  );
 
   const handleMouseMove = useCallback(
     (event) => {
@@ -531,33 +533,127 @@ function ScatterGL({
     [points, onSelect, findNearestPoint]
   );
 
-  const updateCenteredIndices = (transform) => {
-    const newCenter = getCenterCoordinates(
-      width,
-      height,
-      transform,
-      xScaleRef.current,
-      yScaleRef.current
-    );
-    const closest = findNClosestPoints(newCenter.x, newCenter.y, TOP_N_POINTS);
-    debouncedSetCenteredIndices(closest);
+  const updateCenteredIndices = useCallback(
+    (transform) => {
+      // Skip updating centered indices if we're in a programmatic zoom operation
+      if (isZoomingProgrammatically.current) return;
 
-    // if (useDefaultIndices) {
-    //   const closest = findNearestPoint(newCenter.x, newCenter.y);
-    //   if (closest !== -1) {
-    //     setHoveredIndex(closest);
-    //     const cluster = clusterMap[closest];
-    //     if (cluster) {
-    //       setHoveredCluster(cluster);
-    //     }
+      const newCenter = getCenterCoordinates(
+        width,
+        height,
+        transform,
+        xScaleRef.current,
+        yScaleRef.current
+      );
+      if (!quadtreeRef.current) return;
+      console.log('updateCenteredIndices', newCenter);
+      const closest = findNClosestPoints(newCenter.x, newCenter.y, TOP_N_POINTS);
+      console.log('closest', closest);
+      if (isSmallScreen) {
+        debouncedSetCenteredIndices(closest);
+      }
+    },
+    [width, height, debouncedSetCenteredIndices, findNClosestPoints, isSmallScreen]
+  );
 
-    //     if (isSmallScreen) {
-    //       debouncedSetFilteredIndices([closest]);
-    //     } else {
-    //     }
-    //   }
-    // }
-  };
+  // NEW: When the shownIndices (from FilterContext) change and if centering is enabled,
+  // compute a new transform to center (and optionally partially zoom in on) the shown points.
+  useEffect(() => {
+    if (!centerOnShownIndices) return;
+    if (!points || !points.length) return;
+    if (!shownIndices || shownIndices.length === 0) return;
+
+    // Skip programmatic zooming if the user has manually zoomed/panned
+    if (userHasManuallyZoomed.current) {
+      // Reset this flag when filter changes to allow future programmatic zooms
+      userHasManuallyZoomed.current = false;
+      return;
+    }
+
+    // Update the last centered indices ref
+    lastCenteredIndicesRef.current = [...shownIndices];
+
+    // Compute bounding box in data space for the shown points.
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity;
+    shownIndices.forEach((idx) => {
+      const p = points[idx];
+      if (p) {
+        const [x, y] = p;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    });
+    if (minX === Infinity) return;
+
+    // Convert the data-space bounding box to the "initial screen coordinates" that your shader uses.
+    // (Recall that in the vertex shader we do:
+    //   screen.x = ((position.x + 1) * 0.5 * width)
+    //   screen.y = ((1 - position.y) * 0.5 * height))
+    const screenMinX = ((minX + 1) / 2) * width;
+    const screenMaxX = ((maxX + 1) / 2) * width;
+    const screenMinY = ((1 - maxY) / 2) * height;
+    const screenMaxY = ((1 - minY) / 2) * height;
+
+    const bboxWidth = screenMaxX - screenMinX;
+    const bboxHeight = screenMaxY - screenMinY;
+    const bboxCenterX = screenMinX + bboxWidth / 2;
+    const bboxCenterY = screenMinY + bboxHeight / 2;
+
+    // To avoid an extremely high scale (when only a single point is visible) use a minimal "pad"
+    const pad = 20; // minimal size (in pixels)
+    const boxWidthAdjusted = Math.max(bboxWidth, pad);
+    const boxHeightAdjusted = Math.max(bboxHeight, pad);
+
+    // Compute the maximum zoom scale that would fit the bounding box with the desired margin.
+    const scaleX = (width * centerMargin) / boxWidthAdjusted;
+    const scaleY = (height * centerMargin) / boxHeightAdjusted;
+    let fitScale = Math.min(scaleX, scaleY);
+    fitScale = Math.min(Math.max(fitScale, minZoom), maxZoom);
+
+    // Compute the translation so that the bounding box center is in the middle of the canvas.
+    const newTx = width / 2 - bboxCenterX * fitScale;
+    const newTy = height / 2 - bboxCenterY * fitScale;
+
+    const newTransform = zoomIdentity.translate(newTx, newTy).scale(fitScale);
+
+    // Update the view via a transition.
+    if (zoomSelectionRef.current && zoomBehaviorRef.current) {
+      // Set the flag to indicate we're starting a programmatic zoom
+      isZoomingProgrammatically.current = true;
+
+      zoomSelectionRef.current
+        .transition()
+        .duration(950)
+        .call(zoomBehaviorRef.current.transform, newTransform)
+        .on('end', () => {
+          // Reset the flag when the transition is complete
+          isZoomingProgrammatically.current = false;
+        });
+    } else {
+      // Reset the flag if we couldn't start the transition
+      isZoomingProgrammatically.current = false;
+    }
+  }, [shownIndices, points, width, height, minZoom, maxZoom, centerOnShownIndices, centerMargin]);
+
+  // Add handlers to reset programmatic zoom flag on user interaction
+  const handleMouseDown = useCallback(() => {
+    if (isZoomingProgrammatically.current) {
+      isZoomingProgrammatically.current = false;
+    }
+    userHasManuallyZoomed.current = true;
+  }, []);
+
+  const handleTouchStart = useCallback(() => {
+    if (isZoomingProgrammatically.current) {
+      isZoomingProgrammatically.current = false;
+    }
+    userHasManuallyZoomed.current = true;
+  }, []);
 
   return (
     <canvas
@@ -567,6 +663,8 @@ function ScatterGL({
       onMouseMove={handleMouseMove}
       onMouseLeave={() => onHover && onHover(null)}
       onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
     />
   );
 }

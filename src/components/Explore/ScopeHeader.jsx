@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { compareVersions } from 'compare-versions';
 
 import { apiService } from '../../lib/apiService';
-import { isMobileDevice } from '../../utils';
+import { useSmallScreen } from '../../hooks/useSmallScreen';
 
 const readonly = import.meta.env.MODE == 'read_only';
 
@@ -16,6 +16,8 @@ function DatasetHeader({ dataset, scope, deletedIndices }) {
   // useEffect(() => {
   //   apiService.fetchVersion().then(setLsVersion);
   // }, []);
+
+  const isSmallScreen = useSmallScreen();
 
   return (
     <div className="summary">
@@ -44,7 +46,7 @@ function DatasetHeader({ dataset, scope, deletedIndices }) {
           )}
         </div> */}
 
-        {isMobileDevice() && <i>Use a desktop browser for full interactivity!</i>}
+        {isSmallScreen && <i>Use a desktop browser for full interactivity!</i>}
 
         {lsVersion && compareVersions(scope?.ls_version, lsVersion) < 0 ? (
           <div className="scope-version-warning">
@@ -97,12 +99,6 @@ function DatasetHeader({ dataset, scope, deletedIndices }) {
           <span>{scope?.cluster_labels_lookup?.length} clusters</span>
         </span>
       </div>
-
-      {/* <div className="dataset-card">
-        <span>
-          <b>{dataset.id}</b> {scope?.rows}/{dataset?.length} rows
-        </span>
-      </div> */}
     </div>
   );
 }
@@ -110,7 +106,7 @@ function DatasetHeader({ dataset, scope, deletedIndices }) {
 DatasetHeader.propTypes = {
   dataset: PropTypes.object,
   scope: PropTypes.object,
-  isMobileDevice: PropTypes.bool,
+  isSmallScreen: PropTypes.bool,
 };
 
 export default DatasetHeader;
