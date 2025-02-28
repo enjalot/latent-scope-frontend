@@ -88,8 +88,23 @@ function FilterDataTable({
 
     columns = columns.concat(dataset.columns.filter((d) => d !== dataset.text_column));
 
+    function renderUrl(text) {
+      let urls = text.split('http').filter((url) => !!url);
+      console.log('==== urls ==== ', urls);
+      return (
+        <div className={styles.urlContainer}>
+          {urls.map((url, idx) => (
+            <a key={'url ' + idx} href={`http${url}`} target="_blank" rel="noreferrer">
+              {`http${url}`}
+            </a>
+          ))}
+        </div>
+      );
+    }
+
     let columnDefs = columns.map((col) => {
       const metadata = dataset.column_metadata ? dataset.column_metadata[col] : null;
+      console.log('==== metadata ==== ', col, metadata);
 
       const baseCol = {
         key: col,
@@ -119,11 +134,10 @@ function FilterDataTable({
       } else if (metadata?.url) {
         return {
           ...baseCol,
-          renderCell: ({ row }) => (
-            <a href={row[col]} target="_blank" rel="noreferrer">
-              url
-            </a>
-          ),
+          renderCell: ({ row }) => {
+            let text = row[col];
+            renderUrl(text);
+          },
         };
       } else if (metadata?.type === 'array') {
         return {
@@ -208,11 +222,7 @@ function FilterDataTable({
         }
         if (typeof row[col] === 'string') {
           if (row[col].startsWith('http')) {
-            return (
-              <a href={row[col]} target="_blank" rel="noopener noreferrer">
-                {row[col]}
-              </a>
-            );
+            return renderUrl(row[col]);
           }
         }
 
