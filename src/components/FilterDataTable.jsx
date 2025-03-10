@@ -89,17 +89,20 @@ function FilterDataTable({
     columns = columns.concat(dataset.columns.filter((d) => d !== dataset.text_column));
 
     function renderUrl(text) {
-      let urls = text.split('http').filter((url) => !!url);
+      const key = 'http';
+      let urls = text.split(key).filter((url) => !!url);
       console.log('==== urls ==== ', urls);
-      return (
+      const output = (
         <div className={styles.urlContainer}>
           {urls.map((url, idx) => (
-            <a key={'url ' + idx} href={`http${url}`} target="_blank" rel="noreferrer">
-              {`http${url}`}
+            <a key={'url ' + idx} href={`${key}${url}`} target="_blank" rel="noreferrer">
+              url
             </a>
           ))}
         </div>
       );
+      console.log('==== output ==== ', output);
+      return output;
     }
 
     let columnDefs = columns.map((col) => {
@@ -136,7 +139,7 @@ function FilterDataTable({
           ...baseCol,
           renderCell: ({ row }) => {
             let text = row[col];
-            renderUrl(text);
+            return renderUrl(text);
           },
         };
       } else if (metadata?.type === 'array') {
