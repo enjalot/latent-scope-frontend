@@ -61,6 +61,9 @@
 
 .cardContent {
   width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .cardText {
@@ -80,6 +83,21 @@
   &.showIndex {
     margin-left: 28px;
   }
+  &.showDistance {
+    padding-right: 48px;
+  }
+}
+
+.distance {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #f0f7ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #555;
+  font-weight: bold;
 }
 
 .noResults {

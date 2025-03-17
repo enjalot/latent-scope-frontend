@@ -36,6 +36,7 @@ export function SearchProvider({ children }) {
         ...row,
         idx,
         ls_index: row.index,
+        ls_distance: data.distances[idx],
       }));
       setResults(rowsWithIdx);
     } catch (error) {

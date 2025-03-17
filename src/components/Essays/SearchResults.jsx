@@ -1,32 +1,40 @@
 import React, { useState, useCallback, memo, useRef } from 'react';
 import styles from './SearchResults.module.scss';
 
-const ResultRow = memo(({ result, isHighlighted, onHover, index, dataset, showIndex = true }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const expand = useCallback(() => setIsExpanded(!isExpanded), [isExpanded]);
+const ResultRow = memo(
+  ({ result, isHighlighted, onHover, index, dataset, showIndex = true, showDistance = true }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const expand = useCallback(() => setIsExpanded(!isExpanded), [isExpanded]);
 
-  return (
-    <div
-      className={`${styles.resultCard} ${isHighlighted ? styles.highlighted : ''} ${isExpanded ? styles.expanded : ''}`}
-      onMouseEnter={() => onHover(result.id || index)}
-      onMouseLeave={() => onHover(null)}
-      // onClick={expand}
-    >
-      {showIndex && <div className={styles.indexBadge}>{index + 1}</div>}
-      <div className={styles.cardContent}>
-        <div className={`${styles.cardText} ${isExpanded ? styles.expandedText : ''}`}>
-          {result[dataset.text_column]}
+    return (
+      <div
+        className={`${styles.resultCard} ${isHighlighted ? styles.highlighted : ''} ${isExpanded ? styles.expanded : ''}`}
+        onMouseEnter={() => onHover(result.id || index)}
+        onMouseLeave={() => onHover(null)}
+        // onClick={expand}
+      >
+        {showIndex && <div className={styles.indexBadge}>{index + 1}</div>}
+        <div className={`${styles.cardContent}`}>
+          <div
+            className={`${styles.cardText} ${showDistance ? styles.showDistance : ''} ${showIndex ? styles.showIndex : ''} ${isExpanded ? styles.expandedText : ''}`}
+          >
+            {result[dataset.text_column]}
+          </div>
+          {showDistance && (
+            <div className={styles.distance}>{(1 - result.ls_distance)?.toFixed(2)}</div>
+          )}
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 function SearchResults({
   dataset,
   results = [],
   numToShow = 10,
   showIndex = true,
+  showDistance = true,
   loading = false,
   onHover = () => {},
   onClick = () => {},
@@ -59,6 +67,7 @@ function SearchResults({
             result={result}
             isHighlighted={false}
             showIndex={showIndex}
+            showDistance={showDistance}
             onHover={onHover}
             onClick={onClick}
             dataset={dataset}
