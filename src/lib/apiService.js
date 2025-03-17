@@ -118,4 +118,41 @@ export const apiService = {
       `https://enjalot--latent-scope-api-app-feature${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&feature=${featureId}&threshold=${threshold}`
     ).then((response) => response.json());
   },
+  calcTokenizedEmbeddings: async (query) => {
+    return fetch(
+      `https://enjalot--latent-scope-api-app-calc-embedding.modal.run?query=${encodeURIComponent(query)}`
+    ).then((response) => response.json());
+  },
+  calcFeatures: async (embedding) => {
+    return fetch('https://enjalot--latent-scope-api-app-calc-sae.modal.run', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ embedding: embedding }),
+    }).then((response) => response.json());
+  },
+  calcSteering: async (features) => {
+    return fetch('https://enjalot--latent-scope-api-app-calc-sae.modal.run', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ features: features }),
+    }).then((response) => response.json());
+  },
+  getNNEmbed: async (db, scope, embedding) => {
+    return fetch('https://enjalot--latent-scope-api-app-calc-sae.modal.run', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        neighbors: true,
+        db: db,
+        scope: scope,
+        embedding: embedding,
+      }),
+    }).then((response) => response.json());
+  },
 };

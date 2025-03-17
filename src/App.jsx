@@ -5,6 +5,8 @@ import FullScreenExplore from './pages/FullScreenExplore';
 import Nav from './components/Nav';
 import './App.css';
 
+import NavBySim from './essays/nav-by-sim';
+
 import 'react-element-forge/dist/style.css';
 import './latentscope--brand-theme.scss';
 
@@ -22,6 +24,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/scope/:user/:dataset/:scope" element={<FullScreenExplore />} />
+
+          <Route path="/essays/nav-by-sim" element={<NavBySim />} />
         </Routes>
       </div>
     </Router>

@@ -10,8 +10,6 @@ import LeftPane from '../components/Explore/LeftPane';
 import VisualizationPane from '../components/Explore/VisualizationPane';
 import FilterDataTable from '../components/FilterDataTable';
 
-import { ScopeProvider } from '../contexts/ScopeContext';
-import { FilterProvider } from '../contexts/FilterContext';
 import { useScope } from '../contexts/ScopeContext';
 import { useFilter } from '../contexts/FilterContext';
 import useDebounce from '../hooks/useDebounce';

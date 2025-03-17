@@ -6,8 +6,13 @@ import { saeAvailable } from '../lib/SAE';
 
 const ScopeContext = createContext(null);
 
-export function ScopeProvider({ children }) {
-  const { user: userId, dataset: datasetId, scope: scopeId } = useParams();
+export function ScopeProvider({ children, userParam, datasetParam, scopeParam }) {
+  const { user: userFromParams, dataset: datasetFromParams, scope: scopeFromParams } = useParams();
+
+  // Use provided params if available, otherwise use params from router
+  const userId = userParam || userFromParams;
+  const datasetId = datasetParam || datasetFromParams;
+  const scopeId = scopeParam || scopeFromParams;
 
   // Core scope data
   const [scope, setScope] = useState(null);
