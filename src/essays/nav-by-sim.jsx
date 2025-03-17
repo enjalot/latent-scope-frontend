@@ -9,6 +9,7 @@ import Search from '../components/Essays/Search';
 import SearchResults from '../components/Essays/SearchResults';
 import Examples from '../components/Essays/Examples';
 import EmbeddingVis from '../components/Essays/Embedding';
+// import EmbeddingVis from '../components/Essays/EmbeddingBarChart';
 import TokenEmbeddings, {
   AnimatedTokenEmbeddings,
   AverageTokenEmbeddings,
@@ -21,6 +22,13 @@ import { apiService } from '../lib/apiService';
 import hilbert from './cached/hilbert.json';
 import catAndCalculator from './cached/acatandacalculator.json';
 import catAndCalculatorEmbedding from './cached/embedding-acatandacalculator.json';
+/*
+catConstructed = getSteering({
+  "top_acts": [1,.5],
+  "top_indices": [13557, 6864]
+})
+*/
+import catConstructed from './cached/constructed-cat.json';
 
 function DadJokesSearch() {
   const { query, results, loading, handleSearch, setQuery, dataset, scope } = useSearch();
@@ -175,25 +183,69 @@ function NavBySim() {
           <P>
             When we submit our query we are actually converting it into a vector using an embedding
             model. In this case we're using <a href="">nomic-ai/nomic-embed-text-v1.5</a>, an open
-            source model with 768 dimensional embeddings. So we take the text like:
+            source model with 768 dimensional embeddings. We'll represent those 768 numbers as a
+            "waffle chart" just so we don't need to subject our eyes to 768 numbers every time we
+            want to represent an embedding.
           </P>
           <P>
             <code>A cat and a calculator</code>
+            <EmbeddingVis
+              embedding={catAndCalculatorEmbedding.embedding}
+              rows={8}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            ></EmbeddingVis>
           </P>
           <P>
-            And convert it into a vector with 768 numbers:
+            We also convert each row of our dataset into a vector by embedding the text column (in
+            this case, the joke). Here are the visualized results for the 4 most similar jokes to
+            our query:
             <br />
             <br />
-            <div style={{ marginLeft: '116px' }}>
-              <EmbeddingVis
-                embedding={catAndCalculatorEmbedding.embedding}
-                rows={8}
-                domain={[-0.1, 0, 0.1]}
-                height={48}
-              ></EmbeddingVis>
-            </div>
+            {catAndCalculator.slice(0, 4).map((joke, idx) => (
+              <div key={idx}>
+                <code>{joke.joke}</code>
+                <EmbeddingVis
+                  embedding={joke.vector}
+                  rows={8}
+                  domain={[-0.1, 0, 0.1]}
+                  height={48}
+                ></EmbeddingVis>
+              </div>
+            ))}
           </P>
 
+          <P>
+            Of course, it's very difficult for us to see similarity and differences across 768
+            dimensions, whether we visualize them or not! That's why most applications of similarity
+            search use a tool called cosine similarity to measure the distance between two
+            high-dimensional embeddings. But by reducing our comparison to a single number we lose a
+            lot of information about <em>what</em> is similar or different between our query and our
+            data.
+          </P>
+          {/* <EmbeddingVis embedding={catConstructed} rows={8} domain={[-0.2, 0, 0.2]} height={48} /> */}
+        </section>
+
+        <section>
+          <H3>Sparse Autoencoders</H3>
+          <P>TODO...</P>
+        </section>
+
+        <section>
+          <H3>Touch tokens</H3>
+          <P>
+            Let's see if we can tell which tokens are most activated by the different concepts...
+            TODO
+          </P>
+          <div style={{ marginLeft: '116px' }}>
+            <code>A cat and a calculator</code>
+            <EmbeddingVis
+              embedding={catAndCalculatorEmbedding.embedding}
+              rows={8}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            ></EmbeddingVis>
+          </div>
           <P>This is actually done by averaging the hidden states of each token in the query:</P>
           <AnimatedTokenEmbeddings
             embeddingData={catAndCalculatorEmbedding}
@@ -201,7 +253,6 @@ function NavBySim() {
             rows={8}
             height={48}
           />
-          <br />
           {/* <AverageTokenEmbeddings
             embeddingData={catAndCalculatorEmbedding}
             domain={[-0.1, 0, 0.1]}
@@ -209,8 +260,6 @@ function NavBySim() {
             height={48}
           /> */}
         </section>
-
-        <section>TODO...</section>
         {/* 
         <footer className={styles.footnotes}>
           <div className={styles.footnoteTitle}>Footnotes</div>

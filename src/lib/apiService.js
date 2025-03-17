@@ -93,15 +93,20 @@ export const apiService = {
       `https://enjalot--latent-scope-api-app-column-filter${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&query=${JSON.stringify(query)}`
     ).then((response) => response.json());
   },
-  searchNearestNeighbors: async (userId, datasetId, scope, query) => {
+  searchNearestNeighbors: async (userId, datasetId, scope, query, results = false) => {
     const scopeId = scope.id;
     // TODO: this should be a util function? converting the model to the HF name
     const modelId = scope.embedding?.model_id.replace('___', '/').split('-').slice(1).join('-');
-    return fetch(
-      `https://enjalot--latent-scope-api-app-nn${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&model=${modelId}&query=${query}`
-    )
+    let url = `https://enjalot--latent-scope-api-app-nn${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&model=${modelId}&query=${query}`;
+    if (results) {
+      url += `&results=${results}`;
+    }
+    return fetch(url)
       .then((response) => response.json())
       .then((data) => {
+        if (results) {
+          return data;
+        }
         let dists = [];
         let inds = data.map((d, i) => {
           dists[i] = d._distance;

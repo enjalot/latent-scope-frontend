@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import EmbeddingVis from './Embedding';
+// import EmbeddingVis from './EmbeddingBarChart';
 import styles from '../../essays/essays.module.scss';
 
 const TokenEmbeddings = ({

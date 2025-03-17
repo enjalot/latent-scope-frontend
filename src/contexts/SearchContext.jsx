@@ -24,19 +24,27 @@ export function SearchProvider({ children }) {
     setLoading(true);
     try {
       // Use the actual API service instead of the mock function
-      if (searchQuery === 'cows') {
-        setResults(cows);
-        setLoading(false);
-        return;
-      }
-      const data = await apiService.searchNearestNeighbors(userId, datasetId, scope, searchQuery);
-      const rows = await apiService.getRowsByIndices(userId, datasetId, scope.id, data.indices);
+      // if (searchQuery === 'cows') {
+      //   setResults(cows);
+      //   setLoading(false);
+      //   return;
+      // }
+      const data = await apiService.searchNearestNeighbors(
+        userId,
+        datasetId,
+        scope,
+        searchQuery,
+        true
+      );
+      console.log('DATA');
+      console.log(data);
+      // const rows = await apiService.getRowsByIndices(userId, datasetId, scope.id, data.indices);
       // Only update state if this is the latest request.
-      const rowsWithIdx = rows.map((row, idx) => ({
+      const rowsWithIdx = data.map((row, idx) => ({
         ...row,
         idx,
         ls_index: row.index,
-        ls_distance: data.distances[idx],
+        ls_distance: row._distance,
       }));
       setResults(rowsWithIdx);
     } catch (error) {
