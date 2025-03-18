@@ -3,6 +3,7 @@ import { Tooltip } from 'react-tooltip';
 import { Footnote, FootnoteTooltip } from '../components/Essays/Footnotes';
 import { P, H2, H3 } from '../components/Essays/Basics';
 
+import { saeAvailable } from '../lib/SAE';
 import { ScopeProvider } from '../contexts/ScopeContext';
 import { SearchProvider, useSearch } from '../contexts/SearchContext';
 import Search from '../components/Essays/Search';
@@ -15,6 +16,9 @@ import TokenEmbeddings, {
   AverageTokenEmbeddings,
 } from '../components/Essays/TokenEmbeddings';
 
+import SearchInline from '../components/Essays/SearchInline';
+import FeatureBars from '../components/Essays/FeatureBars';
+
 import styles from './essays.module.scss';
 // import styles from './nav-by-sim.module.scss';
 
@@ -22,6 +26,7 @@ import { apiService } from '../lib/apiService';
 import hilbert from './cached/hilbert.json';
 import catAndCalculator from './cached/acatandacalculator.json';
 import catAndCalculatorEmbedding from './cached/embedding-acatandacalculator.json';
+import cows from './cached/cows.json';
 /*
 catConstructed = getSteering({
   "top_acts": [1,.5],
@@ -30,46 +35,6 @@ catConstructed = getSteering({
 */
 import catConstructed from './cached/constructed-cat.json';
 
-function DadJokesSearch() {
-  const { query, results, loading, handleSearch, setQuery, dataset, scope } = useSearch();
-  const [initialSearchDone, setInitialSearchDone] = useState(false);
-
-  // Run initial search only once
-  useEffect(() => {
-    if (!initialSearchDone && scope) {
-      const defaultQuery = 'cows';
-      setQuery(defaultQuery);
-      handleSearch(defaultQuery);
-      setInitialSearchDone(true);
-    }
-  }, [handleSearch, setQuery, initialSearchDone, scope]);
-
-  const handleExampleClick = useCallback(
-    (example) => {
-      setQuery(example);
-      handleSearch(example);
-    },
-    [handleSearch, setQuery]
-  );
-
-  return (
-    <>
-      <Examples
-        examples={['cows', 'feline stuff', 'Will Smith', 'winter holidays']}
-        onSelectExample={handleExampleClick}
-      />
-      <Search defaultQuery={query} onSearch={handleSearch} value={query} onChange={setQuery} />
-      <SearchResults
-        results={results}
-        loading={loading}
-        dataset={dataset}
-        numToShow={10}
-        showIndex={false}
-      />
-    </>
-  );
-}
-
 function NavBySim() {
   // const embedding = useMemo(async () => {
   //   const emb = await apiService.calcTokenizedEmbeddings('A cat and a calculator');
@@ -77,6 +42,58 @@ function NavBySim() {
   //   console.log(emb);
   //   return emb.embedding;
   // }, []);
+  const [catAndCalculatorFeatures, setCatAndCalculatorFeatures] = useState(null);
+  const [catCalculatorModified, setCatCalculatorModified] = useState(null);
+  const [steeredResults, setSteeredResults] = useState(null);
+  const [saeFeatures, setSaeFeatures] = useState(null);
+  useEffect(() => {
+    apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
+      console.log('SAE FEATURES', fts);
+      setSaeFeatures(fts);
+    });
+  }, []);
+  useEffect(() => {
+    apiService.calcFeatures(catAndCalculatorEmbedding.embedding).then((features) => {
+      console.log('FEATURES');
+      console.log(features);
+      setCatAndCalculatorFeatures(features);
+      let catCalculatorModified = {
+        ...features,
+      };
+      catCalculatorModified.top_acts[0] = cows[0].sae_acts[0];
+      catCalculatorModified.top_indices[0] = cows[0].sae_indices[0];
+      setCatCalculatorModified(catCalculatorModified);
+      apiService.calcSteering(catCalculatorModified).then((embed) => {
+        apiService.getNNEmbed('enjalot/ls-dadabase', 'scopes-001', embed).then((results) => {
+          console.log('steered results', results);
+          setSteeredResults(results);
+        });
+      });
+    });
+  }, []);
+  const [tokenFeatures, setTokenFeatures] = useState([]);
+  useEffect(() => {
+    apiService
+      .calcFeatures(
+        catAndCalculatorEmbedding.hidden_states[0].map((hs) => {
+          console.log('HS', hs);
+          let norm = Math.sqrt(hs.reduce((sum, val) => sum + val * val, 0));
+          let normalized = hs.map((val) => val / norm);
+          return normalized;
+        })
+      )
+      .then((features) => {
+        console.log('TOKEN FEATURES', features);
+        let tokfs = features.top_acts.map((act, i) => {
+          return {
+            top_acts: act,
+            top_indices: features.top_indices[i],
+          };
+        });
+        console.log('TOKFS', tokfs);
+        setTokenFeatures(tokfs);
+      });
+  }, []);
   return (
     <div className={styles.essayContainer}>
       <article className={styles.essayContent}>
@@ -115,7 +132,10 @@ function NavBySim() {
 
           <ScopeProvider userParam="enjalot" datasetParam="ls-dadabase" scopeParam="scopes-001">
             <SearchProvider>
-              <DadJokesSearch />
+              <SearchInline
+                defaultQuery="cows"
+                examples={['cows', 'feline stuff', 'Will Smith', 'winter holidays']}
+              />
             </SearchProvider>
           </ScopeProvider>
 
@@ -228,9 +248,77 @@ function NavBySim() {
 
         <section>
           <H3>Sparse Autoencoders</H3>
-          <P>TODO...</P>
-        </section>
+          <P>TODO: introduce</P>
+          <P>
+            We can break down our query embedding into directions (concepts) via the SAE:
+            <br />
+            <code>A cat and a calculator</code>
+            {/* <EmbeddingVis
+              embedding={catAndCalculatorEmbedding.embedding}
+              rows={8}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            ></EmbeddingVis> */}
+            <FeatureBars topk={catAndCalculatorFeatures} features={saeFeatures} numToShow={10} />
+          </P>
+          <P>
+            Now let's look at the top 10 directions of the top similarity result:
+            <br />
+            <code>What do you call a reptile that is good at math? A Calcugator</code>
+            {/* <EmbeddingVis
+              embedding={catAndCalculator[0].vector}
+              rows={8}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            ></EmbeddingVis> */}
+            <FeatureBars topk={catAndCalculator[0]} features={saeFeatures} numToShow={10} />
+          </P>
+          <P>
+            Notice how the top 6 directions in the top result are found near the top of the query.
+            It's only the 8th feature that specifies "reptilian themes" that takes the result in a
+            slightly different direciton.
+          </P>
 
+          <H3>Steering 🐮</H3>
+          <P>
+            Now let's take a look at a totally different query, showing just the top 5 directions:
+            <br />
+            <code>cows</code>
+            <FeatureBars topk={cows[0]} features={saeFeatures} numToShow={5} />
+            What if we were to take the top feature of this query{' '}
+            <em>(6215 "characteristics and significance of cows")</em> and replace the top feature
+            of our cat and calculator query:
+            <br />
+            <FeatureBars topk={catCalculatorModified} features={saeFeatures} numToShow={10} />
+          </P>
+          <P>
+            Now let's do similarity search using the reconstructed embedding of our modified query:
+            <br />
+            {steeredResults && (
+              <SearchResults
+                results={steeredResults}
+                loading={false}
+                dataset={{ text_column: 'joke' }}
+                numToShow={5}
+                showIndex={false}
+              />
+            )}
+          </P>
+          <P>
+            Now we get several jokes about cowculators! Notice the Calcugator joke is still #4 in
+            the search results.
+          </P>
+        </section>
+        {/* 
+
+
+
+------------------------------------------------------------------------------------------
+
+
+
+
+*/}
         <section>
           <H3>Touch tokens</H3>
           <P>
@@ -259,6 +347,13 @@ function NavBySim() {
             rows={8}
             height={48}
           /> */}
+
+          {tokenFeatures.map((tokf, i) => (
+            <div key={i}>
+              <code>{catAndCalculatorEmbedding.tokens[i]}</code>
+              <FeatureBars topk={tokf} features={saeFeatures} numToShow={5} />
+            </div>
+          ))}
         </section>
         {/* 
         <footer className={styles.footnotes}>

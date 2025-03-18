@@ -158,6 +158,13 @@ export const apiService = {
         scope: scope,
         embedding: embedding,
       }),
-    }).then((response) => response.json());
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        data.forEach((d) => {
+          d.ls_distance = d._distance;
+        });
+        return data;
+      });
   },
 };
