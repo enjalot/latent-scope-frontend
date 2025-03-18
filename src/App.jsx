@@ -6,6 +6,7 @@ import Nav from './components/Nav';
 import './App.css';
 
 import NavBySim from './essays/nav-by-sim';
+import TouchTokens from './essays/touch-tokens';
 
 import 'react-element-forge/dist/style.css';
 import './latentscope--brand-theme.scss';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/scope/:user/:dataset/:scope" element={<FullScreenExplore />} />
 
           <Route path="/essays/nav-by-sim" element={<NavBySim />} />
+          <Route path="/essays/touch-tokens" element={<TouchTokens />} />
         </Routes>
       </div>
     </Router>

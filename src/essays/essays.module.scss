@@ -70,7 +70,7 @@
   font-family: var(--font-secondary), var(--font-backup);
   font-size: 1.2rem;
   line-height: 1.8;
-  margin-bottom: 1.8rem;
+  margin-bottom: 2.3rem;
   
   @media (max-width: 767px) {
     font-size: 1.05rem;
@@ -269,4 +269,19 @@
   &:hover {
     background-color: var(--color-neutral-2); /* Adjust this color as needed */
   }
+}
+
+.query {
+  font-family: "Roboto Mono", monospace;
+  font-size: 14px;
+  line-height: 12px;
+  color: var(--color-text-main);
+  text-decoration: underline;
+}
+.array {
+  font-size: 10px;
+  line-height: 12px;
+  font-family: "Roboto Mono", monospace;
+  line-break: space;
+  color: var(--color-text-subtle);
 }

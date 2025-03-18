@@ -11,4 +11,11 @@ function H3({ children }) {
   return <h3 className={`${styles.sectionHeader} ${styles.h3}`}>{children}</h3>;
 }
 
-export { P, H2, H3 };
+function Query({ children }) {
+  return <span className={styles.query}>{children}</span>;
+}
+function Array({ children }) {
+  return <p className={styles.array}>{children}</p>;
+}
+
+export { P, H2, H3, Query, Array };
