@@ -10,6 +10,7 @@ import Search from '../components/Essays/Search';
 import SearchResults from '../components/Essays/SearchResults';
 import Examples from '../components/Essays/Examples';
 import EmbeddingVis from '../components/Essays/Embedding';
+import CompareFeatureBars from '../components/Essays/CompareFeatureBars';
 // import EmbeddingVis from '../components/Essays/EmbeddingBarChart';
 import TokenEmbeddings, {
   AnimatedTokenEmbeddings,
@@ -34,6 +35,7 @@ catConstructed = getSteering({
 })
 */
 import catConstructed from './cached/constructed-cat.json';
+import SteeringPlayground from '../components/Essays/SteeringPlayground';
 
 function NavBySim() {
   // const embedding = useMemo(async () => {
@@ -59,6 +61,8 @@ function NavBySim() {
       setCatAndCalculatorFeatures(features);
       let catCalculatorModified = {
         ...features,
+        top_acts: [...features.top_acts],
+        top_indices: [...features.top_indices],
       };
       catCalculatorModified.top_acts[0] = cows[0].sae_acts[0];
       catCalculatorModified.top_indices[0] = cows[0].sae_indices[0];
@@ -76,7 +80,6 @@ function NavBySim() {
     apiService
       .calcFeatures(
         catAndCalculatorEmbedding.hidden_states[0].map((hs) => {
-          console.log('HS', hs);
           let norm = Math.sqrt(hs.reduce((sum, val) => sum + val * val, 0));
           let normalized = hs.map((val) => val / norm);
           return normalized;
@@ -94,11 +97,13 @@ function NavBySim() {
         setTokenFeatures(tokfs);
       });
   }, []);
+  const [selectedResult, setSelectedResult] = useState(catAndCalculator[0]);
+
   return (
     <div className={styles.essayContainer}>
       <article className={styles.essayContent}>
         <h1 className={styles.title}>Navigating by Similarity</h1>
-        <p className={styles.subtitle}>Gaining a Visual Intuition for Latent Space</p>
+        <p className={styles.subtitle}>High-dimensional Wayfinding with Sparse Autoencoders</p>
 
         <div className={styles.meta}>
           <span className={styles.author}>By Ian Johnson</span>
@@ -244,6 +249,8 @@ function NavBySim() {
                 ></EmbeddingVis>
               </div>
             ))}
+            <br />
+            TODO: show a totally different embedding, like for "winter holidays"
           </P>
 
           <P>
@@ -263,7 +270,7 @@ function NavBySim() {
           <P>
             We can break down our query embedding into directions (concepts) via the SAE:
             <br />
-            <code>A cat and a calculator</code>
+            <Query>A cat and a calculator</Query>
             {/* <EmbeddingVis
               embedding={catAndCalculatorEmbedding.embedding}
               rows={8}
@@ -275,7 +282,7 @@ function NavBySim() {
           <P>
             Now let's look at the top 10 directions of the top similarity result:
             <br />
-            <code>What do you call a reptile that is good at math? A Calcugator</code>
+            <Query>What do you call a reptile that is good at math? A Calcugator</Query>
             {/* <EmbeddingVis
               embedding={catAndCalculator[0].vector}
               rows={8}
@@ -285,11 +292,30 @@ function NavBySim() {
             <FeatureBars topk={catAndCalculator[0]} features={saeFeatures} numToShow={10} />
           </P>
           <P>
-            Notice how the top 6 directions in the top result are found near the top of the query.
-            It's only the 8th feature that specifies "reptilian themes" that takes the result in a
-            slightly different direciton.
+            We can make a direct comparison between our query and our document to notice how the top
+            6 directions in the document are also top directions in our query:
           </P>
-
+          <br />
+          <CompareFeatureBars
+            queryA="A cat and a calculator"
+            queryB={selectedResult.joke}
+            topkA={catAndCalculatorFeatures}
+            topkB={selectedResult}
+            features={saeFeatures}
+            numToShow={10}
+          />
+          <br />
+          <SearchResults
+            results={catAndCalculator}
+            loading={false}
+            dataset={{ text_column: 'joke' }}
+            numToShow={5}
+            showIndex={false}
+            onSelect={setSelectedResult}
+            selectedResult={selectedResult}
+            selectable={true}
+          />
+          <P>Try selecting other results to see how the directions compare with the query.</P>
           <H3>Steering 🐮</H3>
           <P>
             Now let's take a look at a totally different query, showing just the top 5 directions:
@@ -323,7 +349,15 @@ function NavBySim() {
 
         <section>
           <H3>Playground</H3>
-          <P>TODO: Playground</P>
+          <P>
+            Now you can explore the Sparse Autoencoder features yourself and see how adjusting
+            different semantic dimensions affects search results:
+          </P>
+          <ScopeProvider userParam="enjalot" datasetParam="ls-dadabase" scopeParam="scopes-001">
+            <SearchProvider>
+              <SteeringPlayground saeFeatures={saeFeatures} />
+            </SearchProvider>
+          </ScopeProvider>
         </section>
 
         <section>

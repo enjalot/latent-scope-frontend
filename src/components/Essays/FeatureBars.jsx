@@ -36,10 +36,11 @@ const ActivationBar = ({
           }
         }
       >
-        <span>
-          {feature.feature}: {feature.label}
-        </span>
-        <span>
+        <div className={styles.labelContainer}>
+          <span className={styles.featureIdPill}>{feature.feature}</span>
+          <span className={styles.featureLabel}>{feature.label}</span>
+        </div>
+        <span className={styles.activationValue}>
           {activation.toFixed(3)}
           {/* ({((100 * activation) / feature.max_activation).toFixed(0)}%) */}
         </span>

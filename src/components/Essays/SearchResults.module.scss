@@ -148,3 +148,19 @@
     transform: rotate(360deg);
   }
 }
+
+.selected {
+  border: 2px solid #0070f3; /* Bold blue border */
+  background-color: rgba(0, 112, 243, 0.1); /* Light blue background */
+  box-shadow: 0 0 8px rgba(0, 112, 243, 0.3); /* Subtle blue glow */
+}
+
+.selectable {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    border-color: #0070f3;
+    transform: translateY(-2px);
+  }
+}

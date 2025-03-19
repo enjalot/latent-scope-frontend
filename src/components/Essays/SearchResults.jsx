@@ -1,17 +1,36 @@
-import React, { useState, useCallback, memo, useRef } from 'react';
+import React, { useState, useCallback, memo, useRef, useEffect } from 'react';
 import styles from './SearchResults.module.scss';
 
 const ResultRow = memo(
-  ({ result, isHighlighted, onHover, index, dataset, showIndex = true, showDistance = true }) => {
+  ({
+    result,
+    isHighlighted,
+    isSelected,
+    onHover,
+    onSelect,
+    index,
+    dataset,
+    showIndex = true,
+    showDistance = true,
+    selectable = false,
+  }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const expand = useCallback(() => setIsExpanded(!isExpanded), [isExpanded]);
 
+    const handleClick = useCallback(() => {
+      if (selectable) {
+        onSelect(result);
+      } else {
+        expand();
+      }
+    }, [selectable, onSelect, result, expand]);
+
     return (
       <div
-        className={`${styles.resultCard} ${isHighlighted ? styles.highlighted : ''} ${isExpanded ? styles.expanded : ''}`}
+        className={`${styles.resultCard} ${isHighlighted ? styles.highlighted : ''} ${isExpanded ? styles.expanded : ''} ${isSelected ? styles.selected : ''} ${selectable ? styles.selectable : ''}`}
         onMouseEnter={() => onHover(result.id || index)}
         onMouseLeave={() => onHover(null)}
-        // onClick={expand}
+        onClick={handleClick}
       >
         {showIndex && <div className={styles.indexBadge}>{index + 1}</div>}
         <div className={`${styles.cardContent}`}>
@@ -37,8 +56,37 @@ function SearchResults({
   showDistance = true,
   loading = false,
   onHover = () => {},
-  onClick = () => {},
+  onSelect = () => {},
+  selectedResult = null,
+  initialSelectedIndex = null,
+  selectable = false,
 }) {
+  // State to track the selected result
+  const [selected, setSelected] = useState(null);
+
+  // Initialize with the initial selected index if provided
+  useEffect(() => {
+    if (selectable) {
+      if (initialSelectedIndex !== null && results.length > initialSelectedIndex) {
+        setSelected(results[initialSelectedIndex]);
+        onSelect(results[initialSelectedIndex]);
+      } else if (selectedResult) {
+        setSelected(selectedResult);
+      }
+    }
+  }, [initialSelectedIndex, results, selectedResult, onSelect, selectable]);
+
+  // Handle row selection
+  const handleSelect = useCallback(
+    (result) => {
+      if (selectable) {
+        setSelected(result);
+        onSelect(result);
+      }
+    },
+    [onSelect, selectable]
+  );
+
   if (loading) {
     return (
       <div className={styles.searchResults}>
@@ -55,7 +103,9 @@ function SearchResults({
   if (results.length === 0) {
     return <div className={styles.noResults}>No matching results found.</div>;
   }
+  // console.log('=== Search Results ===');
   console.log(results.slice(0, numToShow));
+  console.log(selected);
 
   return (
     <div className={styles.searchResults}>
@@ -66,11 +116,13 @@ function SearchResults({
             index={result.index}
             result={result}
             isHighlighted={false}
+            isSelected={selected && selected.index === result.index && result.index !== undefined}
             showIndex={showIndex}
             showDistance={showDistance}
             onHover={onHover}
-            onClick={onClick}
+            onSelect={handleSelect}
             dataset={dataset}
+            selectable={selectable}
           />
         ))}
       </div>
