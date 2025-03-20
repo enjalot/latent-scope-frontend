@@ -110,13 +110,17 @@
 
 .featureSelector {
   position: relative;
+  width: calc(100% - 8px);
   
   .featureSearch {
     width: 100%;
-    padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 14px;
+    padding: 0px 4px;
+    margin: 0;
+    min-width: 100px;
+    outline: none;
   }
   
   .featureDropdown {
@@ -152,6 +156,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  width: 100%;
 }
 
 .editableActivationBar {
@@ -183,19 +188,19 @@
 }
 
 .editableFeatureContainer {
-  flex: 0 0 auto;
-  max-width: 60%;
+  flex: 1 0 auto;
+  // max-width: 60%;
   height: 100%;
   display: flex;
   align-items: center;
 }
 
 .editableActivationControls {
-  flex: 1;
+  // flex: 1;
   display: flex;
   align-items: center;
   gap: 2px;
-  margin-left: 18px;
+  // margin-left: 14px;
   height: 100%;
 }
 

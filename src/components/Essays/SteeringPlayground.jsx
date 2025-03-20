@@ -7,7 +7,7 @@ import EditableFeatureBars from './EditableFeatureBars';
 import styles from './SteeringPlayground.module.scss';
 import { apiService } from '../../lib/apiService';
 
-function SteeringPlayground({ saeFeatures }) {
+function SteeringPlayground({ saeFeatures, defaultQuery }) {
   const { query, results, loading, handleSearch, setQuery, dataset, scope } = useSearch();
   const [queryEmbedding, setQueryEmbedding] = useState(null);
   const [queryFeatures, setQueryFeatures] = useState(null);
@@ -19,10 +19,12 @@ function SteeringPlayground({ saeFeatures }) {
 
   // Use effect to initialize localQuery when component mounts
   useEffect(() => {
-    if (query) {
-      setLocalQuery(query);
+    if (defaultQuery) {
+      setQuery(defaultQuery);
+      setLocalQuery(defaultQuery);
+      handleSearch(defaultQuery);
     }
-  }, []);
+  }, [defaultQuery]);
 
   // Calculate embedding and features when query changes (after search is performed)
   useEffect(() => {
@@ -74,80 +76,85 @@ function SteeringPlayground({ saeFeatures }) {
     performSteeringSearch();
   }, [editedFeatures, scope, userHasEditedFeatures]);
 
-  // Initial search
-  // useEffect(() => {
-  //   if (scope && defaultQuery) {
-  //     setQuery(defaultQuery);
-  //     handleSearch(defaultQuery);
-  //   }
-  // }, [scope, defaultQuery, setQuery, handleSearch]);
-
   const handleFeaturesChange = useCallback((newFeatures) => {
     setEditedFeatures(newFeatures);
     setUserHasEditedFeatures(true);
   }, []);
 
   const handleLocalSearch = (searchQuery) => {
+    setLocalQuery(searchQuery);
     setQuery(searchQuery);
     handleSearch(searchQuery);
   };
 
   return (
     <div className={styles.steeringPlayground}>
-      <div className={styles.column}>
-        <h3>Original Search</h3>
-        <Search
-          defaultQuery={query}
-          onSearch={handleLocalSearch}
-          value={localQuery}
-          onChange={setLocalQuery}
-        />
-        {queryFeatures && saeFeatures && (
-          <>
-            <h4>Query Features</h4>
-            <FeatureBars topk={queryFeatures} features={saeFeatures} numToShow={10} />
-          </>
-        )}
-        <h4>Results</h4>
-        <div className={styles.resultsContainer}>
-          {results && results.length > 0 ? (
-            <SearchResults
-              results={results}
-              loading={loading}
-              dataset={dataset}
-              numToShow={5}
-              showIndex={false}
-            />
-          ) : (
-            !loading && <p>No results found. Try a different search query.</p>
-          )}
+      <div className={styles.headerSection}>
+        <div className={styles.column}>
+          <h3>Original Search</h3>
+          <Search onSearch={handleLocalSearch} value={localQuery} onChange={setLocalQuery} />
+        </div>
+
+        <div className={styles.column}>
+          <h3>Steering</h3>
+          <p style={{ marginBottom: '53px' }}>
+            Adjust feature activations to steer the search in different directions
+          </p>
         </div>
       </div>
 
-      <div className={styles.column}>
-        <h3>Steering</h3>
-        <p style={{ marginBottom: '53px' }}>
-          Adjust feature activations to steer the search in different directions
-        </p>
-        {queryFeatures && saeFeatures && (
-          <EditableFeatureBars
-            topk={queryFeatures}
-            features={saeFeatures}
-            numToShow={10}
-            onFeaturesChange={handleFeaturesChange}
-          />
-        )}
-        <h4>Steered Results</h4>
-        <div className={styles.resultsContainer}>
-          {steeringResults && (
-            <SearchResults
-              results={steeringResults}
-              loading={steeringLoading}
-              dataset={dataset}
-              numToShow={5}
-              showIndex={false}
-            />
-          )}
+      <div className={styles.fullWidthSection}>
+        <div className={styles.fullWidthInner}>
+          <div className={styles.featureAndResultsGrid}>
+            <div className={styles.featureColumn}>
+              {queryFeatures && saeFeatures && (
+                <>
+                  <h4>Query Features</h4>
+                  <FeatureBars topk={queryFeatures} features={saeFeatures} numToShow={10} />
+                </>
+              )}
+              <h4>Results</h4>
+              <div className={styles.resultsContainer}>
+                {results && results.length > 0 ? (
+                  <SearchResults
+                    results={results}
+                    loading={loading}
+                    dataset={dataset}
+                    numToShow={5}
+                    showIndex={false}
+                  />
+                ) : (
+                  !loading && <p>No results found. Try a different search query.</p>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.featureColumn}>
+              {queryFeatures && saeFeatures && (
+                <>
+                  <h4>Steered Features</h4>
+                  <EditableFeatureBars
+                    topk={queryFeatures}
+                    features={saeFeatures}
+                    numToShow={10}
+                    onFeaturesChange={handleFeaturesChange}
+                  />
+                </>
+              )}
+              <h4>Steered Results</h4>
+              <div className={styles.resultsContainer}>
+                {steeringResults && (
+                  <SearchResults
+                    results={steeringResults}
+                    loading={steeringLoading}
+                    dataset={dataset}
+                    numToShow={5}
+                    showIndex={false}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

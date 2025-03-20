@@ -296,14 +296,18 @@ function NavBySim() {
             6 directions in the document are also top directions in our query:
           </P>
           <br />
-          <CompareFeatureBars
-            queryA="A cat and a calculator"
-            queryB={selectedResult.joke}
-            topkA={catAndCalculatorFeatures}
-            topkB={selectedResult}
-            features={saeFeatures}
-            numToShow={10}
-          />
+          <div className={styles.fullWidth}>
+            <div className={styles.fullWidthInner}>
+              <CompareFeatureBars
+                queryA="A cat and a calculator"
+                queryB={selectedResult.joke}
+                topkA={catAndCalculatorFeatures}
+                topkB={selectedResult}
+                features={saeFeatures}
+                numToShow={10}
+              />
+            </div>
+          </div>
           <br />
           <SearchResults
             results={catAndCalculator}
@@ -355,7 +359,7 @@ function NavBySim() {
           </P>
           <ScopeProvider userParam="enjalot" datasetParam="ls-dadabase" scopeParam="scopes-001">
             <SearchProvider>
-              <SteeringPlayground saeFeatures={saeFeatures} />
+              <SteeringPlayground saeFeatures={saeFeatures} defaultQuery="A cat and a calculator" />
             </SearchProvider>
           </ScopeProvider>
         </section>

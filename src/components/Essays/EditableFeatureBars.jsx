@@ -45,15 +45,6 @@ const FeatureAutocomplete = ({ currentFeature, features, onSelect, featureColor 
           onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
           placeholder={currentFeature.label}
           className={styles.featureSearch}
-          style={{
-            padding: '0px 4px',
-            margin: 0,
-            // border: 'none',
-            // background: 'transparent',
-            width: 'auto',
-            minWidth: '100px',
-            outline: 'none',
-          }}
         />
       </div>
       {showDropdown && filteredFeatures.length > 0 && (
