@@ -1,6 +1,7 @@
 import { useMemo, useEffect } from 'react';
 import styles from './SubNav.module.css';
 import scopes from '../lib/scopes.js';
+import Title from './Title';
 
 function SubNav({ user, dataset, scope }) {
   if (!dataset) {
@@ -27,6 +28,7 @@ function SubNav({ user, dataset, scope }) {
       <div className={styles.tabsContainer}>
         <div className={styles.leftTabs}>
           <div className={styles.scope}>
+            <Title title={scopeDetail?.label} />
             <span className={styles.scopeTitle}>{scopeDetail?.label}</span>
             {/* <span>
               {user}/{dataset?.id}/{scope?.id}

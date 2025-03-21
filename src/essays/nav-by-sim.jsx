@@ -36,6 +36,7 @@ catConstructed = getSteering({
 */
 import catConstructed from './cached/constructed-cat.json';
 import SteeringPlayground from '../components/Essays/SteeringPlayground';
+import Title from '../components/Title';
 
 function NavBySim() {
   // const embedding = useMemo(async () => {
@@ -101,6 +102,7 @@ function NavBySim() {
 
   return (
     <div className={styles.essayContainer}>
+      <Title title="Navigating by Similarity" />
       <article className={styles.essayContent}>
         <h1 className={styles.title}>Navigating by Similarity</h1>
         <p className={styles.subtitle}>High-dimensional Wayfinding with Sparse Autoencoders</p>
