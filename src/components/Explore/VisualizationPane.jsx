@@ -55,7 +55,8 @@ function VisualizationPane({
 
   const isSmallScreen = useSmallScreen();
 
-  const { featureFilter, clusterFilter, shownIndices, filterConfig } = useFilter();
+  const { featureFilter, clusterFilter, shownIndices, filterConfig, setCenteredIndices } =
+    useFilter();
 
   // only show the hull if we are filtering by cluster
   const showHull = filterConfig?.type === filterConstants.CLUSTER;
@@ -291,6 +292,8 @@ function VisualizationPane({
         {scope && (
           <Scatter
             points={drawingPoints}
+            shownIndices={shownIndices}
+            setCenteredIndices={setCenteredIndices}
             width={width}
             height={height}
             onView={handleView}

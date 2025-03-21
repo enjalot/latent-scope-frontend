@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect, useMemo } from 'react';
 import { Tooltip } from 'react-tooltip';
+import { interpolateTurbo } from 'd3-scale-chromatic';
 import { Footnote, FootnoteTooltip } from '../components/Essays/Footnotes';
 import { P, H2, H3, Query, Array } from '../components/Essays/Basics';
 
@@ -10,12 +11,16 @@ import Search from '../components/Essays/Search';
 import SearchResults from '../components/Essays/SearchResults';
 import Examples from '../components/Essays/Examples';
 import EmbeddingVis from '../components/Essays/Embedding';
+import EmbeddingInline from '../components/Essays/EmbeddingInline';
 import CompareFeatureBars from '../components/Essays/CompareFeatureBars';
 // import EmbeddingVis from '../components/Essays/EmbeddingBarChart';
 import TokenEmbeddings, {
   AnimatedTokenEmbeddings,
   AverageTokenEmbeddings,
 } from '../components/Essays/TokenEmbeddings';
+import FeatureAutocomplete from '../components/Essays/FeatureAutocomplete';
+
+import { cosineSimilarity } from '../utils';
 
 import SearchInline from '../components/Essays/SearchInline';
 import FeatureBars from '../components/Essays/FeatureBars';
@@ -37,6 +42,7 @@ catConstructed = getSteering({
 import catConstructed from './cached/constructed-cat.json';
 import SteeringPlayground from '../components/Essays/SteeringPlayground';
 import Title from '../components/Title';
+import FeatureScatter from '../components/Essays/FeatureScatter';
 
 function NavBySim() {
   // const embedding = useMemo(async () => {
@@ -49,6 +55,16 @@ function NavBySim() {
   const [catCalculatorModified, setCatCalculatorModified] = useState(null);
   const [steeredResults, setSteeredResults] = useState(null);
   const [saeFeatures, setSaeFeatures] = useState(null);
+  const [selectedFeature, setSelectedFeature] = useState(null);
+  const [steeredEmbedding, setSteeredEmbedding] = useState(null);
+
+  useEffect(() => {
+    apiService.calcFeatures(catAndCalculatorEmbedding.embedding).then(async (features) => {
+      const se = await apiService.calcSteering(features);
+      setSteeredEmbedding(se);
+    });
+  }, []);
+
   useEffect(() => {
     apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
       console.log('SAE FEATURES', fts);
@@ -99,6 +115,15 @@ function NavBySim() {
       });
   }, []);
   const [selectedResult, setSelectedResult] = useState(catAndCalculator[0]);
+
+  const handleFeatureSelect = useCallback((feature) => {
+    console.log('Selected feature:', feature);
+    setSelectedFeature(feature);
+  }, []);
+
+  const handleSteer = useCallback((embedding) => {
+    setSteeredEmbedding(embedding);
+  }, []);
 
   return (
     <div className={styles.essayContainer}>
@@ -252,7 +277,16 @@ function NavBySim() {
               </div>
             ))}
             <br />
-            TODO: show a totally different embedding, like for "winter holidays"
+            You can embed any text and see what it looks like, flipping through the examples below
+            you may also be able to sense that some are very different and some are more similar:
+            <EmbeddingInline
+              defaultQuery="winter holidays"
+              examples={[
+                'winter holidays',
+                'A cat and a calculator',
+                'Where do cats write notes? Scratch Paper!',
+              ]}
+            />
           </P>
 
           <P>
@@ -266,33 +300,76 @@ function NavBySim() {
         <section>
           <H3>Sparse Autoencoders</H3>
           <P>
-            TODO: introduce Sparse Autoencoders
-            {/* <FootnoteTooltip number="1" text="Anthropic circuits" /> */}
+            Sparse Autoencoders (SAEs) provide a powerful way to interpret embeddings by breaking
+            them down into interpretable features. Each feature in an SAE corresponds to a specific
+            direction in the embedding space that often aligns with an interpretable concept.
           </P>
+          <P>
+            Below is a visualization of the SAE features. Each point represents a feature, and its
+            position is determined by its semantic meaning. Similar features are positioned closer
+            together. Try hovering over points to see feature descriptions, or click on a feature to
+            select it.
+          </P>
+
+          {saeFeatures && (
+            <FeatureScatter
+              features={saeFeatures}
+              selectedFeature={selectedFeature}
+              onFeature={handleFeatureSelect}
+              width={700}
+              height={500}
+            />
+          )}
+
           <P>
             We can break down our query embedding into directions (concepts) via the SAE:
             <br />
             <Query>A cat and a calculator</Query>
-            {/* <EmbeddingVis
+            <FeatureBars topk={catAndCalculatorFeatures} features={saeFeatures} numToShow={10} />
+          </P>
+          <P>
+            We can also reconstruct the embedding from the SAE features, which will give us an
+            approximation of our original embedding:
+            <Query>A cat and a calculator</Query>
+            <EmbeddingVis
               embedding={catAndCalculatorEmbedding.embedding}
               rows={8}
               domain={[-0.1, 0, 0.1]}
               height={48}
-            ></EmbeddingVis> */}
-            <FeatureBars topk={catAndCalculatorFeatures} features={saeFeatures} numToShow={10} />
+            ></EmbeddingVis>
+            <br />
+            <Query>A cat and a calculator</Query>{' '}
+            <em style={{ fontSize: '0.8em' }}>(reconstructed)</em>
+            {steeredEmbedding && (
+              <EmbeddingVis
+                embedding={steeredEmbedding}
+                rows={8}
+                domain={[-0.1, 0, 0.1]}
+                height={48}
+              ></EmbeddingVis>
+            )}
           </P>
           <P>
+            You may be able to spot small differences in the visualization, but the cosine
+            similarity between the two embeddings is{' '}
+            <b>
+              {steeredEmbedding
+                ? cosineSimilarity(catAndCalculatorEmbedding.embedding, steeredEmbedding)?.toFixed(
+                    3
+                  )
+                : 'N/A'}
+            </b>
+            , which is still pretty high, but not perfect.
+          </P>
+          {/* <P>
             Now let's look at the top 10 directions of the top similarity result:
             <br />
             <Query>What do you call a reptile that is good at math? A Calcugator</Query>
-            {/* <EmbeddingVis
-              embedding={catAndCalculator[0].vector}
-              rows={8}
-              domain={[-0.1, 0, 0.1]}
-              height={48}
-            ></EmbeddingVis> */}
             <FeatureBars topk={catAndCalculator[0]} features={saeFeatures} numToShow={10} />
-          </P>
+          </P> */}
+
+          <H3>Comparisons</H3>
+
           <P>
             We can make a direct comparison between our query and our document to notice how the top
             6 directions in the document are also top directions in our query:
@@ -310,7 +387,7 @@ function NavBySim() {
               />
             </div>
           </div>
-          <br />
+          <em>Try selecting other results to see how the directions compare with the query.</em>
           <SearchResults
             results={catAndCalculator}
             loading={false}
@@ -321,7 +398,43 @@ function NavBySim() {
             selectedResult={selectedResult}
             selectable={true}
           />
-          <P>Try selecting other results to see how the directions compare with the query.</P>
+
+          <H3>Filtering</H3>
+          <P>
+            We can also filter our dataset by finding the rows with the top activations for a given
+            feature. This may be useful if you have identified a feature of interest and want to see
+            what if any of your data activates strongly on that feature. To demonstrate this, select
+            a feature and see the top 10 results that activate strongly on that feature:
+          </P>
+
+          {saeFeatures && (
+            <div
+              className={styles.featureSearchContainer}
+              style={{ maxWidth: '600px', margin: '20px 0' }}
+            >
+              <FeatureAutocomplete
+                currentFeature={saeFeatures.find((f) => f.feature === selectedFeature)}
+                features={saeFeatures}
+                onSelect={(feature) => setSelectedFeature(feature.feature)}
+                featureColor={
+                  selectedFeature &&
+                  interpolateTurbo(saeFeatures.find((f) => f.feature === selectedFeature)?.order)
+                }
+                placeholder="Search for a feature..."
+              />
+            </div>
+          )}
+
+          <P>
+            This form of filtering is supported directly in Latent Scope, see{' '}
+            <a
+              href={`https://latent.estate/scope/enjalot/ls-dadabase/scopes-001?filter=${selectedFeature}`}
+            >
+              all the jokes
+            </a>{' '}
+            that activate strongly on the {selectedFeature} feature.
+          </P>
+
           <H3>Steering 🐮</H3>
           <P>
             Now let's take a look at a totally different query, showing just the top 5 directions:
@@ -354,7 +467,7 @@ function NavBySim() {
         </section>
 
         <section>
-          <H3>Playground</H3>
+          <H3>Steering Playground</H3>
           <P>
             Now you can explore the Sparse Autoencoder features yourself and see how adjusting
             different semantic dimensions affects search results:
@@ -364,6 +477,13 @@ function NavBySim() {
               <SteeringPlayground saeFeatures={saeFeatures} defaultQuery="A cat and a calculator" />
             </SearchProvider>
           </ScopeProvider>
+          <P>
+            Something you may have noticed is that before you start editing the steered features,
+            your search results might be slightly different from the original query search results.
+            This is beause when we use the SAE to reconstruct the original embedding it doesn't do a
+            perfect job. Let's take a closer look, we can see the two embeddings visually are
+            similar:
+          </P>
         </section>
 
         <section>

@@ -6,12 +6,14 @@ import FeatureBars from './FeatureBars';
 import EditableFeatureBars from './EditableFeatureBars';
 import styles from './SteeringPlayground.module.scss';
 import { apiService } from '../../lib/apiService';
+import { cosineSimilarity } from '../../utils';
 
-function SteeringPlayground({ saeFeatures, defaultQuery }) {
+function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
   const { query, results, loading, handleSearch, setQuery, dataset, scope } = useSearch();
   const [queryEmbedding, setQueryEmbedding] = useState(null);
   const [queryFeatures, setQueryFeatures] = useState(null);
   const [editedFeatures, setEditedFeatures] = useState(null);
+  const [steeringEmbedding, setSteeringEmbedding] = useState(null);
   const [steeringResults, setSteeringResults] = useState(null);
   const [steeringLoading, setSteeringLoading] = useState(false);
   const [userHasEditedFeatures, setUserHasEditedFeatures] = useState(false);
@@ -53,17 +55,14 @@ function SteeringPlayground({ saeFeatures, defaultQuery }) {
       setSteeringLoading(true);
       try {
         // Calculate steering to get reconstructed embedding
-        console.log('editedFeatures', editedFeatures);
-        const steeringEmbedding = await apiService.calcSteering(editedFeatures);
-        console.log('steeringEmbedding', steeringEmbedding);
-
+        // console.log('editedFeatures', editedFeatures);
+        const se = await apiService.calcSteering(editedFeatures);
+        // console.log('steeringEmbedding', se);
+        setSteeringEmbedding(se);
+        // onSteer(steeringEmbedding);
         // Search with this embedding
         // TODO: this should be set by useSearch probably. its due to using the modal backend directly not via scope
-        const res = await apiService.getNNEmbed(
-          'enjalot/ls-dadabase',
-          'scopes-001',
-          steeringEmbedding
-        );
+        const res = await apiService.getNNEmbed('enjalot/ls-dadabase', 'scopes-001', se);
 
         setSteeringResults(res);
       } catch (error) {
@@ -97,8 +96,14 @@ function SteeringPlayground({ saeFeatures, defaultQuery }) {
 
         <div className={styles.column}>
           <h3>Steering</h3>
-          <p style={{ marginBottom: '53px' }}>
-            Adjust feature activations to steer the search in different directions
+          <p>
+            Adjust feature activations to steer the search in different directions. Cosine
+            similarity:{' '}
+            <b>
+              {steeringEmbedding && queryEmbedding
+                ? cosineSimilarity(queryEmbedding.embedding, steeringEmbedding)?.toFixed(3)
+                : 'N/A'}
+            </b>
           </p>
         </div>
       </div>

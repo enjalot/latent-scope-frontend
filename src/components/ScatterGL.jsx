@@ -34,22 +34,7 @@ ScatterGL.propTypes = {
   isSmallScreen: PropTypes.bool,
   centerOnShownIndices: PropTypes.bool,
   centerMargin: PropTypes.number,
-};
-
-const calculatePointColor = (valueA) => {
-  return mapSelectionColorsLight[valueA];
-};
-
-const calculatePointOpacity = (featureIsSelected, valueA, activation) => {
-  // when a feature is selected, we want to use the activation value to set the opacity
-  if (featureIsSelected && valueA === mapSelectionKey.selected && activation !== undefined) {
-    return activation + 0.5;
-  }
-  return mapSelectionOpacity[valueA];
-};
-
-const calculatePointSize = (valueA) => {
-  return mapPointSizeRange[valueA];
+  calculatePointColor: PropTypes.func,
 };
 
 const calculateDynamicPointScale = (pointCount, width, height) => {
@@ -101,6 +86,8 @@ function ScatterGL({
   quadtreeRadius = 10,
   minZoom = 0.75,
   maxZoom = 40,
+  shownIndices,
+  setCenteredIndices,
   onView,
   onSelect,
   onHover,
@@ -109,9 +96,21 @@ function ScatterGL({
   isSmallScreen = false,
   centerOnShownIndices = true,
   centerMargin = 0.25,
+  calculatePointColor = (valueA) => {
+    return mapSelectionColorsLight[valueA];
+  },
+  calculatePointOpacity = (featureIsSelected, valueA, activation) => {
+    // when a feature is selected, we want to use the activation value to set the opacity
+    if (featureIsSelected && valueA === mapSelectionKey.selected && activation !== undefined) {
+      return activation + 0.5;
+    }
+    return mapSelectionOpacity[valueA] || 1;
+  },
+  calculatePointSize = (valueA) => {
+    return mapPointSizeRange[valueA] || 1;
+  },
 }) {
   const { isDark: isDarkMode } = useColorMode();
-  const { setCenteredIndices, shownIndices } = useFilter();
 
   // Add a ref to track if we're currently in a programmatic zoom operation
   const isZoomingProgrammatically = useRef(false);
@@ -546,9 +545,9 @@ function ScatterGL({
         yScaleRef.current
       );
       if (!quadtreeRef.current) return;
-      console.log('updateCenteredIndices', newCenter);
+      // console.log('updateCenteredIndices', newCenter);
       const closest = findNClosestPoints(newCenter.x, newCenter.y, TOP_N_POINTS);
-      console.log('closest', closest);
+      // console.log('closest', closest);
       if (isSmallScreen) {
         debouncedSetCenteredIndices(closest);
       }

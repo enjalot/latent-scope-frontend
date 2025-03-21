@@ -82,6 +82,8 @@ export const apiService = {
             max_activation: f[1],
             label: f[6],
             order: f[7],
+            grid_x: f[8],
+            grid_y: f[9],
           };
         });
         callback(fts);

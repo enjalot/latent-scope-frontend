@@ -220,7 +220,7 @@ const CompareFeatureBars = ({
           style={{
             position: 'absolute',
             width: '100%',
-            height: `${numToShow * (barHeight + barMargin) + 100}px`,
+            height: `${numToShow * (barHeight + barMargin) + 30}px`,
             zIndex: 1,
             pointerEvents: 'none',
             fontFamily: 'monospace',

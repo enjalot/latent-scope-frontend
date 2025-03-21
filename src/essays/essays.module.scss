@@ -70,7 +70,7 @@
   font-family: var(--font-secondary), var(--font-backup);
   font-size: 1.2rem;
   line-height: 1.8;
-  margin-bottom: 2.3rem;
+  margin-bottom: .5rem;
   
   @media (max-width: 767px) {
     font-size: 1.05rem;
@@ -116,10 +116,10 @@
   margin-right: calc(-50vw + 50%);
   max-width: 100vw;
   width: 100vw;
-  padding: 3rem 2rem;
+  padding: 1rem 2rem;
   
   @media (max-width: 767px) {
-    padding: 2rem 1rem;
+    padding: 0rem 1rem;
   }
 }
 

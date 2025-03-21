@@ -1,0 +1,40 @@
+.embeddingVisualizer {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.searchContainer {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.searchBar {
+  display: flex;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  font-size: 1rem;
+  outline: none;
+  text-decoration: underline;
+  font-family: "Roboto Mono", monospace;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  height: 48px;
+}
+
+// Styles specific to the embedding visualization
+.visualizationContainer {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
