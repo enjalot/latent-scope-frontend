@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useMemo } from 'react';
 import { Tooltip } from 'react-tooltip';
 import { interpolateTurbo } from 'd3-scale-chromatic';
 import { Footnote, FootnoteTooltip } from '../components/Essays/Footnotes';
-import { P, H2, H3, Query, Array } from '../components/Essays/Basics';
+import { P, H2, H3, Query, Array, Scrollable, Caption } from '../components/Essays/Basics';
 
 import { saeAvailable } from '../lib/SAE';
 import { ScopeProvider } from '../contexts/ScopeContext';
@@ -24,6 +24,7 @@ import { cosineSimilarity } from '../utils';
 
 import SearchInline from '../components/Essays/SearchInline';
 import FeatureBars from '../components/Essays/FeatureBars';
+import VectorVis from '../components/Essays/VectorVis';
 
 import styles from './essays.module.scss';
 // import styles from './nav-by-sim.module.scss';
@@ -305,6 +306,52 @@ function NavBySim() {
             direction in the embedding space that often aligns with an interpretable concept.
           </P>
           <P>
+            To understand what the SAE does for us, let's review a little bit about high-dimensional
+            vector spaces. We'll shoot for an intuition using 2D vectors focused on the high-level
+            concepts. Let's take the classic example of the <Query>King</Query> - <Query>Man</Query>{' '}
+            = <Query>Queen</Query>
+            <VectorVis
+              vectors={[
+                { vector: [1, -1], label: 'King' },
+                { vector: [-0.3, 0.7], label: 'Man' },
+              ]}
+              resultLabel="Queen"
+              operation="-"
+              height={300}
+            ></VectorVis>
+            <P>
+              We can also think about a direction as composed of other directions. We can take{' '}
+              <Query>Queen</Query> as the addition of the <Query>Woman</Query> and{' '}
+              <Query>Royalty</Query> directions:
+            </P>
+            <VectorVis
+              vectors={[
+                { vector: [0.3, -0.7], label: 'Woman' },
+                { vector: [0.4, 0.4], label: 'Royalty' },
+              ]}
+              resultLabel="Queen"
+              operation="+"
+              height={300}
+            ></VectorVis>
+            <P>
+              We can also think about a direction as composed of other directions. We can take{' '}
+              <Query>Queen</Query> as the addition of the <Query>Woman</Query> and{' '}
+              <Query>Royalty</Query> directions:
+            </P>
+            <VectorVis
+              vectors={[
+                { vector: [0.3, -0.7], label: 'Woman' },
+                { vector: [0.2, 0.2], label: 'Crown' },
+                { vector: [0.1, 0.2], label: 'Wife' },
+                { vector: [0.1, -0.0], label: 'Court' },
+              ]}
+              scale={2}
+              resultLabel="Queen"
+              operation="+"
+              height={300}
+            ></VectorVis>
+          </P>
+          <P>
             Below is a visualization of the SAE features. Each point represents a feature, and its
             position is determined by its semantic meaning. Similar features are positioned closer
             together. Try hovering over points to see feature descriptions, or click on a feature to
@@ -325,7 +372,17 @@ function NavBySim() {
             We can break down our query embedding into directions (concepts) via the SAE:
             <br />
             <Query>A cat and a calculator</Query>
-            <FeatureBars topk={catAndCalculatorFeatures} features={saeFeatures} numToShow={10} />
+            <Scrollable height={255}>
+              <FeatureBars topk={catAndCalculatorFeatures} features={saeFeatures} numToShow={64} />
+            </Scrollable>
+            <Caption>
+              The visualization above shows each of the directions as a bar. The number on the left{' '}
+              <span className={styles.featureIdPill}>13557</span>is the feature index, and the
+              number on the right <code>0.371</code> is the activation strength of that feature for
+              the query. The bar's length is relative to the maximum activation seen on the SAE's
+              training data. So this example activates the cat and the calculator about as strongly
+              as they are ever activated.
+            </Caption>
           </P>
           <P>
             We can also reconstruct the embedding from the SAE features, which will give us an

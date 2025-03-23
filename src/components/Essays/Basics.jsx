@@ -18,4 +18,16 @@ function Array({ children }) {
   return <p className={styles.array}>{children}</p>;
 }
 
-export { P, H2, H3, Query, Array };
+function Scrollable({ children, height }) {
+  return (
+    <div className={styles.scrollable} style={{ height: `${height}px` }}>
+      {children}
+    </div>
+  );
+}
+
+function Caption({ children }) {
+  return <p className={styles.caption}>{children}</p>;
+}
+
+export { P, H2, H3, Query, Array, Scrollable, Caption };

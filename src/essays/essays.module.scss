@@ -285,3 +285,42 @@
   line-break: space;
   color: var(--color-text-subtle);
 }
+
+.scrollable {
+  overflow-y: scroll;
+  border: 1px solid var(--color-border-1);
+  border-radius: 8px;
+  padding: 1rem;
+  background-color: var(--color-neutral-1);
+  
+  // Optional: Hide scrollbar for webkit browsers while maintaining functionality
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-1);
+    border-radius: 4px;
+  }
+}
+
+.caption {
+  font-size: 12px;
+  color: var(--color-text-subtle);
+  margin-top: 0.5rem;
+}
+
+.featureIdPill {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  width: 35px;
+  min-width: 35px;
+}

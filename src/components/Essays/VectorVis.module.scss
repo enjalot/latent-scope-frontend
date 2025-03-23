@@ -1,0 +1,24 @@
+.vectorVisContainer {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  
+  svg {
+    overflow: visible;
+  }
+  
+  text {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    // fill: #333;
+  }
+  
+  .equation {
+    font-size: 16px;
+    font-weight: bold;
+  }
+  
+  .vectorLabel {
+    font-size: 12px;
+  }
+} 
