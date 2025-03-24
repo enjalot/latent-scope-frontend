@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import VectorVis from './VectorVis';
 import { interpolateSinebow } from 'd3-scale-chromatic';
 import styles from './VectorEquation.module.scss';
@@ -12,7 +12,7 @@ const VectorEquation = ({
   showEquation = true,
   scalable = false,
   inverseK = false,
-  targetVector = [0, 0],
+  targetVector = { vector: [0, 0], label: 'Target' },
   scaleDomain = [-3, 3],
 }) => {
   if (vectors.length === 0) return null;
@@ -21,9 +21,16 @@ const VectorEquation = ({
   const resultVisRef = useRef(null);
   const [vectorWidth, setVectorWidth] = useState(null);
   const [scalingFactors, setScalingFactors] = useState(vectors.map(() => 0.5));
-  const [currentTarget, setCurrentTarget] = useState(targetVector);
+  const [currentTarget, setCurrentTarget] = useState(targetVector.vector);
   const [isDragging, setIsDragging] = useState(false);
   const [prevTarget, setPrevTarget] = useState(null);
+
+  useEffect(() => {
+    if (inverseK) {
+      console.log('did this really change?', targetVector);
+      setCurrentTarget(targetVector.vector);
+    }
+  }, [targetVector, inverseK]);
 
   // Detect container width and calculate vector width
   useEffect(() => {
@@ -456,7 +463,7 @@ const VectorEquation = ({
         return vectors.map((_, i) => scalingFactors[i] || 0.5);
       }
     },
-    [vectors, scalingFactors, scaleDomain]
+    [vectors, scaleDomain]
   );
 
   // Update scaling factors when target or inverseK changes

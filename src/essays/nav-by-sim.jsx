@@ -45,6 +45,7 @@ import catConstructed from './cached/constructed-cat.json';
 import SteeringPlayground from '../components/Essays/SteeringPlayground';
 import Title from '../components/Title';
 import FeatureScatter from '../components/Essays/FeatureScatter';
+import VectorExample from '../components/Essays/VectorExample';
 
 function NavBySim() {
   // const embedding = useMemo(async () => {
@@ -59,6 +60,11 @@ function NavBySim() {
   const [saeFeatures, setSaeFeatures] = useState(null);
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [steeredEmbedding, setSteeredEmbedding] = useState(null);
+
+  const [selectedVector, setSelectedVector] = useState({
+    vector: [0.5, 0.3],
+    label: 'R1',
+  });
 
   useEffect(() => {
     apiService.calcFeatures(catAndCalculatorEmbedding.embedding).then(async (features) => {
@@ -373,11 +379,12 @@ function NavBySim() {
               scalable={true}
               resultLabel="R"
               inverseK={true}
-              targetVector={[0.5, 0.5]}
+              targetVector={selectedVector}
               height={200}
             />
             Try clicking or draggin on the right-most chart to see how you can reconstruct a target
             direction just by changing the scaling of the 2 "feature" directions.
+            <VectorExample onSelect={setSelectedVector} selectedVector={selectedVector} />
           </P>
           <P>
             What we do with an SAE is try to automatically find a bunch of directions that can be
