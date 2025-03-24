@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './VectorVis.module.scss';
+import { interpolateSinebow } from 'd3-scale-chromatic';
 
 const VectorVis = ({
   vectors,
@@ -25,15 +26,13 @@ const VectorVis = ({
   // Calculate center point of the box
   const center = { x: boxSize / 2 + boxPadding, y: boxSize / 2 + boxPadding + 30 };
 
-  // Generate colors for vectors - base colors for input vectors
-  const baseColors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853'];
+  // Generate colors for vectors using d3's interpolateSinebow
   const getVectorColor = (index) => {
-    const baseColor = baseColors[index % baseColors.length];
-    // Adjust opacity based on position in the sequence
-    return `${baseColor}${Math.floor(90 - index * 10)}`;
+    // Space the colors evenly across the sinebow spectrum
+    return interpolateSinebow(index / (vectors.length || 1));
   };
 
-  const resultColor = '#34A853';
+  const resultColor = '#000000'; // Black color for result vector
 
   // Function to draw a vector from center
   const drawVector = (vector, startX = center.x, startY = center.y) => {
