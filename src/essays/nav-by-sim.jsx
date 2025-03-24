@@ -302,14 +302,10 @@ function NavBySim() {
         <section>
           <H3>Sparse Autoencoders</H3>
           <P>
-            Sparse Autoencoders (SAEs) provide a powerful way to interpret embeddings by breaking
-            them down into interpretable features. Each feature in an SAE corresponds to a specific
-            direction in the embedding space that often aligns with an interpretable concept.
-          </P>
-          <P>
-            To understand what the SAE does for us, let's review a little bit about high-dimensional
-            vector spaces. We'll shoot for an intuition using 2D vectors focused on the high-level
-            concepts. Let's take the classic example:
+            Sparse Autoencoders (SAEs) allow us to automatically decompose embeddings into
+            interpretable directions (i.e. concepts) that we can then use to navigate our data. To
+            understand what the SAE does for us, let's review a little bit about high-dimensional
+            vector spaces, starting with a simplified version of the classic example:
             <VectorEquation
               vectors={[
                 { vector: [1, -1], label: 'King' },
@@ -320,6 +316,22 @@ function NavBySim() {
               scale={0.75}
               height={200}
             />
+            <P>
+              It was shown
+              {/* <Footnote number="1">
+                <a href="https://arxiv.org/abs/1509.01692">
+                  <em>
+                    Take and Took, Gaggle and Goose, Book and Read: Evaluating the Utility of Vector
+                    Differences for Lexical Relation Learning
+                  </em>
+                </a>
+              </Footnote> */}
+              that embeddings aren't just points in high-dimensional space, they are directions. So
+              if you subtracted one direction from another (<Query>King</Query> - <Query>Man</Query>
+              ) you would be pointing in a new direction, which was very similar to the direction
+              for
+              <Query>Queen</Query>.
+            </P>
             <P>We can also think about a direction as being composed of sub-directions:</P>
             <VectorEquation
               vectors={[
@@ -344,6 +356,40 @@ function NavBySim() {
               resultLabel="Queen"
               height={200}
             />
+          </P>
+          <P>
+            Let's say we have 2 directions set up in our vector space, we can do a linear
+            combination of them to get a new direction in our space. That means besides just adding
+            them together we can also scale each one by some amount:
+            <VectorEquation
+              vectors={[
+                { vector: [0.3, -0.7], label: 'A' },
+                { vector: [0.15, 0.5], label: 'B' },
+                // { vector: [-0.7, 0.15], label: 'C' },
+                // { vector: [-0.1, 0.8], label: 'D' },
+              ]}
+              operations={['+', '+']}
+              scale={0.75}
+              scalable={true}
+              resultLabel="R"
+              inverseK={true}
+              targetVector={[0.5, 0.5]}
+              height={200}
+            />
+            Try clicking or draggin on the right-most chart to see how you can reconstruct a target
+            direction just by changing the scaling of the 2 "feature" directions.
+          </P>
+          <P>
+            What we do with an SAE is try to automatically find a bunch of directions that can be
+            composed into any of the embeddings we are deailing with. The "sparse" in Sparse
+            Autoencoder is referring to an additional constraint we want, which is that we will only
+            use a few directions at a time to reconstruct an embedding.
+          </P>
+          <P>
+            In the SAE we trained on nomic-embed-text-v1.5 we chose a "topk" constraint of 64
+            directions, and a total of 25,000 directions to choose. This seemlingly arbitrary number
+            comes from 768 (dimensions of the embedding) * 32 (expansion factor) = 24,576, which is
+            the number of directions in the SAE.
           </P>
           <P>
             Below is a visualization of the SAE features. Each point represents a feature, and its

@@ -104,8 +104,8 @@ function SearchResults({
     return <div className={styles.noResults}>No matching results found.</div>;
   }
   // console.log('=== Search Results ===');
-  console.log(results.slice(0, numToShow));
-  console.log(selected);
+  // console.log(results.slice(0, numToShow));
+  // console.log(selected);
 
   return (
     <div className={styles.searchResults}>

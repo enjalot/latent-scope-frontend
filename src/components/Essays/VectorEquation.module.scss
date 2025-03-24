@@ -8,7 +8,10 @@
 }
 
 .equationPart {
+  position: relative;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   flex: 0 1 auto;
   min-width: 50px;
@@ -38,6 +41,8 @@
   justify-content: center;
   flex-wrap: wrap;
   width: 100%;
+  padding-bottom: 30px;
+  position: relative;
 }
 
 /* Add media query for small screens */
@@ -50,4 +55,17 @@
   .equationPart {
     min-width: 40px;
   }
+}
+
+.sliderContainer {
+  position: absolute;
+  bottom: -25px; /* Position below the vector visualization */
+  left: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.vectorSlider {
+  width: 100%;
+  margin: 0 auto;
 }
