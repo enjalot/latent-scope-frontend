@@ -1,0 +1,53 @@
+.vectorEquation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0px 0;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.equationPart {
+  display: flex;
+  justify-content: center;
+  flex: 0 1 auto;
+  min-width: 50px;
+}
+
+.operationSymbol, .equalsSign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  padding: 0 5px;
+  color: #333;
+  flex: 0 0 auto;
+} 
+
+.equation {
+  text-align: center;
+  font-size: 1em;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.equationVisuals {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Add media query for small screens */
+@media (max-width: 600px) {
+  .operationSymbol, .equalsSign {
+    font-size: 20px;
+    padding: 0 3px;
+  }
+  
+  .equationPart {
+    min-width: 40px;
+  }
+}

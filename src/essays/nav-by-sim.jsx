@@ -25,6 +25,7 @@ import { cosineSimilarity } from '../utils';
 import SearchInline from '../components/Essays/SearchInline';
 import FeatureBars from '../components/Essays/FeatureBars';
 import VectorVis from '../components/Essays/VectorVis';
+import VectorEquation from '../components/Essays/VectorEquation';
 
 import styles from './essays.module.scss';
 // import styles from './nav-by-sim.module.scss';
@@ -308,48 +309,41 @@ function NavBySim() {
           <P>
             To understand what the SAE does for us, let's review a little bit about high-dimensional
             vector spaces. We'll shoot for an intuition using 2D vectors focused on the high-level
-            concepts. Let's take the classic example of the <Query>King</Query> - <Query>Man</Query>{' '}
-            = <Query>Queen</Query>
-            <VectorVis
+            concepts. Let's take the classic example:
+            <VectorEquation
               vectors={[
                 { vector: [1, -1], label: 'King' },
                 { vector: [-0.3, 0.7], label: 'Man' },
               ]}
+              operations={['-']}
               resultLabel="Queen"
-              operation="-"
-              height={300}
-            ></VectorVis>
-            <P>
-              We can also think about a direction as composed of other directions. We can take{' '}
-              <Query>Queen</Query> as the addition of the <Query>Woman</Query> and{' '}
-              <Query>Royalty</Query> directions:
-            </P>
-            <VectorVis
+              scale={0.75}
+              height={200}
+            />
+            <P>We can also think about a direction as being composed of sub-directions:</P>
+            <VectorEquation
               vectors={[
                 { vector: [0.3, -0.7], label: 'Woman' },
                 { vector: [0.4, 0.4], label: 'Royalty' },
               ]}
+              operations={['+']}
               resultLabel="Queen"
-              operation="+"
-              height={300}
-            ></VectorVis>
-            <P>
-              We can also think about a direction as composed of other directions. We can take{' '}
-              <Query>Queen</Query> as the addition of the <Query>Woman</Query> and{' '}
-              <Query>Royalty</Query> directions:
-            </P>
-            <VectorVis
+              scale={0.75}
+              height={200}
+            />
+            <P>We can take this further and add together sub-sub-directions:</P>
+            <VectorEquation
               vectors={[
                 { vector: [0.3, -0.7], label: 'Woman' },
-                { vector: [0.2, 0.2], label: 'Crown' },
-                { vector: [0.1, 0.2], label: 'Wife' },
-                { vector: [0.1, -0.0], label: 'Court' },
+                // { vector: [0.1, 0.15], label: 'Court' },
+                { vector: [0.15, 0.25], label: 'Crown' },
+                { vector: [0.25, 0.15], label: 'Monarchy' },
               ]}
-              scale={2}
+              operations={['+', '+', '+']}
+              scale={0.75}
               resultLabel="Queen"
-              operation="+"
-              height={300}
-            ></VectorVis>
+              height={200}
+            />
           </P>
           <P>
             Below is a visualization of the SAE features. Each point represents a feature, and its
