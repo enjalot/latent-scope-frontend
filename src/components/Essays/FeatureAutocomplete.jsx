@@ -60,9 +60,7 @@ const FeatureAutocomplete = ({ currentFeature, features, onSelect, placeholder }
           onChange={(e) => setSearch(e.target.value)}
           onFocus={() => setShowDropdown(true)}
           onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-          placeholder={
-            placeholder || (currentFeature ? currentFeature.label : 'Search features...')
-          }
+          placeholder={currentFeature ? currentFeature.label : placeholder || 'Search features...'}
           className={styles.featureSearch}
         />
       </div>

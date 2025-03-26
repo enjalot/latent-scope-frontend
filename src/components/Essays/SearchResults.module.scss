@@ -164,3 +164,35 @@
     transform: translateY(-2px);
   }
 }
+
+.featureActivation {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 2px 2px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+}
+
+.activationValue {
+  white-space: nowrap;
+  text-align: right;
+  font-family: 'Roboto Mono', monospace;
+  text-shadow: 0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 4px white;
+}
+
+.showFeatureActivation {
+  display: flex;
+  align-items: center;
+}

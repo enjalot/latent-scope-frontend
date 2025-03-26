@@ -99,6 +99,7 @@ const VectorVis = ({
   // Helper function to add arrow to a line
   const createArrowMarker = (id, color, arrowSize = 4) => (
     <marker
+      key={id}
       id={id}
       viewBox="0 0 10 10"
       refX="9"

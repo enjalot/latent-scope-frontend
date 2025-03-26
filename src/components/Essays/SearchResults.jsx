@@ -13,6 +13,8 @@ const ResultRow = memo(
     showIndex = true,
     showDistance = true,
     selectable = false,
+    showFeatureActivation = false,
+    feature = null,
   }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const expand = useCallback(() => setIsExpanded(!isExpanded), [isExpanded]);
@@ -25,6 +27,18 @@ const ResultRow = memo(
       }
     }, [selectable, onSelect, result, expand]);
 
+    // Find feature activation value if needed
+    let activationValue = null;
+    if (showFeatureActivation && feature && result.sae_indices && result.sae_acts) {
+      const featureIndex = result.sae_indices.indexOf(feature.feature);
+      if (featureIndex !== -1) {
+        activationValue = result.sae_acts[featureIndex];
+      }
+    }
+
+    // Determine if we should show distance or activation
+    const showDistanceElement = showDistance && !showFeatureActivation;
+
     return (
       <div
         className={`${styles.resultCard} ${isHighlighted ? styles.highlighted : ''} ${isExpanded ? styles.expanded : ''} ${isSelected ? styles.selected : ''} ${selectable ? styles.selectable : ''}`}
@@ -35,12 +49,23 @@ const ResultRow = memo(
         {showIndex && <div className={styles.indexBadge}>{index + 1}</div>}
         <div className={`${styles.cardContent}`}>
           <div
-            className={`${styles.cardText} ${showDistance ? styles.showDistance : ''} ${showIndex ? styles.showIndex : ''} ${isExpanded ? styles.expandedText : ''}`}
+            className={`${styles.cardText} 
+              ${showDistanceElement || (showFeatureActivation && activationValue !== null) ? styles.showDistance : ''} 
+              ${showIndex ? styles.showIndex : ''} 
+              ${isExpanded ? styles.expandedText : ''}`}
           >
             {result[dataset.text_column]}
           </div>
-          {showDistance && (
+          {showDistanceElement && (
             <div className={styles.distance}>{(1 - result.ls_distance)?.toFixed(2)}</div>
+          )}
+          {showFeatureActivation && activationValue !== null && (
+            <div
+              className={styles.featureActivation}
+              style={{ backgroundColor: feature.color || 'rgba(0, 0, 0, 0.1)' }}
+            >
+              <span className={styles.activationValue}>{activationValue.toFixed(2)}</span>
+            </div>
           )}
         </div>
       </div>
@@ -60,6 +85,8 @@ function SearchResults({
   selectedResult = null,
   initialSelectedIndex = null,
   selectable = false,
+  showFeatureActivation = false,
+  feature = null,
 }) {
   // State to track the selected result
   const [selected, setSelected] = useState(null);
@@ -123,6 +150,8 @@ function SearchResults({
             onSelect={handleSelect}
             dataset={dataset}
             selectable={selectable}
+            showFeatureActivation={showFeatureActivation}
+            feature={feature}
           />
         ))}
       </div>

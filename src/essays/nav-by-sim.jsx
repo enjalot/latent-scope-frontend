@@ -46,6 +46,7 @@ import SteeringPlayground from '../components/Essays/SteeringPlayground';
 import Title from '../components/Title';
 import FeatureScatter from '../components/Essays/FeatureScatter';
 import VectorExample from '../components/Essays/VectorExample';
+import FeatureFilter from '../components/Essays/FeatureFilter';
 
 function NavBySim() {
   // const embedding = useMemo(async () => {
@@ -77,6 +78,7 @@ function NavBySim() {
     apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
       console.log('SAE FEATURES', fts);
       setSaeFeatures(fts);
+      setSelectedFeature(fts[6864]); //domestic wildlife
     });
   }, []);
   useEffect(() => {
@@ -147,12 +149,19 @@ function NavBySim() {
 
         <section>
           <P>
-            I am interested in better understaning what's happening when we use similarity search to
-            navigate large amounts of unstructured data. I'm especially interested in new techniques
-            that would allow us to build better tools for mapping latent space. In this essay I'm
-            hoping to build an intuition for how similarity search works and when it fails. We'll
-            examine the potential for Sparse Autoencoders to become a kind of high-dimensional
-            compass, and use our intution to feel for the limits of steering similarity search.
+            Navigating unstructured data with similarity search is becoming an increasingly popular
+            technique. The fuzzy nature of nearest neighbor search is desirable for allowing people
+            to search based more on the concepts they have in mind rather than the exact wording of
+            the query. It is also a challenge when the results don't match the user's intent becuase
+            it isn't clear what went wrong.
+          </P>
+          <P>
+            There are new interpretability techniques like Sparse Autoencoders that allow us to dig
+            a bit deeper into the concepts represented in the latent space used by the similarity
+            search. They may even serve as a sort of high-dimensional compass, allowing us to
+            navigate the space with more explicit control. This essay aims to build an intuition for
+            similarity search, embedding spaces and how we can use Sparse Autoencoders to steer our
+            searches through the latent space.
           </P>
         </section>
 
@@ -364,9 +373,13 @@ function NavBySim() {
             />
           </P>
           <P>
-            Let's say we have 2 directions set up in our vector space, we can do a linear
-            combination of them to get a new direction in our space. That means besides just adding
-            them together we can also scale each one by some amount:
+            Now we want to consider that each document in our dataset is a vector and we want to
+            find some set of "sub-directions" that can be combined to reconstruct any document. A
+            Sparse Autoencoder essentially figures out what those directions are so for a given
+            document vector:
+            <VectorExample onSelect={setSelectedVector} selectedVector={selectedVector} />
+            We would get some linear combination of "sub-directions" (sometimes called "features")
+            to reconstruct that vector:
             <VectorEquation
               vectors={[
                 { vector: [0.3, -0.7], label: 'A' },
@@ -377,32 +390,21 @@ function NavBySim() {
               operations={['+', '+']}
               scale={0.75}
               scalable={true}
-              resultLabel="R"
+              resultLabel={selectedVector.label}
               inverseK={true}
               targetVector={selectedVector}
               height={200}
             />
-            Try clicking or draggin on the right-most chart to see how you can reconstruct a target
-            direction just by changing the scaling of the 2 "feature" directions.
-            <VectorExample onSelect={setSelectedVector} selectedVector={selectedVector} />
           </P>
           <P>
-            What we do with an SAE is try to automatically find a bunch of directions that can be
-            composed into any of the embeddings we are deailing with. The "sparse" in Sparse
-            Autoencoder is referring to an additional constraint we want, which is that we will only
-            use a few directions at a time to reconstruct an embedding.
+            For an embedding model like nomic-embed-text-v1.5, which has 768 dimensions, we can
+            train an SAE to find 25,000 of these features and allow it to use 64 when reconstructing
+            an embedding.
           </P>
           <P>
-            In the SAE we trained on nomic-embed-text-v1.5 we chose a "topk" constraint of 64
-            directions, and a total of 25,000 directions to choose. This seemlingly arbitrary number
-            comes from 768 (dimensions of the embedding) * 32 (expansion factor) = 24,576, which is
-            the number of directions in the SAE.
-          </P>
-          <P>
-            Below is a visualization of the SAE features. Each point represents a feature, and its
-            position is determined by its semantic meaning. Similar features are positioned closer
-            together. Try hovering over points to see feature descriptions, or click on a feature to
-            select it.
+            You can preview all the features in this grid below, they are somewhat organized by
+            semantic meaning, but the important thing is to get a sense for what kinds of directions
+            the SAE found.
           </P>
 
           {saeFeatures && (
@@ -416,9 +418,18 @@ function NavBySim() {
           )}
 
           <P>
-            We can break down our query embedding into directions (concepts) via the SAE:
+            Let's see what happens if we give an example query embedding to the SAE: We can break
+            down our query embedding into directions (concepts) via the SAE:
             <br />
             <Query>A cat and a calculator</Query>
+            <EmbeddingVis
+              embedding={catAndCalculatorEmbedding.embedding}
+              rows={8}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            ></EmbeddingVis>
+            <br />
+            Becomes:
             <Scrollable height={255}>
               <FeatureBars topk={catAndCalculatorFeatures} features={saeFeatures} numToShow={64} />
             </Scrollable>
@@ -434,6 +445,7 @@ function NavBySim() {
           <P>
             We can also reconstruct the embedding from the SAE features, which will give us an
             approximation of our original embedding:
+            <br />
             <Query>A cat and a calculator</Query>
             <EmbeddingVis
               embedding={catAndCalculatorEmbedding.embedding}
@@ -516,27 +528,24 @@ function NavBySim() {
               className={styles.featureSearchContainer}
               style={{ maxWidth: '600px', margin: '20px 0' }}
             >
-              <FeatureAutocomplete
-                currentFeature={saeFeatures.find((f) => f.feature === selectedFeature)}
+              <FeatureFilter
                 features={saeFeatures}
-                onSelect={(feature) => setSelectedFeature(feature.feature)}
-                featureColor={
-                  selectedFeature &&
-                  interpolateTurbo(saeFeatures.find((f) => f.feature === selectedFeature)?.order)
-                }
-                placeholder="Search for a feature..."
+                defaultFeature={selectedFeature}
+                threshold={0.1}
               />
+              TODO: get the dataset feature counts so we don't show features that don't activate in
+              the dataset
             </div>
           )}
 
           <P>
             This form of filtering is supported directly in Latent Scope, see{' '}
             <a
-              href={`https://latent.estate/scope/enjalot/ls-dadabase/scopes-001?filter=${selectedFeature}`}
+              href={`https://latent.estate/scope/enjalot/ls-dadabase/scopes-001?filter=${selectedFeature?.feature}`}
             >
               all the jokes
             </a>{' '}
-            that activate strongly on the {selectedFeature} feature.
+            that activate strongly on the {selectedFeature?.label} feature.
           </P>
 
           <H3>Steering 🐮</H3>
@@ -599,20 +608,22 @@ function NavBySim() {
           </P>
         </section>
 
-        {/* 
         <footer className={styles.footnotes}>
+          <div className={styles.footnoteTitle}>Acknowledgements</div>
+          <P>TODO:</P>
+
           <div className={styles.footnoteTitle}>Footnotes</div>
-          <Footnote
+          <P>TODO:</P>
+          {/* <Footnote
             number="1"
             text="This note underscores the importance of having a robust base in programming fundamentals."
           />
           <Footnote
             number="2"
             text="Abstraction not only simplifies complexity but also enables efficient problem decomposition."
-          />
+          /> */}
           <Tooltip id="footnote" />
         </footer>
-        */}
       </article>
     </div>
   );
