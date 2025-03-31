@@ -29,5 +29,12 @@ function Scrollable({ children, height }) {
 function Caption({ children }) {
   return <p className={styles.caption}>{children}</p>;
 }
+function Aside({ children }) {
+  return (
+    <div className={styles.aside}>
+      <div>{children}</div>
+    </div>
+  );
+}
 
-export { P, H2, H3, Query, Array, Scrollable, Caption };
+export { P, H2, H3, Query, Array, Scrollable, Caption, Aside };

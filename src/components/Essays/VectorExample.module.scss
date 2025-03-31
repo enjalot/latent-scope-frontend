@@ -8,9 +8,12 @@
 .vectorGrid {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 15px;
   align-items: flex-start;
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 10px; /* Space for scrollbar */
 }
 
 .vectorItem {
@@ -22,6 +25,8 @@
   padding: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex: 1 1 0;
+  min-width: 150px;
   
   &:hover {
     background-color: #f0f0f0;
@@ -45,6 +50,7 @@
 
 .vectorDisplay {
   margin-top: 10px;
+  width: 100%;
 }
 
 .vectorButtons {

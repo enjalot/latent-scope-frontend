@@ -314,6 +314,36 @@
   margin-top: 0.5rem;
 }
 
+.aside {
+  background-color: var(--color-neutral-1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text-subtle);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-left: 3px solid var(--interactions---primary-color-interaction-primary);
+  position: relative;
+  
+  @media (min-width: 1101px) {
+    float: right;
+    max-width: 200px;
+    margin-left: 20px;
+    margin-right: -240px; /* Much more negative margin to push outside the column */
+    margin-bottom: 16px;
+    // margin-top: -62px;
+    clear: right;
+  }
+  
+  @media (max-width: 1100px) {
+    width: 90%;
+    display: block;
+    margin: 16px 0;
+    clear: both;
+  }
+}
+
 .featureIdPill {
   background-color: rgba(0, 0, 0, 0.1);
   border-radius: 12px;

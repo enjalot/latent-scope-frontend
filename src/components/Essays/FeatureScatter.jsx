@@ -13,11 +13,31 @@ function debounce(fn, delay) {
   };
 }
 
-function FeatureScatter({ features, selectedFeature, onFeature, width = 800, height = 400 }) {
+function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) {
   const [hovered, setHovered] = useState(null);
   const [xDomain, setXDomain] = useState([-1, 1]);
   const [yDomain, setYDomain] = useState([-1, 1]);
   const [transform, setTransform] = useState({ k: 1, x: 0, y: 0 });
+  const [containerWidth, setContainerWidth] = useState(800);
+  const containerRef = useRef(null);
+
+  // Get the container width on mount and when window resizes
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.getBoundingClientRect().width);
+      }
+    };
+
+    // Initial measurement
+    updateWidth();
+
+    // Add resize listener
+    window.addEventListener('resize', updateWidth);
+
+    // Clean up
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   // Debounced setHovered function
   const debouncedSetHoveredRef = useRef(null);
@@ -85,11 +105,11 @@ function FeatureScatter({ features, selectedFeature, onFeature, width = 800, hei
   }, [features, selectedFeature]);
 
   return (
-    <div className={styles.featureScatterContainer}>
-      <div className={styles.scatterWrapper} style={{ width, height }}>
+    <div className={styles.featureScatterContainer} ref={containerRef}>
+      <div className={styles.scatterWrapper} style={{ width: '100%', height }}>
         <Scatter
           points={points}
-          width={width}
+          width={containerWidth}
           height={height}
           calculatePointColor={(a) => a}
           calculatePointOpacity={() => 1}

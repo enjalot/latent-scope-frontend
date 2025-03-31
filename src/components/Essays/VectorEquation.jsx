@@ -207,9 +207,13 @@ const VectorEquation = ({
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
+      // Get coordinates from either mouse or touch event
+      const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+
       // Calculate click position relative to center
-      const clickX = event.clientX - centerX;
-      const clickY = centerY - event.clientY; // Flip Y to match coordinate system
+      const clickX = clientX - centerX;
+      const clickY = centerY - clientY; // Flip Y to match coordinate system
 
       // Scale coordinates based on visualization scale
       const visualizationRadius = Math.min(rect.width, rect.height) / 2;
@@ -252,18 +256,50 @@ const VectorEquation = ({
     setIsDragging(false);
   }, []);
 
+  // Touch event handlers
+  const handleTouchStart = useCallback(
+    (event) => {
+      if (inverseK) {
+        setIsDragging(true);
+        handleResultInteraction(event);
+        // Prevent default to avoid scrolling while dragging
+        event.preventDefault();
+      }
+    },
+    [inverseK, handleResultInteraction]
+  );
+
+  const handleTouchMove = useCallback(
+    (event) => {
+      if (isDragging && inverseK) {
+        handleResultInteraction(event);
+        // Prevent default to avoid scrolling while dragging
+        event.preventDefault();
+      }
+    },
+    [isDragging, inverseK, handleResultInteraction]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
   useEffect(() => {
     // Add global mouse up and move handlers
     if (inverseK) {
       document.addEventListener('mouseup', handleMouseUp);
       document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('touchend', handleTouchEnd);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
 
       return () => {
         document.removeEventListener('mouseup', handleMouseUp);
         document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+        document.removeEventListener('touchmove', handleTouchMove);
       };
     }
-  }, [inverseK, isDragging, handleMouseUp, handleMouseMove]);
+  }, [inverseK, isDragging, handleMouseUp, handleMouseMove, handleTouchEnd, handleTouchMove]);
 
   // Add target vector to the result visualization
   equationComponents.push(
@@ -271,6 +307,7 @@ const VectorEquation = ({
       key="result"
       className={styles.equationPart}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
       ref={resultVisRef}
       style={inverseK ? { cursor: isDragging ? 'grabbing' : 'grab' } : {}}
     >

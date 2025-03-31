@@ -2,10 +2,10 @@
 
 .searchResults {
   width: 100%;
-  // overflow-y: auto;
+  overflow-y: auto;
   background-color: #f9f9f9;
   border-radius: 8px;
-  // max-height: 400px;
+  max-height: 400px;
   
   @media (max-width: 767px) {
     max-height: 300px;
@@ -75,6 +75,7 @@
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  word-wrap: break-word;
   
   &.expandedText {
     -webkit-line-clamp: initial;
@@ -108,11 +109,8 @@
 }
 
 .loadingOverlay {
-  // position: absolute;
-  // top: 0;
-  // left: 0;
-  // width: 100%;
-  // height: 100%;
+  position: relative;
+  width: 100%;
   background-color: #eee;
   padding: 24px;
   display: flex;

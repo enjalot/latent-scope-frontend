@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useMemo } from 'react';
 import { Tooltip } from 'react-tooltip';
 import { interpolateTurbo } from 'd3-scale-chromatic';
 import { Footnote, FootnoteTooltip } from '../components/Essays/Footnotes';
-import { P, H2, H3, Query, Array, Scrollable, Caption } from '../components/Essays/Basics';
+import { P, H2, H3, Query, Array, Scrollable, Caption, Aside } from '../components/Essays/Basics';
 
 import { saeAvailable } from '../lib/SAE';
 import { ScopeProvider } from '../contexts/ScopeContext';
@@ -277,11 +277,16 @@ function NavBySim() {
               domain={[-0.1, 0, 0.1]}
               height={48}
             ></EmbeddingVis>
-            <br />
-            We also convert each row of our dataset into a vector by embedding the text column (in
-            this case, the joke). Here are the visualized results for the 4 most similar jokes to
-            our query:
-            <br />
+            <Aside>
+              This visualization is called a "waffle chart", here we are converting each number to a
+              small square, each square's color is more green the more positive the number and more
+              orange the more negative.
+            </Aside>
+            <P>
+              We also convert each row of our dataset into a vector by embedding the text column (in
+              this case, the joke). Here are the visualized results for the 4 most similar jokes to
+              our query:
+            </P>
             {catAndCalculator.slice(0, 4).map((joke, idx) => (
               <div key={idx}>
                 <Query>{joke.joke}</Query>
@@ -412,7 +417,6 @@ function NavBySim() {
               features={saeFeatures}
               selectedFeature={selectedFeature}
               onFeature={handleFeatureSelect}
-              width={700}
               height={500}
             />
           )}
