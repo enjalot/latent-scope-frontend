@@ -127,31 +127,41 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
           style={{
             position: 'absolute',
             left: 10,
-            top: 10,
+            bottom: 8,
             width: '100%',
-            height: '100%',
             pointerEvents: 'none',
           }}
-        />
-        <Tooltip
+        >
+          {hovered && (
+            <p className={styles.hoverInfo}>
+              <span
+                className={styles.featureIdPill}
+                style={{ backgroundColor: interpolateSinebow(hovered.order), opacity: 0.75 }}
+              >
+                {hovered.feature}
+              </span>
+              <span className={styles.featureLabel}>{hovered.label || 'Unnamed feature'}</span>
+            </p>
+          )}
+        </div>
+        {/* <Tooltip
           id="featureTooltip"
           isOpen={hovered !== null}
           delayShow={0} // Show immediately
           delayHide={0} // Longer delay before hiding
           delayUpdate={0}
           noArrow={true}
-          position="fixed"
-          offset={10} // Add an offset to move it from the cursor position
+          // position="fixed"
+          offset={0} // Add an offset to move it from the cursor position
           className={styles.tooltipArea}
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }} // Make background more transparent
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', width: '100%' }} // Make background more transparent
         >
           <div className={styles.tooltipContent}>
             <p>
-              <strong>Feature {hovered?.feature}</strong>
+              {hovered?.feature}: {hovered?.label || 'Unnamed feature'}
             </p>
-            <p>{hovered?.label || 'Unnamed feature'}</p>
           </div>
-        </Tooltip>
+        </Tooltip> */}
       </div>
     </div>
   );

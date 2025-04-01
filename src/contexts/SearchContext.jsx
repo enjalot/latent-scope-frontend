@@ -17,6 +17,9 @@ export function SearchProvider({ children }) {
   const handleSearch = async (searchQuery) => {
     if (!userId || !datasetId || !scope) {
       console.error('Search requires userId, datasetId, and scopeId to be set');
+      console.log('userId', userId);
+      console.log('datasetId', datasetId);
+      console.log('scope', scope);
       return;
     }
 

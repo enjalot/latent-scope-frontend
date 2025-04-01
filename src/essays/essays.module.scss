@@ -330,9 +330,9 @@
     float: right;
     max-width: 200px;
     margin-left: 20px;
-    margin-right: -240px; /* Much more negative margin to push outside the column */
+    margin-right: -244px; /* Much more negative margin to push outside the column */
     margin-bottom: 16px;
-    // margin-top: -62px;
+    margin-top: -70px;
     clear: right;
   }
   
@@ -353,4 +353,83 @@
   white-space: nowrap;
   width: 35px;
   min-width: 35px;
+}
+
+.expandable {
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  background-color: var(--color-neutral-1);
+  border: 1px solid var(--color-border-1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+  
+  &.expanded {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.expandableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: var(--color-neutral-2);
+  }
+}
+
+.expandableTitleWrapper {
+  flex: 1;
+}
+
+.expandableTitle {
+  font-family: var(--font-primary), var(--font-backup);
+  font-weight: var(--font-secondary-weight);
+  font-size: 1.1rem;
+  color: var(--color-text-main);
+}
+
+.expandableSubtitle {
+  font-size: 0.9rem;
+  color: var(--color-text-subtle);
+  margin-top: 0.25rem;
+}
+
+.expandableToggle {
+  background: none;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--interactions---primary-color-interaction-primary);
+  cursor: pointer;
+  margin-left: 1rem;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: var(--color-background-subtle-callout);
+  }
+}
+
+.expandableContent {
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+  padding: 0 1.25rem;
+  
+  &.visible {
+    height: auto;
+    opacity: 1;
+    padding: 1.25rem;
+    border-top: 1px solid var(--color-border-1);
+  }
 }

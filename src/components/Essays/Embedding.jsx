@@ -50,7 +50,7 @@ const EmbeddingVis = ({
 
   // Add a small buffer to prevent cutoff (account for the last row's spacing)
   const calculatedHeight = useMemo(
-    () => rows * (squareSize + spacing),
+    () => (rows - 0) * (squareSize + spacing),
     [rows, squareSize, spacing]
   );
 
@@ -97,7 +97,7 @@ const EmbeddingVis = ({
   }, [embedding, rows, calculatedWidth, height, spacing, minValues, maxValues, difference, domain]);
 
   return (
-    <div ref={parentRef} style={{ width: '100%' }}>
+    <div ref={parentRef} style={{ width: '100%', lineHeight: 0 }}>
       <canvas
         className="embedding-vis"
         ref={container}

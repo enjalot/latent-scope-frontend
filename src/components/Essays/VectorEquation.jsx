@@ -14,6 +14,7 @@ const VectorEquation = ({
   inverseK = false,
   targetVector = { vector: [0, 0], label: 'Target' },
   scaleDomain = [-3, 3],
+  interactive = true,
 }) => {
   if (vectors.length === 0) return null;
 
@@ -170,7 +171,7 @@ const VectorEquation = ({
           showResult={false}
           width={vectorWidth}
         />
-        {scalable && (
+        {scalable && interactive && (
           <div className={styles.sliderContainer}>
             <input
               type="range"
@@ -198,7 +199,7 @@ const VectorEquation = ({
   // Handle interactions with the result visualization
   const handleResultInteraction = useCallback(
     (event) => {
-      if (!inverseK || !resultVisRef.current) return;
+      if (!inverseK || !interactive || !resultVisRef.current) return;
 
       const resultVis = resultVisRef.current;
       const rect = resultVis.getBoundingClientRect();
@@ -229,27 +230,27 @@ const VectorEquation = ({
       // Update target vector
       setCurrentTarget([clampedX, clampedY]);
     },
-    [inverseK, scale, scaleDomain]
+    [inverseK, interactive, scale, scaleDomain]
   );
 
   // Mouse event handlers
   const handleMouseDown = useCallback(
     (event) => {
-      if (inverseK) {
+      if (inverseK && interactive) {
         setIsDragging(true);
         handleResultInteraction(event);
       }
     },
-    [inverseK, handleResultInteraction]
+    [inverseK, interactive, handleResultInteraction]
   );
 
   const handleMouseMove = useCallback(
     (event) => {
-      if (isDragging && inverseK) {
+      if (isDragging && inverseK && interactive) {
         handleResultInteraction(event);
       }
     },
-    [isDragging, inverseK, handleResultInteraction]
+    [isDragging, inverseK, interactive, handleResultInteraction]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -259,25 +260,25 @@ const VectorEquation = ({
   // Touch event handlers
   const handleTouchStart = useCallback(
     (event) => {
-      if (inverseK) {
+      if (inverseK && interactive) {
         setIsDragging(true);
         handleResultInteraction(event);
         // Prevent default to avoid scrolling while dragging
         event.preventDefault();
       }
     },
-    [inverseK, handleResultInteraction]
+    [inverseK, interactive, handleResultInteraction]
   );
 
   const handleTouchMove = useCallback(
     (event) => {
-      if (isDragging && inverseK) {
+      if (isDragging && inverseK && interactive) {
         handleResultInteraction(event);
         // Prevent default to avoid scrolling while dragging
         event.preventDefault();
       }
     },
-    [isDragging, inverseK, handleResultInteraction]
+    [isDragging, inverseK, interactive, handleResultInteraction]
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -286,7 +287,7 @@ const VectorEquation = ({
 
   useEffect(() => {
     // Add global mouse up and move handlers
-    if (inverseK) {
+    if (inverseK && interactive) {
       document.addEventListener('mouseup', handleMouseUp);
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('touchend', handleTouchEnd);
@@ -299,7 +300,15 @@ const VectorEquation = ({
         document.removeEventListener('touchmove', handleTouchMove);
       };
     }
-  }, [inverseK, isDragging, handleMouseUp, handleMouseMove, handleTouchEnd, handleTouchMove]);
+  }, [
+    inverseK,
+    interactive,
+    isDragging,
+    handleMouseUp,
+    handleMouseMove,
+    handleTouchEnd,
+    handleTouchMove,
+  ]);
 
   // Add target vector to the result visualization
   equationComponents.push(
@@ -309,7 +318,7 @@ const VectorEquation = ({
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       ref={resultVisRef}
-      style={inverseK ? { cursor: isDragging ? 'grabbing' : 'grab' } : {}}
+      style={inverseK && interactive ? { cursor: isDragging ? 'grabbing' : 'grab' } : {}}
     >
       <VectorVis
         vectors={[

@@ -2,7 +2,17 @@ import { useCallback, useState, useEffect, useMemo } from 'react';
 import { Tooltip } from 'react-tooltip';
 import { interpolateTurbo } from 'd3-scale-chromatic';
 import { Footnote, FootnoteTooltip } from '../components/Essays/Footnotes';
-import { P, H2, H3, Query, Array, Scrollable, Caption, Aside } from '../components/Essays/Basics';
+import {
+  P,
+  H2,
+  H3,
+  Query,
+  Array,
+  Scrollable,
+  Caption,
+  Aside,
+  Expandable,
+} from '../components/Essays/Basics';
 
 import { saeAvailable } from '../lib/SAE';
 import { ScopeProvider } from '../contexts/ScopeContext';
@@ -277,11 +287,11 @@ function NavBySim() {
               domain={[-0.1, 0, 0.1]}
               height={48}
             ></EmbeddingVis>
-            <Aside>
-              This visualization is called a "waffle chart", here we are converting each number to a
-              small square, each square's color is more green the more positive the number and more
-              orange the more negative.
-            </Aside>
+            <Caption>
+              This visualization is a cross between a "waffle chart" and a heatmap, here we are
+              converting each number to a small square, each square's color is more green the more
+              positive the number and more orange the more negative.
+            </Caption>
             <P>
               We also convert each row of our dataset into a vector by embedding the text column (in
               this case, the joke). Here are the visualized results for the 4 most similar jokes to
@@ -322,85 +332,149 @@ function NavBySim() {
         <section>
           <H3>Sparse Autoencoders</H3>
           <P>
-            Sparse Autoencoders (SAEs) allow us to automatically decompose embeddings into
-            interpretable directions (i.e. concepts) that we can then use to navigate our data. To
-            understand what the SAE does for us, let's review a little bit about high-dimensional
-            vector spaces, starting with a simplified version of the classic example:
-            <VectorEquation
-              vectors={[
-                { vector: [1, -1], label: 'King' },
-                { vector: [-0.3, 0.7], label: 'Man' },
-              ]}
-              operations={['-']}
-              resultLabel="Queen"
-              scale={0.75}
-              height={200}
-            />
-            <P>
-              It was shown
-              {/* <Footnote number="1">
-                <a href="https://arxiv.org/abs/1509.01692">
-                  <em>
-                    Take and Took, Gaggle and Goose, Book and Read: Evaluating the Utility of Vector
-                    Differences for Lexical Relation Learning
-                  </em>
-                </a>
-              </Footnote> */}
-              that embeddings aren't just points in high-dimensional space, they are directions. So
-              if you subtracted one direction from another (<Query>King</Query> - <Query>Man</Query>
-              ) you would be pointing in a new direction, which was very similar to the direction
-              for
-              <Query>Queen</Query>.
-            </P>
-            <P>We can also think about a direction as being composed of sub-directions:</P>
-            <VectorEquation
-              vectors={[
-                { vector: [0.3, -0.7], label: 'Woman' },
-                { vector: [0.4, 0.4], label: 'Royalty' },
-              ]}
-              operations={['+']}
-              resultLabel="Queen"
-              scale={0.75}
-              height={200}
-            />
-            <P>We can take this further and add together sub-sub-directions:</P>
-            <VectorEquation
-              vectors={[
-                { vector: [0.3, -0.7], label: 'Woman' },
-                // { vector: [0.1, 0.15], label: 'Court' },
-                { vector: [0.15, 0.25], label: 'Crown' },
-                { vector: [0.25, 0.15], label: 'Monarchy' },
-              ]}
-              operations={['+', '+', '+']}
-              scale={0.75}
-              resultLabel="Queen"
-              height={200}
-            />
+            A particularly helpful tool is called a Sparse Autoencoder, or SAE. An SAE allow us to
+            automatically decompose embeddings into interpretable directions (i.e. concepts) that we
+            can then use to navigate our data.
+            <br />
+            <img src="/images/essays/sae-diagram.png" />
+            <br />
+            For example, our query:
+            <br />
+            <Query>A cat and a calculator</Query>
+            <EmbeddingVis
+              embedding={catAndCalculatorEmbedding.embedding}
+              rows={8}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            ></EmbeddingVis>
+            Becomes:
+            <Scrollable height={255}>
+              <FeatureBars topk={catAndCalculatorFeatures} features={saeFeatures} numToShow={64} />
+            </Scrollable>
+            <Caption>
+              The visualization above shows each of the directions as a bar. The number on the left{' '}
+              <span className={styles.featureIdPill}>13557</span>is the feature index, and the
+              number on the right <code>0.371</code> is the activation strength of that feature for
+              the query. The bar's length is relative to the maximum activation seen on the SAE's
+              training data. So this example activates the cat and the calculator about as strongly
+              as they are ever activated.
+            </Caption>
           </P>
           <P>
-            Now we want to consider that each document in our dataset is a vector and we want to
-            find some set of "sub-directions" that can be combined to reconstruct any document. A
-            Sparse Autoencoder essentially figures out what those directions are so for a given
-            document vector:
-            <VectorExample onSelect={setSelectedVector} selectedVector={selectedVector} />
-            We would get some linear combination of "sub-directions" (sometimes called "features")
-            to reconstruct that vector:
-            <VectorEquation
-              vectors={[
-                { vector: [0.3, -0.7], label: 'A' },
-                { vector: [0.15, 0.5], label: 'B' },
-                // { vector: [-0.7, 0.15], label: 'C' },
-                // { vector: [-0.1, 0.8], label: 'D' },
-              ]}
-              operations={['+', '+']}
-              scale={0.75}
-              scalable={true}
-              resultLabel={selectedVector.label}
-              inverseK={true}
-              targetVector={selectedVector}
-              height={200}
-            />
+            The concepts shown in the above visualization are just 64 out of 25,000 directions that
+            the SAE was trained to find. The names are automatically generated by an LLM so they may
+            leave something to be desired, however as we will see they are still useful for
+            navigating our data. in a process described further in{' '}
+            <a href="https://enjalot.github.io/latent-taxonomy/articles/about"></a>
           </P>
+          <Expandable
+            title="An interactive refresher on high-dimensional vector composition"
+            subtitle="This section tries to provide some intuition for how an SAE comes from adding vectors together."
+          >
+            <P>
+              To understand what the SAE does for us, let's do a quick review of high-dimensional
+              vector spaces, starting with a simplified version of the classic example:
+              <VectorEquation
+                vectors={[
+                  { vector: [1, -1], label: 'King' },
+                  { vector: [-0.3, 0.7], label: 'Man' },
+                ]}
+                operations={['-']}
+                resultLabel="Queen"
+                scale={0.75}
+                height={200}
+              />
+              <P>
+                It was shown{' '}
+                {/* <Footnote number="1">
+                  <a href="https://arxiv.org/abs/1509.01692">
+                    <em>
+                      Take and Took, Gaggle and Goose, Book and Read: Evaluating the Utility of Vector
+                      Differences for Lexical Relation Learning
+                    </em>
+                  </a>
+                </Footnote> */}
+                that embeddings aren't just points in high-dimensional space, they are directions.
+                So if you subtracted one direction from another (<Query>King</Query> -{' '}
+                <Query>Man</Query>) you would be pointing in a new direction, which was very similar
+                to the direction for <Query>Queen</Query>.
+              </P>
+              <P>We can also think about a direction as being composed of sub-directions:</P>
+              <VectorEquation
+                vectors={[
+                  { vector: [0.3, -0.7], label: 'Woman' },
+                  { vector: [0.4, 0.4], label: 'Royalty' },
+                ]}
+                operations={['+']}
+                resultLabel="Queen"
+                scale={0.75}
+                height={200}
+              />
+              <P>We can take this further and add together sub-sub-directions:</P>
+              <VectorEquation
+                vectors={[
+                  { vector: [0.3, -0.7], label: 'Woman' },
+                  // { vector: [0.1, 0.15], label: 'Court' },
+                  { vector: [0.15, 0.25], label: 'Crown' },
+                  { vector: [0.25, 0.15], label: 'Monarchy' },
+                ]}
+                operations={['+', '+', '+']}
+                scale={0.75}
+                resultLabel="Queen"
+                height={200}
+              />
+            </P>
+            <P>
+              Now we want to consider that each document in our dataset is a vector and we want to
+              find some set of "sub-directions" that can be combined to reconstruct any document. A
+              Sparse Autoencoder essentially figures out what those directions are. Thus, for a
+              given document vector:
+              <VectorExample onSelect={setSelectedVector} selectedVector={selectedVector} />
+              We would get some linear combination of "sub-directions" (sometimes called "features")
+              to reconstruct that vector:
+              <VectorEquation
+                vectors={[
+                  { vector: [0.3, -0.7], label: 'A' },
+                  { vector: [0.15, 0.5], label: 'B' },
+                  // { vector: [-0.7, 0.15], label: 'C' },
+                  // { vector: [-0.1, 0.8], label: 'D' },
+                ]}
+                operations={['+', '+']}
+                scale={0.75}
+                scalable={true}
+                resultLabel={selectedVector.label}
+                inverseK={true}
+                interactive={false}
+                targetVector={selectedVector}
+                height={200}
+              />
+              Finally, you can reconstruct any direction in our space by doing some linear
+              combination of the two "feature" directions, try changing the sliders or dragging the
+              target vector to see it in action:
+              <VectorEquation
+                vectors={[
+                  { vector: [0.3, -0.7], label: 'A' },
+                  { vector: [0.15, 0.5], label: 'B' },
+                  // { vector: [-0.7, 0.15], label: 'C' },
+                  // { vector: [-0.1, 0.8], label: 'D' },
+                ]}
+                operations={['+', '+']}
+                scale={0.75}
+                scalable={true}
+                resultLabel={'R'}
+                inverseK={true}
+                targetVector={{ vector: [0.5, 0.3], label: 'R' }}
+                interactive={true}
+                height={200}
+              />
+            </P>
+            <P>
+              Of course, in the high-dimensional SAE you would have many more features, and the
+              combination would be made up of some small subset of them. The intuition should hold
+              though, that you would be able to reconstruct any of the embeddings (directions) in
+              your dataset as a linear combination of these features.
+            </P>
+          </Expandable>
           <P>
             For an embedding model like nomic-embed-text-v1.5, which has 768 dimensions, we can
             train an SAE to find 25,000 of these features and allow it to use 64 when reconstructing
@@ -425,26 +499,6 @@ function NavBySim() {
             Let's see what happens if we give an example query embedding to the SAE: We can break
             down our query embedding into directions (concepts) via the SAE:
             <br />
-            <Query>A cat and a calculator</Query>
-            <EmbeddingVis
-              embedding={catAndCalculatorEmbedding.embedding}
-              rows={8}
-              domain={[-0.1, 0, 0.1]}
-              height={48}
-            ></EmbeddingVis>
-            <br />
-            Becomes:
-            <Scrollable height={255}>
-              <FeatureBars topk={catAndCalculatorFeatures} features={saeFeatures} numToShow={64} />
-            </Scrollable>
-            <Caption>
-              The visualization above shows each of the directions as a bar. The number on the left{' '}
-              <span className={styles.featureIdPill}>13557</span>is the feature index, and the
-              number on the right <code>0.371</code> is the activation strength of that feature for
-              the query. The bar's length is relative to the maximum activation seen on the SAE's
-              training data. So this example activates the cat and the calculator about as strongly
-              as they are ever activated.
-            </Caption>
           </P>
           <P>
             We can also reconstruct the embedding from the SAE features, which will give us an
@@ -613,11 +667,29 @@ function NavBySim() {
         </section>
 
         <footer className={styles.footnotes}>
-          <div className={styles.footnoteTitle}>Acknowledgements</div>
-          <P>TODO:</P>
+          <div className={styles.footnoteTitle}>Further Reading</div>
+          <P>
+            TODO: A number of articles on embeddings and SAEs:
+            <ul>
+              <li>
+                <a href="https://www.jimmymeetsworld.com/embeddings">
+                  Why I'm Excited About Embeddings
+                </a>
+              </li>
+              <li></li>
+            </ul>
+          </P>
 
-          <div className={styles.footnoteTitle}>Footnotes</div>
-          <P>TODO:</P>
+          <div className={styles.footnoteTitle}>Acknowledgements</div>
+          <P>
+            TODO:
+            <a href="https://www.jimmymeetsworld.com/">Jimmy Zhang</a> for his contributions to
+            Latent Scope, including improvements that made this article possible and his feedback on
+            this article. Thank you to <a href="https://www.ksadov.com/">Konstantine Sadov</a>,{' '}
+            <a href="https://a13x.io/">Alex Bäurle</a>
+            for their thoughtful feedback on this article leading to numerous improvements.
+          </P>
+
           {/* <Footnote
             number="1"
             text="This note underscores the importance of having a robust base in programming fundamentals."

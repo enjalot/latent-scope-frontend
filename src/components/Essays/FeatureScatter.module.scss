@@ -31,3 +31,41 @@
     margin: 5px 0;
   }
 } 
+
+.hoverInfo {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-size: 14px;
+  width: fit-content;
+}
+
+.featureIdPill {
+  color: black;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  width: 35px;
+  min-width: 35px;
+  text-align: center;
+  text-shadow: 0 0 1px white,
+  0 0 1px white,
+  0 0 1px white,
+  0 0 1px white,
+  0 0 1px white,
+  0 0 1px white,
+  0 0 4px white;
+}
+
+.featureLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

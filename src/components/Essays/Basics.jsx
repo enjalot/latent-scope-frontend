@@ -1,4 +1,6 @@
 import styles from '../../essays/essays.module.scss';
+import { useState } from 'react';
+import { Button } from 'react-element-forge';
 
 function P({ children }) {
   return <div className={styles.paragraph}>{children}</div>;
@@ -37,4 +39,36 @@ function Aside({ children }) {
   );
 }
 
-export { P, H2, H3, Query, Array, Scrollable, Caption, Aside };
+function Expandable({ children, title, subtitle }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleOpen = () => {
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div className={`${styles.expandable} ${isOpen ? styles.expanded : ''}`}>
+      <div className={styles.expandableHeader} onClick={toggleOpen}>
+        <div className={styles.expandableTitleWrapper}>
+          <div className={styles.expandableTitle}>{title}</div>
+          {subtitle && <div className={styles.expandableSubtitle}>{subtitle}</div>}
+        </div>
+        <Button
+          color="primary"
+          variant="outline"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleOpen();
+          }}
+          icon={isOpen ? 'chevron-up' : 'chevron-down'}
+          aria-label={isOpen ? 'Close' : 'Open'}
+        />
+      </div>
+      <div className={`${styles.expandableContent} ${isOpen ? styles.visible : ''}`}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export { P, H2, H3, Query, Array, Scrollable, Caption, Aside, Expandable };

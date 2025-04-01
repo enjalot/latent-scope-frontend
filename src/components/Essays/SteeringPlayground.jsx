@@ -21,12 +21,12 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
 
   // Use effect to initialize localQuery when component mounts
   useEffect(() => {
-    if (defaultQuery) {
+    if (defaultQuery && scope) {
       setQuery(defaultQuery);
       setLocalQuery(defaultQuery);
       handleSearch(defaultQuery);
     }
-  }, [defaultQuery]);
+  }, [defaultQuery, scope]);
 
   // Calculate embedding and features when query changes (after search is performed)
   useEffect(() => {
