@@ -84,6 +84,7 @@ const FeatureAutocomplete = ({ currentFeature, features, onSelect, placeholder }
                 {feature.feature}
               </span>
               <span className={styles.featureLabel}>{feature.label}</span>
+              <span className={styles.featureCount}>{feature.count}</span>
             </div>
           ))}
         </div>
