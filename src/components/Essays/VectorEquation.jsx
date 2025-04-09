@@ -28,7 +28,6 @@ const VectorEquation = ({
 
   useEffect(() => {
     if (inverseK) {
-      console.log('did this really change?', targetVector);
       setCurrentTarget(targetVector.vector);
     }
   }, [targetVector, inverseK]);

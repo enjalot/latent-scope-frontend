@@ -35,7 +35,7 @@ function Search({ defaultQuery = '', onSearch, value, onChange }) {
             placeholder="Search dad jokes..."
             className={styles.searchInput}
           />
-          <Button type="submit" className={styles.searchButton} icon="search" />
+          <Button type="submit" size="medium" className={styles.searchButton} icon="search" />
         </div>
       </form>
     </div>

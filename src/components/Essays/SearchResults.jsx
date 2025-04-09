@@ -114,47 +114,44 @@ function SearchResults({
     [onSelect, selectable]
   );
 
-  if (loading) {
-    return (
-      <div className={styles.searchResults}>
+  if (results?.length === 0) {
+    return <div className={styles.noResults}>No matching results found.</div>;
+  }
+
+  return (
+    <div className={styles.searchResults}>
+      <div className={styles.resultsContainer}>
+        {results?.length &&
+          results
+            .slice(0, numToShow)
+            .map((result, index) => (
+              <ResultRow
+                key={result.id || index}
+                index={result.index}
+                result={result}
+                isHighlighted={false}
+                isSelected={
+                  selected && selected.index === result.index && result.index !== undefined
+                }
+                showIndex={showIndex}
+                showDistance={showDistance}
+                onHover={onHover}
+                onSelect={handleSelect}
+                dataset={dataset}
+                selectable={selectable}
+                showFeatureActivation={showFeatureActivation}
+                feature={feature}
+              />
+            ))}
+      </div>
+      {loading && (
         <div className={styles.loadingOverlay}>
           <div className={styles.loadingContainer}>
             <div className={styles.loadingSpinner}></div>
             <div>Loading results...</div>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  if (results.length === 0) {
-    return <div className={styles.noResults}>No matching results found.</div>;
-  }
-  // console.log('=== Search Results ===');
-  // console.log(results.slice(0, numToShow));
-  // console.log(selected);
-
-  return (
-    <div className={styles.searchResults}>
-      <div className={styles.resultsContainer}>
-        {results.slice(0, numToShow).map((result, index) => (
-          <ResultRow
-            key={result.id || index}
-            index={result.index}
-            result={result}
-            isHighlighted={false}
-            isSelected={selected && selected.index === result.index && result.index !== undefined}
-            showIndex={showIndex}
-            showDistance={showDistance}
-            onHover={onHover}
-            onSelect={handleSelect}
-            dataset={dataset}
-            selectable={selectable}
-            showFeatureActivation={showFeatureActivation}
-            feature={feature}
-          />
-        ))}
-      </div>
+      )}
     </div>
   );
 }

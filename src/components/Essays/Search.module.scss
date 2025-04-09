@@ -16,15 +16,12 @@
   border: none;
   font-size: 1rem;
   outline: none;
-  text-decoration: underline;
+  // text-decoration: underline;
   font-family: "Roboto Mono", monospace;
 }
 
 .searchButton {
   background: #f0f0f0;
-  border: none;
-  padding: 0 1rem;
-  cursor: pointer;
   transition: background-color 0.2s;
   
   &:hover {

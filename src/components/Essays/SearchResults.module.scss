@@ -1,6 +1,7 @@
 // Add these to your existing Search.module.scss file
 
 .searchResults {
+  position: relative;
   width: 100%;
   overflow-y: auto;
   background-color: #f9f9f9;
@@ -17,6 +18,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
+  min-height:300px;
 }
 
 .resultCard {
@@ -109,15 +111,16 @@
 }
 
 .loadingOverlay {
-  position: relative;
-  width: 100%;
-  background-color: #eee;
-  padding: 24px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8); /* semi-transparent background */
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 8px;
-  z-index: 10;
+  z-index: 10; /* Ensure it's above other content */
 }
 
 .loadingContainer {

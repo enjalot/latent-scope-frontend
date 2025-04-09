@@ -1,5 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { interpolateTurbo } from 'd3-scale-chromatic';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import styles from './FeatureBars.module.scss';
 import { rgb } from 'd3-color';
 import FeatureAutocomplete from './FeatureAutocomplete';
@@ -59,6 +58,7 @@ const EditableActivationBar = ({
 };
 
 const EditableFeatureBars = ({ topk, features, numToShow = 10, onFeaturesChange }) => {
+  const initialLoadRef = useRef(false);
   const [editedFeatures, setEditedFeatures] = useState([]);
 
   // Initialize from topk when it changes
@@ -75,7 +75,7 @@ const EditableFeatureBars = ({ topk, features, numToShow = 10, onFeaturesChange 
       };
     });
     // .slice(0, numToShow);
-
+    initialLoadRef.current = true;
     setEditedFeatures(newFeatures);
   }, [topk, features, numToShow]);
 
@@ -83,11 +83,14 @@ const EditableFeatureBars = ({ topk, features, numToShow = 10, onFeaturesChange 
     if (editedFeatures.length > 0 && onFeaturesChange) {
       const top_acts = editedFeatures.map((f) => f.activation);
       const top_indices = editedFeatures.map((f) => f.featureIndex);
-      onFeaturesChange({ top_acts, top_indices });
+      if (!initialLoadRef.current) {
+        onFeaturesChange({ top_acts, top_indices });
+      }
     }
   }, [editedFeatures, onFeaturesChange]);
 
   const handleActivationChange = (featureId, newActivation) => {
+    initialLoadRef.current = false;
     setEditedFeatures((prev) =>
       prev.map((item) =>
         item.feature.feature === featureId ? { ...item, activation: newActivation } : item

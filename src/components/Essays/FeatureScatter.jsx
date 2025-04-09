@@ -94,15 +94,38 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
   const points = useMemo(() => {
     if (!features) return [];
 
-    return features.map((feature, i) => {
+    const pts = features.map((feature) => {
       // Check if this is the selected feature
-      const isSelected = selectedFeature && feature.index === selectedFeature.index;
+      // const isSelected = selectedFeature && feature?.feature === selectedFeature?.feature;
 
-      // Format: [x, y, selectionState, intensity]
-      // Using 3 for selected, 1 for normal
-      return [feature.grid_x || 0, feature.grid_y || 0, interpolateSinebow(feature.order)];
+      // Format: [x, y, color]
+      // We'll make selected points larger by setting a different size in calculatePointSize
+      return [
+        feature.grid_x || 0,
+        feature.grid_y || 0,
+        interpolateSinebow(feature.order),
+        feature.count,
+      ];
     });
+    console.log('pts', pts);
+    return pts;
   }, [features, selectedFeature]);
+
+  // Add a calculatePointSize function that makes selected points larger
+  const calculatePointSize = useCallback(
+    (valueA, index) => {
+      const feature = features[index];
+      const isSelected = selectedFeature && feature?.feature === selectedFeature?.feature;
+      return isSelected ? 3 : 1.25;
+    },
+    [features, selectedFeature]
+  );
+  const calculatePointOpacity = useCallback(
+    (isselected, valueA, count, index) => {
+      return count > 0 ? 1 : 0.25;
+    },
+    [features]
+  );
 
   return (
     <div className={styles.featureScatterContainer} ref={containerRef}>
@@ -112,13 +135,18 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
           width={containerWidth}
           height={height}
           calculatePointColor={(a) => a}
-          calculatePointOpacity={() => 1}
-          calculatePointSize={() => 1.25}
+          calculatePointOpacity={calculatePointOpacity}
+          calculatePointSize={calculatePointSize}
           onView={handleView}
-          onSelect={handleSelect}
+          onSelect={(index) => {
+            if (index !== null) {
+              onFeature(features[index]);
+            }
+          }}
           onHover={handleHover}
           minZoom={0.8}
           maxZoom={0.8}
+          disablePan={true}
         />
 
         {/* Tooltip for hover information */}
@@ -132,7 +160,7 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
             pointerEvents: 'none',
           }}
         >
-          {hovered && (
+          {hovered ? (
             <p className={styles.hoverInfo}>
               <span
                 className={styles.featureIdPill}
@@ -140,9 +168,26 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
               >
                 {hovered.feature}
               </span>
-              <span className={styles.featureLabel}>{hovered.label || 'Unnamed feature'}</span>
+              <span className={styles.featureLabel}>
+                {hovered.label || 'Unnamed feature'} ({hovered.count})
+              </span>
             </p>
-          )}
+          ) : selectedFeature ? (
+            <p className={styles.hoverInfo}>
+              <span
+                className={styles.featureIdPill}
+                style={{
+                  backgroundColor: interpolateSinebow(selectedFeature.order),
+                  opacity: 0.75,
+                }}
+              >
+                {selectedFeature.feature}
+              </span>
+              <span className={styles.featureLabel}>
+                {selectedFeature.label || 'Unnamed feature'} ({selectedFeature.count})
+              </span>
+            </p>
+          ) : null}
         </div>
         {/* <Tooltip
           id="featureTooltip"

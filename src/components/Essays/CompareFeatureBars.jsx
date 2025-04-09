@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { interpolateTurbo } from 'd3-scale-chromatic';
+import { interpolateSinebow } from 'd3-scale-chromatic';
 import styles from './FeatureBars.module.scss';
 import FeatureBars from './FeatureBars';
 import { Query } from './Basics';
@@ -39,8 +39,8 @@ const CompareFeatureBars = ({
           rightPanelWidth: Math.floor(containerWidth * panelPercentage),
           gapWidth: containerWidth - 2 * Math.floor(containerWidth * panelPercentage),
         };
-        console.log('=== Dimensions ===');
-        console.log(dims);
+        // console.log('=== Dimensions ===');
+        // console.log(dims);
         setDimensions(dims);
       };
 
@@ -173,8 +173,8 @@ const CompareFeatureBars = ({
       });
     });
 
-    console.log('=== Connections ===');
-    console.log(newConnections);
+    // console.log('=== Connections ===');
+    // console.log(newConnections);
     setConnections(newConnections);
   }, [topkA, topkB, features, numToShow, dimensions]);
 
@@ -340,7 +340,7 @@ const CompareFeatureBars = ({
             {connections.map((conn) => {
               const isHighlighted =
                 hoveredFeature && hoveredFeature.feature === conn.feature.feature;
-              const featureColor = interpolateTurbo(conn.feature?.order);
+              const featureColor = interpolateSinebow(conn.feature?.order);
 
               return (
                 <g key={conn.id}>
@@ -378,7 +378,7 @@ const CompareFeatureBars = ({
               <g key={hoverConnection.id}>
                 <path
                   d={`M ${hoverConnection.startX + 10} ${hoverConnection.startY} C ${hoverConnection.startX + 50} ${hoverConnection.startY}, ${hoverConnection.endX - 50} ${hoverConnection.endY}, ${hoverConnection.endX - 8} ${hoverConnection.endY}`}
-                  stroke={interpolateTurbo(hoverConnection.feature?.order)}
+                  stroke={interpolateSinebow(hoverConnection.feature?.order)}
                   strokeWidth={3}
                   opacity={0.7}
                   strokeDasharray={
@@ -392,7 +392,7 @@ const CompareFeatureBars = ({
                   <text
                     x={hoverConnection.startX - 5}
                     y={hoverConnection.startY + 5}
-                    fill={interpolateTurbo(hoverConnection.feature?.order)}
+                    fill={interpolateSinebow(hoverConnection.feature?.order)}
                     fontSize="12px"
                   >
                     #{hoverConnection.positionA + 1}
@@ -402,7 +402,7 @@ const CompareFeatureBars = ({
                   <text
                     x={hoverConnection.startX - 5}
                     y={hoverConnection.startY + 5}
-                    fill={interpolateTurbo(hoverConnection.feature?.order)}
+                    fill={interpolateSinebow(hoverConnection.feature?.order)}
                     fontSize="12px"
                   >
                     NA
@@ -412,7 +412,7 @@ const CompareFeatureBars = ({
                   <text
                     x={hoverConnection.endX - 5}
                     y={hoverConnection.endY + 5}
-                    fill={interpolateTurbo(hoverConnection.feature?.order)}
+                    fill={interpolateSinebow(hoverConnection.feature?.order)}
                     fontSize="12px"
                   >
                     #{hoverConnection.positionB + 1}
@@ -422,7 +422,7 @@ const CompareFeatureBars = ({
                   <text
                     x={hoverConnection.endX - 5}
                     y={hoverConnection.endY + 5}
-                    fill={interpolateTurbo(hoverConnection.feature?.order)}
+                    fill={interpolateSinebow(hoverConnection.feature?.order)}
                     fontSize="12px"
                   >
                     NA

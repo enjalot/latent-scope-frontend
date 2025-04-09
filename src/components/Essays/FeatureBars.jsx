@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { interpolateTurbo } from 'd3-scale-chromatic';
+import { interpolateSinebow } from 'd3-scale-chromatic';
 import styles from './FeatureBars.module.scss';
 import { rgb } from 'd3-color';
 function yiq(color) {
@@ -13,7 +13,7 @@ const ActivationBar = ({
   onHover = () => {},
   onSelect = () => {},
 }) => {
-  const featureColor = useMemo(() => interpolateTurbo(feature?.order), [feature]);
+  const featureColor = useMemo(() => interpolateSinebow(feature?.order), [feature]);
   return (
     <div
       className={styles.sampleActivationBar}

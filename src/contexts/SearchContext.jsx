@@ -39,8 +39,8 @@ export function SearchProvider({ children }) {
         searchQuery,
         true
       );
-      console.log('DATA');
-      console.log(data);
+      // console.log('DATA');
+      // console.log(data);
       // const rows = await apiService.getRowsByIndices(userId, datasetId, scope.id, data.indices);
       // Only update state if this is the latest request.
       const rowsWithIdx = data.map((row, idx) => ({

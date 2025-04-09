@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { interpolateTurbo } from 'd3-scale-chromatic';
+import { interpolateSinebow } from 'd3-scale-chromatic';
 import { rgb } from 'd3-color';
 import styles from './FeatureAutocomplete.module.scss';
 
@@ -12,7 +12,7 @@ const FeatureAutocomplete = ({ currentFeature, features, onSelect, placeholder }
   // Calculate feature color internally instead of accepting as prop
   const featureColor = (order) => {
     if (!order) return 'rgba(0, 0, 0, 0.1)';
-    const color = rgb(interpolateTurbo(order));
+    const color = rgb(interpolateSinebow(order));
     color.opacity = 0.75;
     return color.toString();
   };

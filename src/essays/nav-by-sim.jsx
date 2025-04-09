@@ -1,6 +1,5 @@
 import { useCallback, useState, useEffect, useMemo } from 'react';
 import { Tooltip } from 'react-tooltip';
-import { interpolateTurbo } from 'd3-scale-chromatic';
 import { Footnote, FootnoteTooltip } from '../components/Essays/Footnotes';
 import {
   P,
@@ -88,14 +87,41 @@ function NavBySim() {
 
   useEffect(() => {
     apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
-      console.log('SAE FEATURES', fts);
+      // console.log('SAE FEATURES', fts);
       setSaeFeatures(fts);
       setSelectedFeature(fts[6864]); //domestic wildlife
     });
   }, []);
+
+  const [datasetFilteredFeatures, setDatasetFilteredFeatures] = useState(null);
+  useEffect(() => {
+    if (!saeFeatures) return;
+    // Fetch the dataset features to see which features are actually present
+    apiService
+      .getDatasetFeatures('enjalot', 'ls-dadabase', 'sae-001')
+      .then((dataFeatures) => {
+        // console.log('data features', dataFeatures);
+        // const filtered = dataFeatures.filter((f) => f.count > 0);
+        const filtered = dataFeatures.map((f) => f);
+        // console.log('filtered data features', filtered);
+        const filteredFeatures = filtered.map((d) => {
+          return {
+            ...d,
+            ...saeFeatures[d.feature_id],
+          };
+        });
+        // .sort((a, b) => b.count - a.count);
+        console.log('filtered features', filteredFeatures);
+        setDatasetFilteredFeatures(filteredFeatures);
+      })
+      .catch((error) => {
+        console.error('Error fetching dataset features:', error);
+      });
+  }, [saeFeatures]);
+
   useEffect(() => {
     apiService.calcFeatures(catAndCalculatorEmbedding.embedding).then((features) => {
-      console.log('FEATURES');
+      // console.log('FEATURES');
       console.log(features);
       setCatAndCalculatorFeatures(features);
       let catCalculatorModified = {
@@ -108,41 +134,41 @@ function NavBySim() {
       setCatCalculatorModified(catCalculatorModified);
       apiService.calcSteering(catCalculatorModified).then((embed) => {
         apiService.getNNEmbed('enjalot/ls-dadabase', 'scopes-001', embed).then((results) => {
-          console.log('steered results', results);
+          // console.log('steered results', results);
           setSteeredResults(results);
         });
       });
     });
   }, []);
-  useEffect(() => {
-    apiService.getNNEmbed('enjalot/ls-dadabase', 'scopes-001', steeredEmbedding).then((results) => {
-      console.log('reconstructed results', results);
-      setReconstructedResults(results);
-    });
-  }, [steeredEmbedding]);
+  // useEffect(() => {
+  //   apiService.getNNEmbed('enjalot/ls-dadabase', 'scopes-001', steeredEmbedding).then((results) => {
+  //     // console.log('reconstructed results', results);
+  //     setReconstructedResults(results);
+  //   });
+  // }, [steeredEmbedding]);
 
-  const [tokenFeatures, setTokenFeatures] = useState([]);
-  useEffect(() => {
-    apiService
-      .calcFeatures(
-        catAndCalculatorEmbedding.hidden_states[0].map((hs) => {
-          let norm = Math.sqrt(hs.reduce((sum, val) => sum + val * val, 0));
-          let normalized = hs.map((val) => val / norm);
-          return normalized;
-        })
-      )
-      .then((features) => {
-        console.log('TOKEN FEATURES', features);
-        let tokfs = features.top_acts.map((act, i) => {
-          return {
-            top_acts: act,
-            top_indices: features.top_indices[i],
-          };
-        });
-        console.log('TOKFS', tokfs);
-        setTokenFeatures(tokfs);
-      });
-  }, []);
+  // const [tokenFeatures, setTokenFeatures] = useState([]);
+  // useEffect(() => {
+  //   apiService
+  //     .calcFeatures(
+  //       catAndCalculatorEmbedding.hidden_states[0].map((hs) => {
+  //         let norm = Math.sqrt(hs.reduce((sum, val) => sum + val * val, 0));
+  //         let normalized = hs.map((val) => val / norm);
+  //         return normalized;
+  //       })
+  //     )
+  //     .then((features) => {
+  //       // console.log('TOKEN FEATURES', features);
+  //       let tokfs = features.top_acts.map((act, i) => {
+  //         return {
+  //           top_acts: act,
+  //           top_indices: features.top_indices[i],
+  //         };
+  //       });
+  //       // console.log('TOKFS', tokfs);
+  //       setTokenFeatures(tokfs);
+  //     });
+  // }, []);
   const [selectedResult, setSelectedResult] = useState(catAndCalculator[0]);
 
   const handleFeatureSelect = useCallback((feature) => {
@@ -174,6 +200,14 @@ function NavBySim() {
             the query. It is also a challenge when the results don't match the user's intent becuase
             it isn't clear what went wrong.
           </P>
+          <ScopeProvider userParam="enjalot" datasetParam="ls-dadabase" scopeParam="scopes-001">
+            <SearchProvider>
+              <SteeringPlayground
+                saeFeatures={datasetFilteredFeatures}
+                defaultQuery="A cat and a calculator"
+              />
+            </SearchProvider>
+          </ScopeProvider>
           <P>
             There are new interpretability techniques like Sparse Autoencoders that allow us to dig
             a bit deeper into the concepts represented in the latent space used by the similarity
@@ -358,7 +392,11 @@ function NavBySim() {
             ></EmbeddingVis>
             Becomes:
             <Scrollable height={255}>
-              <FeatureBars topk={catAndCalculatorFeatures} features={saeFeatures} numToShow={64} />
+              <FeatureBars
+                topk={catAndCalculatorFeatures}
+                features={datasetFilteredFeatures}
+                numToShow={64}
+              />
             </Scrollable>
             <Caption>
               The visualization above shows each of the directions as a bar. The number on the left{' '}
@@ -369,25 +407,6 @@ function NavBySim() {
               as they are ever activated.
             </Caption>
           </P>
-          <P>
-            The concepts shown in the above visualization are just 64 out of 25,000 directions that
-            the SAE was trained to find. You can preview all the features in this grid below:
-          </P>
-
-          {saeFeatures && (
-            <FeatureScatter
-              features={saeFeatures}
-              selectedFeature={selectedFeature}
-              onFeature={handleFeatureSelect}
-              height={500}
-            />
-          )}
-          <Caption>
-            Each dot is one feature, colored by semantic ordering. The names of each feature are
-            automatically generated by an LLM from samples of the training data. You can read more
-            about how this SAE was trained at{' '}
-            <a href="https://enjalot.github.io/latent-taxonomy/articles/about">Latent Taxonomy</a>.
-          </Caption>
 
           <Expandable
             title="An interactive refresher on high-dimensional vector composition"
@@ -498,11 +517,58 @@ function NavBySim() {
             </P>
           </Expandable>
 
+          <P>
+            The concepts shown in the above visualization are just 64 out of 25,000 directions that
+            the SAE was trained to find. You can preview all the features in this grid below:
+          </P>
+
+          {datasetFilteredFeatures && (
+            <FeatureScatter
+              features={datasetFilteredFeatures}
+              selectedFeature={selectedFeature}
+              onFeature={handleFeatureSelect}
+              height={500}
+            />
+          )}
+          <Caption>
+            Each dot is one feature, colored by semantic ordering. The names of each feature are
+            automatically generated by an LLM from samples of the training data. You can read more
+            about how this SAE was trained at{' '}
+            <a href="https://enjalot.github.io/latent-taxonomy/articles/about">Latent Taxonomy</a>.
+          </Caption>
+
+          <P>We can filter our dataset to the rows with the top activations for a given feature:</P>
+
+          {datasetFilteredFeatures && (
+            <div
+              className={styles.featureSearchContainer}
+              style={{ maxWidth: '600px', margin: '20px 0' }}
+            >
+              <FeatureFilter
+                features={datasetFilteredFeatures}
+                selectedFeature={selectedFeature}
+                onFeatureSelect={handleFeatureSelect}
+              />
+              <Caption></Caption>
+            </div>
+          )}
+
+          <P>
+            This form of filtering is supported directly in Latent Scope, see{' '}
+            <a
+              href={`https://latent.estate/scope/enjalot/ls-dadabase/scopes-001?filter=${selectedFeature?.feature}`}
+            >
+              all the jokes
+            </a>{' '}
+            that activate strongly on the <FeaturePill feature={selectedFeature} />{' '}
+            {selectedFeature?.label} feature.
+          </P>
+
           {/* <P>
             Now let's look at the top 10 directions of the top similarity result:
             <br />
             <Query>What do you call a reptile that is good at math? A Calcugator</Query>
-            <FeatureBars topk={catAndCalculator[0]} features={saeFeatures} numToShow={10} />
+            <FeatureBars topk={catAndCalculator[0]} features={datasetFilteredFeatures} numToShow={10} />
           </P> */}
 
           <H3>Comparisons</H3>
@@ -519,7 +585,7 @@ function NavBySim() {
                 queryB={selectedResult.joke}
                 topkA={catAndCalculatorFeatures}
                 topkB={selectedResult}
-                features={saeFeatures}
+                features={datasetFilteredFeatures}
                 numToShow={10}
               />
             </div>
@@ -539,39 +605,6 @@ function NavBySim() {
             You may notice that many of the top features in our query are also contained in the top
             features of our search results! We can also see that some of our results contain some
             totally different directions that we may become curious about.
-          </P>
-
-          <H3>Filtering</H3>
-          <P>
-            We can follow our curiousity by filtering our dataset by finding the rows with the top
-            activations for a given feature. This may be useful if you have identified a feature of
-            interest and want to see what if any of your data activates strongly on that feature. To
-            demonstrate this, select a feature and see the top 10 results that activate strongly on
-            that feature:
-          </P>
-
-          {saeFeatures && (
-            <div
-              className={styles.featureSearchContainer}
-              style={{ maxWidth: '600px', margin: '20px 0' }}
-            >
-              <FeatureFilter
-                features={saeFeatures}
-                defaultFeature={selectedFeature}
-                onFeatureSelect={setSelectedFeature}
-              />
-            </div>
-          )}
-
-          <P>
-            This form of filtering is supported directly in Latent Scope, see{' '}
-            <a
-              href={`https://latent.estate/scope/enjalot/ls-dadabase/scopes-001?filter=${selectedFeature?.feature}`}
-            >
-              all the jokes
-            </a>{' '}
-            that activate strongly on the <FeaturePill feature={selectedFeature} />{' '}
-            {selectedFeature?.label} feature.
           </P>
 
           <H3>Steering 🐮</H3>
@@ -634,12 +667,16 @@ function NavBySim() {
             Now let's take a look at a totally different query, showing just the top 5 directions:
             <br />
             <code>cows</code>
-            <FeatureBars topk={cows[0]} features={saeFeatures} numToShow={5} />
+            <FeatureBars topk={cows[0]} features={datasetFilteredFeatures} numToShow={5} />
             What if we were to take the top feature of this query{' '}
             <em>(6215 "characteristics and significance of cows")</em> and replace the top feature
             of our cat and calculator query:
             <br />
-            <FeatureBars topk={catCalculatorModified} features={saeFeatures} numToShow={10} />
+            <FeatureBars
+              topk={catCalculatorModified}
+              features={datasetFilteredFeatures}
+              numToShow={10}
+            />
           </P>
           <P>
             Now let's do similarity search using the reconstructed embedding of our modified query:
@@ -669,7 +706,10 @@ function NavBySim() {
           </P>
           <ScopeProvider userParam="enjalot" datasetParam="ls-dadabase" scopeParam="scopes-001">
             <SearchProvider>
-              <SteeringPlayground saeFeatures={saeFeatures} defaultQuery="A cat and a calculator" />
+              <SteeringPlayground
+                datasetFilteredFeatures={datasetFilteredFeatures}
+                defaultQuery="A cat and a calculator"
+              />
             </SearchProvider>
           </ScopeProvider>
           <P>
@@ -710,8 +750,15 @@ function NavBySim() {
             <a href="https://www.jimmymeetsworld.com/">Jimmy Zhang</a> for his contributions to
             Latent Scope, including improvements that made this article possible and his feedback on
             this article. Thank you to <a href="https://www.ksadov.com/">Konstantine Sadov</a>,{' '}
-            <a href="https://a13x.io/">Alex Bäurle</a>
+            <a href="https://a13x.io/">Alex Bäurle</a>,
+            <a href="https://gytis.co/">Gytis Daujotas</a>, and{' '}
+            <a href="https://www.linkedin.com/in/johntigue/">John Tigue</a>
             for their thoughtful feedback on this article leading to numerous improvements.
+          </P>
+          <P>
+            Join the Latent Interfaces Discord!
+            <br />
+            <br />
           </P>
 
           {/* <Footnote

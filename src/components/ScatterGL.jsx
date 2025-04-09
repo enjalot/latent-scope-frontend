@@ -35,6 +35,7 @@ ScatterGL.propTypes = {
   centerOnShownIndices: PropTypes.bool,
   centerMargin: PropTypes.number,
   calculatePointColor: PropTypes.func,
+  disablePan: PropTypes.bool,
 };
 
 const calculateDynamicPointScale = (pointCount, width, height) => {
@@ -109,6 +110,7 @@ function ScatterGL({
   calculatePointSize = (valueA) => {
     return mapPointSizeRange[valueA] || 1;
   },
+  disablePan = false,
 }) {
   const { isDark: isDarkMode } = useColorMode();
 
@@ -172,12 +174,12 @@ function ScatterGL({
       })
     );
     const opacityBuffer = reglRef.current.buffer(
-      points.map(([, , valueA, activation]) =>
-        calculatePointOpacity(featureIsSelected, valueA, activation)
+      points.map(([p, i, valueA, activation]) =>
+        calculatePointOpacity(featureIsSelected, valueA, activation, i)
       )
     );
     const sizeBuffer = reglRef.current.buffer(
-      points.map(([, , valueA]) => calculatePointSize(valueA))
+      points.map(([p, i, valueA]) => calculatePointSize(valueA, i))
     );
 
     // Redefine your drawPoints command to take these buffers as attributes.
@@ -290,6 +292,11 @@ function ScatterGL({
     const zoomBehavior = zoom()
       .scaleExtent([minZoom, maxZoom])
       .on('zoom', (event) => {
+        // If panning is disabled, ignore panning events
+        if (disablePan && event.sourceEvent && event.sourceEvent.type === 'mousemove') {
+          return;
+        }
+
         // If the user is manually zooming/panning, cancel any programmatic zoom
         if (event.sourceEvent) {
           isZoomingProgrammatically.current = false;
@@ -332,7 +339,7 @@ function ScatterGL({
         reglRef.current.destroy();
       }
     };
-  }, [width, height]);
+  }, [width, height, disablePan]);
 
   const dynamicSize = useMemo(() => {
     let size = calculateDynamicPointScale(points.length, width, height);

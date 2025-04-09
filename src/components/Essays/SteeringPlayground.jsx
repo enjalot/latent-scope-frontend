@@ -7,6 +7,7 @@ import EditableFeatureBars from './EditableFeatureBars';
 import styles from './SteeringPlayground.module.scss';
 import { apiService } from '../../lib/apiService';
 import { cosineSimilarity } from '../../utils';
+import { Button } from 'react-element-forge';
 
 function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
   const { query, results, loading, handleSearch, setQuery, dataset, scope } = useSearch();
@@ -15,41 +16,46 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
   const [editedFeatures, setEditedFeatures] = useState(null);
   const [steeringEmbedding, setSteeringEmbedding] = useState(null);
   const [steeringResults, setSteeringResults] = useState(null);
-  const [steeringLoading, setSteeringLoading] = useState(false);
+  const [steeringLoading, setSteeringLoading] = useState(true);
   const [userHasEditedFeatures, setUserHasEditedFeatures] = useState(false);
   const [localQuery, setLocalQuery] = useState('');
+  const [queryFeaturesLoading, setQueryFeaturesLoading] = useState(false);
 
   // Use effect to initialize localQuery when component mounts
   useEffect(() => {
     if (defaultQuery && scope) {
       setQuery(defaultQuery);
       setLocalQuery(defaultQuery);
-      handleSearch(defaultQuery);
+      // handleSearch(defaultQuery);
     }
   }, [defaultQuery, scope]);
 
-  // Calculate embedding and features when query changes (after search is performed)
-  useEffect(() => {
-    if (!query) return;
-
-    // Calculate embedding
-    const getEmbedding = async () => {
+  // Calculate embedding
+  const getEmbedding = useCallback(async (query) => {
+    setQueryFeaturesLoading(true); // Start loading
+    try {
       const emb = await apiService.calcTokenizedEmbeddings(query);
       setQueryEmbedding(emb);
 
       // Calculate features from embedding
       const features = await apiService.calcFeatures(emb.embedding);
+      // setUserHasEditedFeatures(true);
       setQueryFeatures(features);
       setEditedFeatures(features);
-      setUserHasEditedFeatures(false);
-    };
+    } finally {
+      setQueryFeaturesLoading(false); // End loading
+    }
+  }, []);
 
-    getEmbedding();
+  // Calculate embedding and features when query changes (after search is performed)
+  useEffect(() => {
+    if (!query) return;
+    getEmbedding(query);
   }, [query]);
 
   // Perform search with edited features
   useEffect(() => {
-    if (!editedFeatures || !scope || !userHasEditedFeatures) return;
+    if (!editedFeatures || !scope) return;
 
     const performSteeringSearch = async () => {
       setSteeringLoading(true);
@@ -76,6 +82,7 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
   }, [editedFeatures, scope, userHasEditedFeatures]);
 
   const handleFeaturesChange = useCallback((newFeatures) => {
+    console.log('FEATURES CHANGED??', newFeatures);
     setEditedFeatures(newFeatures);
     setUserHasEditedFeatures(true);
   }, []);
@@ -83,82 +90,68 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
   const handleLocalSearch = (searchQuery) => {
     setLocalQuery(searchQuery);
     setQuery(searchQuery);
-    handleSearch(searchQuery);
+    // handleSearch(searchQuery);
   };
 
   return (
     <div className={styles.steeringPlayground}>
-      <div className={styles.headerSection}>
-        <div className={styles.column}>
-          <h3>Original Search</h3>
+      <div className={styles.featureAndResultsGrid}>
+        <div className={styles.featureColumn}>
           <Search onSearch={handleLocalSearch} value={localQuery} onChange={setLocalQuery} />
-        </div>
-
-        <div className={styles.column}>
-          <h3>Steering</h3>
-          <p>
-            Adjust feature activations to steer the search in different directions. Cosine
-            similarity:{' '}
-            <b>
-              {steeringEmbedding && queryEmbedding
-                ? cosineSimilarity(queryEmbedding.embedding, steeringEmbedding)?.toFixed(3)
-                : 'N/A'}
-            </b>
-          </p>
-        </div>
-      </div>
-
-      <div className={styles.fullWidthSection}>
-        <div className={styles.fullWidthInner}>
-          <div className={styles.featureAndResultsGrid}>
-            <div className={styles.featureColumn}>
-              {queryFeatures && saeFeatures && (
-                <>
-                  <h4>Query Features</h4>
-                  <FeatureBars topk={queryFeatures} features={saeFeatures} numToShow={10} />
-                </>
-              )}
-              <h4>Results</h4>
-              <div className={styles.resultsContainer}>
-                {results && results.length > 0 ? (
-                  <SearchResults
-                    results={results}
-                    loading={loading}
-                    dataset={dataset}
-                    numToShow={5}
-                    showIndex={false}
-                  />
+          <div className={styles.featureRow}>
+            <span>
+              Cosine similarity with original query embedding:{' '}
+              <b>
+                {steeringLoading ||
+                queryFeaturesLoading ||
+                !(steeringEmbedding && queryEmbedding) ? (
+                  <div className={styles.loadingSpinnerInline}></div>
                 ) : (
-                  !loading && <p>No results found. Try a different search query.</p>
+                  cosineSimilarity(queryEmbedding.embedding, steeringEmbedding)?.toFixed(3)
                 )}
-              </div>
-            </div>
-
-            <div className={styles.featureColumn}>
-              {queryFeatures && saeFeatures && (
-                <>
-                  <h4>Steered Features</h4>
-                  <EditableFeatureBars
-                    topk={queryFeatures}
-                    features={saeFeatures}
-                    numToShow={10}
-                    onFeaturesChange={handleFeaturesChange}
-                  />
-                </>
+              </b>
+            </span>
+            <span>
+              {userHasEditedFeatures && (
+                <Button
+                  icon="refresh-ccw"
+                  text="Reset"
+                  onClick={() => {
+                    getEmbedding(localQuery);
+                    setUserHasEditedFeatures(false);
+                  }}
+                />
               )}
-              <h4>Steered Results</h4>
-              <div className={styles.resultsContainer}>
-                {steeringResults && (
-                  <SearchResults
-                    results={steeringResults}
-                    loading={steeringLoading}
-                    dataset={dataset}
-                    numToShow={5}
-                    showIndex={false}
-                  />
-                )}
+            </span>
+          </div>
+          {queryFeaturesLoading ? (
+            <div className={styles.loadingOverlay}>
+              <div className={styles.loadingContainer}>
+                <div className={styles.loadingSpinner}></div>
+                <div>Loading features...</div>
               </div>
             </div>
+          ) : (
+            queryFeatures &&
+            saeFeatures && (
+              <>
+                <EditableFeatureBars
+                  topk={queryFeatures}
+                  features={saeFeatures}
+                  numToShow={10}
+                  onFeaturesChange={handleFeaturesChange}
+                />
+              </>
+            )
+          )}
+          <div className={styles.resultsContainer}>
+            <SearchResults
+              results={steeringResults}
+              loading={steeringLoading}
+              dataset={dataset}
+              numToShow={5}
+              showIndex={false}
+            />
           </div>
         </div>
       </div>
