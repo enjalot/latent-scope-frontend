@@ -90,6 +90,28 @@ export const apiService = {
       },
     });
   },
+  getSaeTopSamples: async (saeMeta, sample, feature, callback) => {
+    const chunkMappingUrl = saeMeta[sample] + 'chunk_mapping.json';
+    const chunkMapping = await fetch(chunkMappingUrl).then((r) => r.json());
+    const buffer = await asyncBufferFromUrl(
+      saeMeta[sample] + `chunk_${chunkMapping[feature.feature]}.parquet?cachebust=1`
+    );
+    parquetRead({
+      file: buffer,
+      rowFormat: 'object',
+      onComplete: (data) => {
+        let ss = data
+          .map((d) => {
+            return {
+              ...d,
+              feature: parseInt(d.feature),
+            };
+          })
+          .filter((d) => d.feature === feature.feature);
+        callback(ss);
+      },
+    });
+  },
   columnFilter: async (userId, datasetId, scopeId, query) => {
     return fetch(
       `https://enjalot--latent-scope-api-app-column-filter${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}&query=${JSON.stringify(query)}`

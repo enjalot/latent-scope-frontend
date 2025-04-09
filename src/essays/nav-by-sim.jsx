@@ -89,7 +89,6 @@ function NavBySim() {
     apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
       // console.log('SAE FEATURES', fts);
       setSaeFeatures(fts);
-      setSelectedFeature(fts[6864]); //domestic wildlife
     });
   }, []);
 
@@ -113,6 +112,7 @@ function NavBySim() {
         // .sort((a, b) => b.count - a.count);
         console.log('filtered features', filteredFeatures);
         setDatasetFilteredFeatures(filteredFeatures);
+        setSelectedFeature(filteredFeatures[6864]); //domestic wildlife
       })
       .catch((error) => {
         console.error('Error fetching dataset features:', error);
@@ -540,29 +540,26 @@ function NavBySim() {
           <P>We can filter our dataset to the rows with the top activations for a given feature:</P>
 
           {datasetFilteredFeatures && (
-            <div
-              className={styles.featureSearchContainer}
-              style={{ maxWidth: '600px', margin: '20px 0' }}
-            >
+            <>
               <FeatureFilter
                 features={datasetFilteredFeatures}
                 selectedFeature={selectedFeature}
                 onFeatureSelect={handleFeatureSelect}
               />
-              <Caption></Caption>
-            </div>
+              <Caption>
+                There are {selectedFeature?.count} jokes that activate on the{' '}
+                <FeaturePill feature={selectedFeature} /> {selectedFeature?.label} feature.
+                <br />
+                See them all in the{' '}
+                <a
+                  href={`https://latent.estate/scope/enjalot/ls-dadabase/scopes-001?filter=${selectedFeature?.feature}`}
+                >
+                  Latent Scope demo
+                </a>
+                .
+              </Caption>
+            </>
           )}
-
-          <P>
-            This form of filtering is supported directly in Latent Scope, see{' '}
-            <a
-              href={`https://latent.estate/scope/enjalot/ls-dadabase/scopes-001?filter=${selectedFeature?.feature}`}
-            >
-              all the jokes
-            </a>{' '}
-            that activate strongly on the <FeaturePill feature={selectedFeature} />{' '}
-            {selectedFeature?.label} feature.
-          </P>
 
           {/* <P>
             Now let's look at the top 10 directions of the top similarity result:
@@ -707,7 +704,7 @@ function NavBySim() {
           <ScopeProvider userParam="enjalot" datasetParam="ls-dadabase" scopeParam="scopes-001">
             <SearchProvider>
               <SteeringPlayground
-                datasetFilteredFeatures={datasetFilteredFeatures}
+                saeFeatures={datasetFilteredFeatures}
                 defaultQuery="A cat and a calculator"
               />
             </SearchProvider>

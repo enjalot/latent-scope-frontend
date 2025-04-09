@@ -72,13 +72,14 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 0.5rem;
   }
   
   .resultsContainer {
-    height: 350px; 
-    overflow-y: auto;
-    border: 1px solid #eee;
-    border-radius: 4px;
+    // height: 350px; 
+    // overflow-y: auto;
+    // border: 1px solid #eee;
+    // border-radius: 4px;
     padding: 8px;
     margin-bottom: 16px;
     background-color: var(--color-neutral-0);

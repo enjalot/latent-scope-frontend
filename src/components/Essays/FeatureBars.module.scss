@@ -4,6 +4,11 @@
   flex-direction: column;
   // overflow-y: auto;
 }
+.editableDetails {
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: var(--color-neutral-1);
+}
 
 
 
@@ -62,8 +67,9 @@
   margin-right: 8px;
   font-size: 12px;
   white-space: nowrap;
-  width: 35px;
-  min-width: 35px;
+  width: 40px;
+  min-width: 40px;
+  text-align: center;
 }
 
 .featureLabel {

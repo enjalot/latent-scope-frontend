@@ -116,6 +116,7 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
                 <Button
                   icon="refresh-ccw"
                   text="Reset"
+                  color="secondary"
                   onClick={() => {
                     getEmbedding(localQuery);
                     setUserHasEditedFeatures(false);

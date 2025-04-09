@@ -1,0 +1,36 @@
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.token {
+  position: relative;
+  margin: 2px 0;
+  // padding: 2px 4px;
+  // border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.tooltip {
+  visibility: hidden;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%; /* Position above the token */
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.token:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}

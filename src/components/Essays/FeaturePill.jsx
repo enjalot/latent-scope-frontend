@@ -8,7 +8,7 @@ const FeaturePill = ({ feature }) => {
   const getFeatureColor = (order) => {
     if (!order) return 'rgba(0, 0, 0, 0.1)';
     const color = rgb(interpolateSinebow(order));
-    color.opacity = 0.75;
+    color.opacity = 0.5;
     return color.toString();
   };
 

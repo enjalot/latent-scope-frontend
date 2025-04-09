@@ -3,7 +3,7 @@ import { Tooltip } from 'react-tooltip';
 import Scatter from '../ScatterGL';
 import styles from './FeatureScatter.module.scss';
 import { interpolateSinebow } from 'd3-scale-chromatic';
-
+import FeaturePill from './FeaturePill';
 // Simple debounce utility function
 function debounce(fn, delay) {
   let timeoutId;
@@ -71,10 +71,10 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
     (feature) => {
       if (feature !== null) {
         // Use immediate update for hover-on to feel responsive
-        debouncedSetHoveredRef.current(features[feature]);
+        debouncedSetHoveredRef.current?.(features[feature]);
       } else {
         // Use debounced update for hover-off to prevent quick disappearance
-        debouncedSetHoveredRef.current(null);
+        debouncedSetHoveredRef.current?.(null);
       }
     },
     [features]
@@ -107,19 +107,19 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
         feature.count,
       ];
     });
-    console.log('pts', pts);
+    console.log('PTS', pts[0]);
     return pts;
-  }, [features, selectedFeature]);
+  }, [features]);
 
   // Add a calculatePointSize function that makes selected points larger
-  const calculatePointSize = useCallback(
-    (valueA, index) => {
-      const feature = features[index];
-      const isSelected = selectedFeature && feature?.feature === selectedFeature?.feature;
-      return isSelected ? 3 : 1.25;
-    },
-    [features, selectedFeature]
-  );
+  // const calculatePointSize = useCallback(
+  //   (valueA, index) => {
+  //     const feature = features[index];
+  //     const isSelected = selectedFeature && feature?.feature === selectedFeature?.feature;
+  //     return isSelected ? 3 : 1.25;
+  //   },
+  //   [features, selectedFeature]
+  // );
   const calculatePointOpacity = useCallback(
     (isselected, valueA, count, index) => {
       return count > 0 ? 1 : 0.25;
@@ -135,8 +135,9 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
           width={containerWidth}
           height={height}
           calculatePointColor={(a) => a}
-          calculatePointOpacity={calculatePointOpacity}
-          calculatePointSize={calculatePointSize}
+          // calculatePointOpacity={calculatePointOpacity}
+          calculatePointOpacity={() => 1}
+          calculatePointSize={() => 1.25}
           onView={handleView}
           onSelect={(index) => {
             if (index !== null) {
@@ -162,29 +163,16 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
         >
           {hovered ? (
             <p className={styles.hoverInfo}>
-              <span
-                className={styles.featureIdPill}
-                style={{ backgroundColor: interpolateSinebow(hovered.order), opacity: 0.75 }}
-              >
-                {hovered.feature}
-              </span>
-              <span className={styles.featureLabel}>
-                {hovered.label || 'Unnamed feature'} ({hovered.count})
-              </span>
+              <FeaturePill feature={hovered} />
+              <span className={styles.featureLabel}>{hovered.label || 'Unnamed feature'}</span>
+              <span className={styles.featureCount}>(dataset count: {hovered.count})</span>
             </p>
           ) : selectedFeature ? (
             <p className={styles.hoverInfo}>
-              <span
-                className={styles.featureIdPill}
-                style={{
-                  backgroundColor: interpolateSinebow(selectedFeature.order),
-                  opacity: 0.75,
-                }}
-              >
-                {selectedFeature.feature}
-              </span>
+              <FeaturePill feature={selectedFeature} />
               <span className={styles.featureLabel}>
-                {selectedFeature.label || 'Unnamed feature'} ({selectedFeature.count})
+                {selectedFeature.label || 'Unnamed feature'} (dataset count: {selectedFeature.count}
+                )
               </span>
             </p>
           ) : null}

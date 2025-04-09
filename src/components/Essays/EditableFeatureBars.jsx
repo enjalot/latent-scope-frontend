@@ -119,7 +119,7 @@ const EditableFeatureBars = ({ topk, features, numToShow = 10, onFeaturesChange 
   }
 
   return (
-    <div className={styles.details}>
+    <div className={styles.editableDetails}>
       <div
         className={styles.sampleTopFeatures}
         style={{

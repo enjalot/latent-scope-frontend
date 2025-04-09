@@ -3,6 +3,7 @@ import { interpolateSinebow } from 'd3-scale-chromatic';
 import FeatureAutocomplete from './FeatureAutocomplete';
 import SearchResults from './SearchResults';
 import { apiService } from '../../lib/apiService';
+import styles from './FeatureFilter.module.scss';
 
 function FeatureFilter({
   features,
@@ -43,7 +44,7 @@ function FeatureFilter({
   const featureColor = selectedFeature && interpolateSinebow(selectedFeature.order);
 
   return (
-    <div className="feature-filter-container">
+    <div className={styles.featureFilterContainer}>
       <FeatureAutocomplete
         currentFeature={selectedFeature}
         features={features}

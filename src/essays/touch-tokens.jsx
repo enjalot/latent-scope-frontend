@@ -2,6 +2,8 @@ import { useCallback, useState, useEffect, useMemo } from 'react';
 import { Tooltip } from 'react-tooltip';
 import { Footnote, FootnoteTooltip } from '../components/Essays/Footnotes';
 import { P, H2, H3, Query, Array } from '../components/Essays/Basics';
+import { interpolateSinebow } from 'd3-scale-chromatic';
+import { Select } from 'react-element-forge';
 
 import { saeAvailable } from '../lib/SAE';
 import { ScopeProvider } from '../contexts/ScopeContext';
@@ -10,6 +12,11 @@ import Search from '../components/Essays/Search';
 import SearchResults from '../components/Essays/SearchResults';
 import Examples from '../components/Essays/Examples';
 import EmbeddingVis from '../components/Essays/Embedding';
+import FeatureScatter from '../components/Essays/FeatureScatter';
+import FeatureFilter from '../components/Essays/FeatureFilter';
+import FeatureAutocomplete from '../components/Essays/FeatureAutocomplete';
+import TokensAnnotated from '../components/Essays/TokensAnnotated';
+
 // import EmbeddingVis from '../components/Essays/EmbeddingBarChart';
 import TokenEmbeddings, {
   AnimatedTokenEmbeddings,
@@ -46,15 +53,67 @@ function TouchTokens() {
   const [catCalculatorModified, setCatCalculatorModified] = useState(null);
   const [steeredResults, setSteeredResults] = useState(null);
   const [saeFeatures, setSaeFeatures] = useState(null);
+  const [selectedFeature, setSelectedFeature] = useState(null);
+  const [saeTopSamples, setSaeTopSamples] = useState(null);
+  const [loadingTopSamples, setLoadingTopSamples] = useState(false);
+  const [sampleType, setSampleType] = useState('samples');
+  const [selectedSample, setSelectedSample] = useState(null);
+  const [selectedSampleEmbedding, setSelectedSampleEmbedding] = useState(null);
+
   useEffect(() => {
     apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
       console.log('SAE FEATURES', fts);
+      fts.forEach((ft) => {
+        ft.count = 10;
+      });
       setSaeFeatures(fts);
+      setSelectedFeature(fts[6864]);
     });
   }, []);
+
+  useEffect(() => {
+    setLoadingTopSamples(true);
+    if (selectedFeature) {
+      apiService.getSaeTopSamples(
+        saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'],
+        sampleType,
+        selectedFeature,
+        (ss) => {
+          console.log('SAE TOP SAMPLES', ss);
+          ss.forEach((s) => {
+            s.sae_acts = s.top_acts;
+            s.sae_indices = s.top_indices;
+          });
+          setSaeTopSamples(ss);
+          setSelectedSample(ss[0]);
+          setLoadingTopSamples(false);
+        }
+      );
+    }
+  }, [selectedFeature, sampleType]);
+
+  useEffect(() => {
+    if (selectedSample) {
+      apiService.calcTokenizedEmbeddings(selectedSample.text).then((embedding) => {
+        console.log('EMBEDDING', embedding);
+        // this actually gets the features for all the tokens
+        const hs = embedding.hidden_states[0].map((hs) => {
+          let norm = Math.sqrt(hs.reduce((sum, val) => sum + val * val, 0));
+          let normalized = hs.map((val) => val / norm);
+          return normalized;
+        });
+        apiService.calcFeatures(hs).then((features) => {
+          console.log('FEATURES', features);
+          embedding.features = features;
+          setSelectedSampleEmbedding(embedding);
+        });
+      });
+    }
+  }, [selectedSample]);
+
   useEffect(() => {
     apiService.calcFeatures(catAndCalculatorEmbedding.embedding).then((features) => {
-      console.log('FEATURES');
+      // console.log('FEATURES');
       console.log(features);
       setCatAndCalculatorFeatures(features);
       let catCalculatorModified = {
@@ -65,35 +124,47 @@ function TouchTokens() {
       setCatCalculatorModified(catCalculatorModified);
       apiService.calcSteering(catCalculatorModified).then((embed) => {
         apiService.getNNEmbed('enjalot/ls-dadabase', 'scopes-001', embed).then((results) => {
-          console.log('steered results', results);
+          // console.log('steered results', results);
           setSteeredResults(results);
         });
       });
     });
   }, []);
+
   const [tokenFeatures, setTokenFeatures] = useState([]);
+
   useEffect(() => {
     apiService
       .calcFeatures(
         catAndCalculatorEmbedding.hidden_states[0].map((hs) => {
-          console.log('HS', hs);
           let norm = Math.sqrt(hs.reduce((sum, val) => sum + val * val, 0));
           let normalized = hs.map((val) => val / norm);
           return normalized;
         })
       )
       .then((features) => {
-        console.log('TOKEN FEATURES', features);
+        // console.log('TOKEN FEATURES', features);
         let tokfs = features.top_acts.map((act, i) => {
           return {
             top_acts: act,
             top_indices: features.top_indices[i],
           };
         });
-        console.log('TOKFS', tokfs);
+        // console.log('TOKFS', tokfs);
         setTokenFeatures(tokfs);
       });
   }, []);
+
+  const handleFeatureSelect = useCallback((feature) => {
+    console.log('FEATURE SELECTED', feature);
+    setSelectedFeature(feature);
+  }, []);
+
+  const handleSampleSelect = useCallback((sample) => {
+    console.log('SAMPLE SELECTED', sample);
+    setSelectedSample(sample);
+  }, []);
+
   return (
     <div className={styles.essayContainer}>
       <article className={styles.essayContent}>
@@ -115,6 +186,56 @@ function TouchTokens() {
         </section>
 
         <section>
+          <H3>Top samples for a given feature</H3>
+          <FeatureScatter
+            features={saeFeatures}
+            selectedFeature={selectedFeature}
+            onFeature={handleFeatureSelect}
+            height={500}
+          />
+
+          <FeatureAutocomplete
+            currentFeature={selectedFeature}
+            features={saeFeatures}
+            onSelect={handleFeatureSelect}
+            placeholder="Search for a feature..."
+          />
+          <Select
+            options={[
+              { value: 'samples', label: 'FineWeb Samples' },
+              { value: 'wikipedia_samples', label: 'Wikipedia Samples' },
+            ]}
+            onChange={(evt) => {
+              console.log('CHANGE SAMPLE TYPE', evt);
+              setSampleType(evt.target.value);
+            }}
+          />
+
+          <SearchResults
+            results={saeTopSamples}
+            loading={loadingTopSamples}
+            dataset={{ text_column: 'text' }}
+            numToShow={10}
+            showIndex={false}
+            showFeatureActivation={true}
+            onSelect={handleSampleSelect}
+            selectable={true}
+            selectedResult={selectedSample}
+            feature={{
+              ...selectedFeature,
+              color: interpolateSinebow(selectedFeature?.order),
+            }}
+          />
+
+          <P>
+            <TokensAnnotated
+              embedding={selectedSampleEmbedding}
+              selectedFeature={selectedFeature}
+            />
+          </P>
+        </section>
+
+        <section>
           <H3>Mean pooling</H3>
           <P>
             The embedding for a query is actually done by averaging the hidden states of each token.
@@ -129,12 +250,12 @@ function TouchTokens() {
             ></EmbeddingVis>
           </div>
           <P>This is actually done by averaging the hidden states of each token in the query:</P>
-          <AnimatedTokenEmbeddings
+          {/* <AnimatedTokenEmbeddings
             embeddingData={catAndCalculatorEmbedding}
             domain={[-2.5, 0, 2.5]}
             rows={8}
             height={48}
-          />
+          /> */}
           {/* <AverageTokenEmbeddings
             embeddingData={catAndCalculatorEmbedding}
             domain={[-0.1, 0, 0.1]}

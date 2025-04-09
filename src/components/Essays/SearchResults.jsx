@@ -1,5 +1,6 @@
-import React, { useState, useCallback, memo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, memo, useRef, useEffect, useMemo } from 'react';
 import styles from './SearchResults.module.scss';
+import { rgb } from 'd3-color';
 
 const ResultRow = memo(
   ({
@@ -35,6 +36,11 @@ const ResultRow = memo(
         activationValue = result.sae_acts[featureIndex];
       }
     }
+    const colorString = useMemo(() => {
+      let c = rgb(feature?.color);
+      c.opacity = 0.55;
+      return c.toString();
+    }, [feature]);
 
     // Determine if we should show distance or activation
     const showDistanceElement = showDistance && !showFeatureActivation;
@@ -62,7 +68,9 @@ const ResultRow = memo(
           {showFeatureActivation && activationValue !== null && (
             <div
               className={styles.featureActivation}
-              style={{ backgroundColor: feature.color || 'rgba(0, 0, 0, 0.1)' }}
+              style={{
+                backgroundColor: colorString || 'rgba(0, 0, 0, 0.1)',
+              }}
             >
               <span className={styles.activationValue}>{activationValue.toFixed(2)}</span>
             </div>
@@ -126,12 +134,15 @@ function SearchResults({
             .slice(0, numToShow)
             .map((result, index) => (
               <ResultRow
-                key={result.id || index}
+                key={(result.id || '') + (result.index || '') + (index || '')}
                 index={result.index}
                 result={result}
                 isHighlighted={false}
                 isSelected={
-                  selected && selected.index === result.index && result.index !== undefined
+                  selected &&
+                  ((selected.index === result.index && result.index !== undefined) ||
+                    (selected.id === result.id &&
+                      result[dataset.text_column] === selected[dataset.text_column]))
                 }
                 showIndex={showIndex}
                 showDistance={showDistance}

@@ -144,8 +144,11 @@ function ScatterGL({
   const zoomBehaviorRef = useRef(null);
   const zoomSelectionRef = useRef(null);
 
+  const [dirtyCanvas, setDirtyCanvas] = useState(0);
+
   // Setup regl and shaders
   useEffect(() => {
+    console.log('initial canvas setup in scatterGL', width, height);
     const canvas = canvasRef.current;
     // Get the actual pixel ratio, capped at 2 for better performance on high-DPI devices
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
@@ -333,6 +336,8 @@ function ScatterGL({
 
     zoomSelection.call(zoomBehavior.transform, initialTransform);
 
+    setDirtyCanvas(Math.random());
+
     return () => {
       select(canvas).on('.zoom', null);
       if (reglRef.current) {
@@ -340,6 +345,10 @@ function ScatterGL({
       }
     };
   }, [width, height, disablePan]);
+
+  useEffect(() => {
+    console.log('dirtyCanvas update', dirtyCanvas);
+  }, [dirtyCanvas]);
 
   const dynamicSize = useMemo(() => {
     let size = calculateDynamicPointScale(points.length, width, height);
@@ -350,6 +359,7 @@ function ScatterGL({
   // Draw points when they change
   useEffect(() => {
     if (!reglRef.current || !drawPointsRef.current) return;
+    console.log('DRAW POINTS');
 
     reglRef.current.clear({
       color: isDarkMode ? [0.067, 0.067, 0.067, 1] : [0.98, 0.98, 0.98, 1],
@@ -385,7 +395,17 @@ function ScatterGL({
       height,
       blendParams,
     });
-  }, [points, transform, pointScale, featureIsSelected, width, height, isDarkMode, dynamicSize]);
+  }, [
+    points,
+    transform,
+    pointScale,
+    featureIsSelected,
+    width,
+    height,
+    isDarkMode,
+    dynamicSize,
+    dirtyCanvas,
+  ]);
 
   // Update useEffect to rebuild quadtree when points change
   useEffect(() => {

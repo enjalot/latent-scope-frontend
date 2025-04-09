@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { interpolateSinebow } from 'd3-scale-chromatic';
-import { rgb } from 'd3-color';
 import styles from './FeatureAutocomplete.module.scss';
+import FeaturePill from './FeaturePill';
 
 const FeatureAutocomplete = ({ currentFeature, features, onSelect, placeholder }) => {
   const [search, setSearch] = useState('');
@@ -9,17 +8,9 @@ const FeatureAutocomplete = ({ currentFeature, features, onSelect, placeholder }
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // Calculate feature color internally instead of accepting as prop
-  const featureColor = (order) => {
-    if (!order) return 'rgba(0, 0, 0, 0.1)';
-    const color = rgb(interpolateSinebow(order));
-    color.opacity = 0.75;
-    return color.toString();
-  };
-
   const filteredFeatures = useMemo(() => {
     if (!search && !showDropdown) return [];
-    if (!search) return features.slice(0, 10); // Show top 10 features when dropdown is opened without search
+    if (!search) return features.slice(0, 10);
     return features
       .filter(
         (f) =>
@@ -41,14 +32,7 @@ const FeatureAutocomplete = ({ currentFeature, features, onSelect, placeholder }
   return (
     <div className={styles.featureSelector}>
       <div className={styles.editablelabelContainer}>
-        {currentFeature && (
-          <span
-            className={styles.featureIdPill}
-            style={{ backgroundColor: featureColor(currentFeature.order), opacity: 0.75 }}
-          >
-            {currentFeature.feature}
-          </span>
-        )}
+        {currentFeature && <FeaturePill feature={currentFeature} />}
         <input
           ref={inputRef}
           type="text"
@@ -77,12 +61,7 @@ const FeatureAutocomplete = ({ currentFeature, features, onSelect, placeholder }
                 setShowDropdown(false);
               }}
             >
-              <span
-                className={styles.featureIdPill}
-                style={{ backgroundColor: featureColor(feature.order) }}
-              >
-                {feature.feature}
-              </span>
+              <FeaturePill feature={feature} />
               <span className={styles.featureLabel}>{feature.label}</span>
               <span className={styles.featureCount}>{feature.count}</span>
             </div>

@@ -44,26 +44,6 @@
   width: fit-content;
 }
 
-.featureIdPill {
-  color: black;
-  background-color: rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  padding: 2px 8px;
-  margin-right: 8px;
-  font-size: 12px;
-  white-space: nowrap;
-  width: 35px;
-  min-width: 35px;
-  text-align: center;
-  text-shadow: 0 0 1px white,
-  0 0 1px white,
-  0 0 1px white,
-  0 0 1px white,
-  0 0 1px white,
-  0 0 1px white,
-  0 0 4px white;
-}
-
 .featureLabel {
   overflow: hidden;
   text-overflow: ellipsis;
