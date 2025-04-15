@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../lib/apiService';
-import EmbeddingVis from './Embedding';
+// import EmbeddingVis from './Embedding';
+import EmbeddingVis from './EmbeddingBarChart';
+import EmbeddingDifferenceChart from './EmbeddingDifferenceChart';
 import Examples from './Examples';
 import styles from './EmbeddingInline.module.scss';
 
 function EmbeddingVisualizer({
   defaultQuery = 'winter holidays',
   examples = ['cows', 'feline stuff', 'Will Smith', 'winter holidays'],
+  compareEmbedding = null,
 }) {
   const [query, setQuery] = useState(defaultQuery);
   const [embedding, setEmbedding] = useState(null);
@@ -77,6 +80,14 @@ function EmbeddingVisualizer({
             domain={[-0.1, 0, 0.1]}
             height={48}
           />
+          {compareEmbedding && (
+            <EmbeddingDifferenceChart
+              embedding1={embedding}
+              embedding2={compareEmbedding}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            />
+          )}
         </div>
       ) : (
         <div>Enter a query to see its embedding</div>

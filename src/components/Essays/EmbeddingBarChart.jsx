@@ -1,25 +1,53 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { scaleDiverging, scaleSequential, scaleLinear } from 'd3-scale';
 import { interpolateBrBG, interpolateCool } from 'd3-scale-chromatic';
 
 const EmbeddingBarChart = ({
   embedding,
-  width = embedding ? embedding.length : 0, // 1 pixel per embedding element
   height = 200, // Default height for the chart
   domain = [-1, 0, 1],
   minValues = [],
   maxValues = [],
   difference = [],
 }) => {
-  const container = useRef();
+  const containerRef = useRef();
+  const canvasRef = useRef();
+  const [containerWidth, setContainerWidth] = useState(0);
 
+  // Setup ResizeObserver to watch container size changes
   useEffect(() => {
-    if (!embedding || !embedding.length) return;
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    // Initial width measurement
+    setContainerWidth(containerRef.current.clientWidth);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Drawing effect
+  useEffect(() => {
+    if (!embedding || !embedding.length || !containerWidth) return;
+
+    const canvas = canvasRef.current;
+    canvas.width = containerWidth; // Set canvas width to match container
 
     // Set up color scale
     const colorScale = scaleDiverging(domain, interpolateBrBG);
 
-    // Set up height scale (maps domain values to pixel heights)
+    // Calculate bar width based on available space
+    const barWidth = containerWidth / embedding.length;
+
+    // Set up height scale
     const heightScale = scaleLinear()
       .domain([Math.min(...domain), Math.max(...domain)])
       .range([0, height]);
@@ -27,22 +55,19 @@ const EmbeddingBarChart = ({
     // Calculate zero position
     const zeroY = heightScale(0);
 
-    const canvas = container.current;
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, containerWidth, height);
 
     // Draw baseline (zero line)
     ctx.strokeStyle = '#ddd';
     ctx.beginPath();
     ctx.moveTo(0, zeroY);
-    ctx.lineTo(width, zeroY);
+    ctx.lineTo(containerWidth, zeroY);
     ctx.stroke();
 
     // Draw each bar
     embedding.forEach((d, i) => {
-      const x = i; // 1 pixel per element
-
-      // Determine bar properties based on value
+      const x = i * barWidth;
       const barHeight = Math.abs(heightScale(d) - heightScale(0));
       const y = d >= 0 ? zeroY - barHeight : zeroY;
 
@@ -60,11 +85,20 @@ const EmbeddingBarChart = ({
       }
 
       ctx.fillStyle = c;
-      ctx.fillRect(x, y, 1, barHeight); // 1 pixel width bars
+      ctx.fillRect(x, y, barWidth, barHeight);
     });
-  }, [embedding, width, height, domain, minValues, maxValues, difference]);
+  }, [embedding, containerWidth, height, domain, minValues, maxValues, difference]);
 
-  return <canvas className="embedding-bar-chart" ref={container} width={width} height={height} />;
+  return (
+    <div ref={containerRef} style={{ width: '100%', height }}>
+      <canvas
+        className="embedding-bar-chart"
+        ref={canvasRef}
+        height={height}
+        style={{ display: 'block', width: '100%', height: '100%' }}
+      />
+    </div>
+  );
 };
 
 export default EmbeddingBarChart;

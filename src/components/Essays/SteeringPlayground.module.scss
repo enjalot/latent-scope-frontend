@@ -1,7 +1,9 @@
 .steeringPlayground {
   display: flex;
   flex-direction: column;
-  margin-bottom: 2rem;
+  background-color: var(--color-neutral-1);
+  padding: 1rem;
+  border-radius: 0.5rem;
   
   .headerSection {
     display: flex;
@@ -82,7 +84,6 @@
     // border-radius: 4px;
     padding: 8px;
     margin-bottom: 16px;
-    background-color: var(--color-neutral-0);
     
     @media (max-width: 768px) {
       height: 300px;

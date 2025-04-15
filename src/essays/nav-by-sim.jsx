@@ -19,8 +19,10 @@ import { SearchProvider, useSearch } from '../contexts/SearchContext';
 import Search from '../components/Essays/Search';
 import SearchResults from '../components/Essays/SearchResults';
 import Examples from '../components/Essays/Examples';
-import EmbeddingVis from '../components/Essays/Embedding';
+// import EmbeddingVis from '../components/Essays/Embedding';
+import EmbeddingVis from '../components/Essays/EmbeddingBarChart';
 import EmbeddingInline from '../components/Essays/EmbeddingInline';
+import EmbeddingDifferenceChart from '../components/Essays/EmbeddingDifferenceChart';
 import CompareFeatureBars from '../components/Essays/CompareFeatureBars';
 // import EmbeddingVis from '../components/Essays/EmbeddingBarChart';
 import TokenEmbeddings, {
@@ -195,33 +197,36 @@ function NavBySim() {
         <section>
           <P>
             Navigating unstructured data with similarity search is becoming an increasingly popular
-            technique. The fuzzy nature of nearest neighbor search is desirable for allowing people
-            to search based more on the concepts they have in mind rather than the exact wording of
-            the query. It is also a challenge when the results don't match the user's intent becuase
-            it isn't clear what went wrong.
+            technique, but the same magic that makes it so powerful can also be frustratingly
+            opaque. What if we could search by steering the concepts we care about rather than
+            prompting blindly for the right results?
           </P>
+
           <ScopeProvider userParam="enjalot" datasetParam="ls-dadabase" scopeParam="scopes-001">
             <SearchProvider>
               <SteeringPlayground
                 saeFeatures={datasetFilteredFeatures}
                 defaultQuery="A cat and a calculator"
               />
+              <Caption>
+                Type in any query into the search bar above and see the top 5 dad jokes that are
+                most similar to your query. You can also adjust the concepts found in your query by
+                either changing their strength or changing the concepts themselves.
+              </Caption>
             </SearchProvider>
           </ScopeProvider>
           <P>
-            There are new interpretability techniques like Sparse Autoencoders that allow us to dig
-            a bit deeper into the concepts represented in the latent space used by the similarity
-            search. They may even serve as a sort of high-dimensional compass, allowing us to
-            navigate the space with more explicit control. This essay aims to build an intuition for
-            similarity search, embedding spaces and how we can use Sparse Autoencoders to steer our
-            searches through the latent space.
+            This article explores what it could look like to navigate latent space using a Sparse
+            Autoencoder trained on a text embedding model. We'll aim to build an intuition for
+            similarity search, embedding spaces and Sparse Autoencoders at a practical level with
+            interactive examples.
           </P>
         </section>
 
         <section>
           <H3>Dad Jokes</H3>
           <P>
-            Let's start with a concrete dataset:{' '}
+            Any similarity search application starts with a dataset, so we'll use my favorite:{' '}
             <a href="https://www.kaggle.com/datasets/oktayozturk010/reddit-dad-jokes?select=reddit_dadjokes.csv">
               50,000 dad jokes from r/dadjokes
             </a>{' '}
@@ -249,26 +254,8 @@ function NavBySim() {
             to the query.
           </P>
 
-          {/* 
-            <P>
-              But what happens when we query for something that's not well represented in the
-              dataset? Let's search for one of my favorite mathematicians: Hilbert.
-            </P>
-
-          <SearchResults
-            results={hilbert}
-            loading={false}
-            dataset={{ text_column: 'joke' }}
-            numToShow={4}
-            showIndex={false}
-          />
-          <br />
           <P>
-            We get a strange result as the first hit, a joke presumably related to Hilbert's German
-            heritage and then two math related jokes.
-          </P> */}
-          <P>
-            Let's try a query that doesn't give back an exact joke but has multiple concepts:
+            Let's try a query that contains two distince concepts:
             <br />
           </P>
           <Query>A cat and a calculator</Query>
@@ -320,8 +307,8 @@ function NavBySim() {
                 .join(' ')}
               ]
             </Array>
-            From here out we'll represent these as a "waffle chart" just so we don't need to subject
-            our eyes to 768 numbers every time we want to represent an embedding:
+            From here out we'll represent these as a bar chart just so we don't need to subject our
+            eyes to 768 numbers every time we want to represent an embedding:
             <br />
             <Query>A cat and a calculator</Query>
             <EmbeddingVis
@@ -331,9 +318,9 @@ function NavBySim() {
               height={48}
             ></EmbeddingVis>
             <Caption>
-              This visualization is a cross between a "waffle chart" and a heatmap, here we are
-              converting each number to a small square, each square's color is more green the more
-              positive the number and more orange the more negative.
+              This visualization is a bar chart converting each number to a bar where the color is
+              determined by the value, the more green the more positive the number and more orange
+              the more negative.
             </Caption>
             <P>
               We also convert each row of our dataset into a vector by embedding the text column (in
@@ -349,6 +336,12 @@ function NavBySim() {
                   domain={[-0.1, 0, 0.1]}
                   height={48}
                 ></EmbeddingVis>
+                {/* <EmbeddingDifferenceChart
+                  embedding1={catAndCalculatorEmbedding.embedding}
+                  embedding2={joke.vector}
+                  domain={[-0.1, 0, 0.1]}
+                  height={48}
+                ></EmbeddingDifferenceChart> */}
               </div>
             ))}
             <br />
@@ -361,7 +354,13 @@ function NavBySim() {
                 'A cat and a calculator',
                 'Where do cats write notes? Scratch Paper!',
               ]}
+              compareEmbedding={catAndCalculatorEmbedding.embedding}
             />
+            <Caption>
+              We show the difference between the original search term{' '}
+              <Query>A cat and a calculator</Query> and the query here as the red bar chart of the
+              magnitudes of the differences between the embeddings.
+            </Caption>
           </P>
 
           <P>
@@ -377,11 +376,7 @@ function NavBySim() {
           <P>
             A particularly helpful tool is called a Sparse Autoencoder, or SAE. An SAE allow us to
             automatically decompose embeddings into interpretable directions (i.e. concepts) that we
-            can then use to navigate our data.
-            <br />
-            <img src="/images/essays/sae-diagram.png" />
-            <br />
-            For example, our query:
+            can then use to navigate our data. For example, our query:
             <br />
             <Query>A cat and a calculator</Query>
             <EmbeddingVis
@@ -406,6 +401,13 @@ function NavBySim() {
               training data. So this example activates the cat and the calculator about as strongly
               as they are ever activated.
             </Caption>
+          </P>
+          <P>
+            One way to think about the SAE is that it is like a prism, decomposing an embedding into
+            it's component concepts.
+            <br />
+            <img src="/images/essays/sae-diagram.png" />
+            <br />
           </P>
 
           <Expandable
@@ -560,6 +562,10 @@ function NavBySim() {
               </Caption>
             </>
           )}
+          <P>
+            This gives us another way to think about the SAE as a compass, pointing us in a
+            particular direction in the latent space.
+          </P>
 
           {/* <P>
             Now let's look at the top 10 directions of the top similarity result:
