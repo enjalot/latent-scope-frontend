@@ -24,7 +24,7 @@ const ActivationBar = ({
       <div
         className={styles.sampleActivationBarForeground}
         style={{
-          width: `${(activation / feature.max_activation) * 100}%`,
+          width: `${(activation / feature?.max_activation) * 100}%`,
           backgroundColor: featureColor,
         }}
       ></div>
@@ -37,11 +37,11 @@ const ActivationBar = ({
         }
       >
         <div className={styles.labelContainer}>
-          <span className={styles.featureIdPill}>{feature.feature}</span>
-          <span className={styles.featureLabel}>{feature.label}</span>
+          <span className={styles.featureIdPill}>{feature?.feature}</span>
+          <span className={styles.featureLabel}>{feature?.label}</span>
         </div>
         <span className={styles.activationValue}>
-          {activation.toFixed(3)}
+          {activation?.toFixed(3)}
           {/* ({((100 * activation) / feature.max_activation).toFixed(0)}%) */}
         </span>
       </div>
@@ -70,12 +70,15 @@ const FeatureBars = ({
       <div className={styles.sampleTopFeatures}>
         {(topk.top_acts || topk.sae_acts)
           .map((act, i) => {
-            let f = features[topk.top_indices?.[i] || topk.sae_indices?.[i]];
+            let f =
+              features[
+                topk.top_indices?.[i] !== undefined ? topk.top_indices?.[i] : topk.sae_indices?.[i]
+              ];
             return {
               i,
               feature: f,
               activation: act,
-              percent: act / f.max_activation,
+              percent: act / f?.max_activation,
             };
           })
           //.sort((a,b) => b.percent - a.percent)

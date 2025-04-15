@@ -5,6 +5,8 @@ import { P, H2, H3, Query, Array } from '../components/Essays/Basics';
 import { interpolateSinebow } from 'd3-scale-chromatic';
 import { Select } from 'react-element-forge';
 
+import { calculateTokenMetrics, extractActivations } from '../lib/tokens';
+
 import { saeAvailable } from '../lib/SAE';
 import { ScopeProvider } from '../contexts/ScopeContext';
 import { SearchProvider, useSearch } from '../contexts/SearchContext';
@@ -59,6 +61,11 @@ function TouchTokens() {
   const [sampleType, setSampleType] = useState('samples');
   const [selectedSample, setSelectedSample] = useState(null);
   const [selectedSampleEmbedding, setSelectedSampleEmbedding] = useState(null);
+  const [selectedSampleFeatures, setSelectedSampleFeatures] = useState(null);
+  const [selectedSampleTokenScores, setSelectedSampleTokenScores] = useState(null);
+  const [loadingEmbedding, setLoadingEmbedding] = useState(false);
+  const [loadingFeatures, setLoadingFeatures] = useState(false);
+  const [loadingTokenScores, setLoadingTokenScores] = useState(false);
 
   useEffect(() => {
     apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
@@ -93,7 +100,22 @@ function TouchTokens() {
   }, [selectedFeature, sampleType]);
 
   useEffect(() => {
+    if (selectedSampleEmbedding) {
+      setLoadingFeatures(true);
+      apiService.calcFeatures(selectedSampleEmbedding.embedding).then((features) => {
+        console.log('SELECTED SAMPLE FEATURES', features);
+        setSelectedSampleFeatures(features);
+        setLoadingFeatures(false);
+      });
+    }
+  }, [selectedSampleEmbedding]);
+
+  useEffect(() => {
     if (selectedSample) {
+      setLoadingEmbedding(true);
+      setSelectedSampleEmbedding(null);
+      setSelectedSampleFeatures(null);
+      setSelectedSampleTokenScores(null);
       apiService.calcTokenizedEmbeddings(selectedSample.text).then((embedding) => {
         console.log('EMBEDDING', embedding);
         // this actually gets the features for all the tokens
@@ -106,10 +128,30 @@ function TouchTokens() {
           console.log('FEATURES', features);
           embedding.features = features;
           setSelectedSampleEmbedding(embedding);
+          setLoadingEmbedding(false);
         });
       });
     }
   }, [selectedSample]);
+
+  useEffect(() => {
+    if (selectedSampleEmbedding && selectedFeature) {
+      setLoadingTokenScores(true);
+      console.log('SELECTED FEATURE', selectedFeature, selectedSampleEmbedding);
+      let acts = extractActivations(selectedSampleEmbedding, selectedFeature.feature);
+      console.log('ACTIVATIONS', acts);
+      let toks = selectedSampleEmbedding.tokens.map((tok, i) => {
+        return {
+          token: tok,
+          activation: acts[i],
+        };
+      });
+      const tokenScores = calculateTokenMetrics(toks);
+      console.log('TOKEN SCORES', tokenScores);
+      setSelectedSampleTokenScores(tokenScores);
+      setLoadingTokenScores(false);
+    }
+  }, [selectedFeature, selectedSampleEmbedding]);
 
   useEffect(() => {
     apiService.calcFeatures(catAndCalculatorEmbedding.embedding).then((features) => {
@@ -228,11 +270,52 @@ function TouchTokens() {
           />
 
           <P>
-            <TokensAnnotated
-              embedding={selectedSampleEmbedding}
-              selectedFeature={selectedFeature}
-            />
+            <h3>Top sample annotated</h3>
+            {loadingEmbedding ? (
+              <div>Loading embedding and annotations...</div>
+            ) : selectedSampleEmbedding ? (
+              <TokensAnnotated
+                embedding={selectedSampleEmbedding}
+                selectedFeature={selectedFeature}
+              />
+            ) : (
+              <div>Select a sample to view annotations.</div>
+            )}
           </P>
+          <P>
+            {loadingTokenScores ? (
+              <div>Loading token scores...</div>
+            ) : selectedSampleTokenScores?.length ? (
+              <div>
+                <h3>Token scores</h3>
+                {selectedSampleTokenScores
+                  .filter((tok) => tok.zScore > 1.5)
+                  .map((tok, i) => (
+                    <div key={i}>
+                      <code>{tok.token}</code>
+                      <span> {tok.zScore.toFixed(3)}</span>
+                      <span> {tok.prominenceRatio.toFixed(3)}</span>
+                      <span> {tok.modifiedScore.toFixed(3)}</span>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div>Select a sample to view token scores.</div>
+            )}
+          </P>
+
+          <h3>Top sample pre-computed features</h3>
+          <FeatureBars topk={selectedSample} features={saeFeatures} numToShow={10} />
+          <h3>Top sample live computed features</h3>
+          {loadingFeatures ? (
+            <div>Loading live features...</div>
+          ) : selectedSampleFeatures ? (
+            <FeatureBars topk={selectedSampleFeatures} features={saeFeatures} numToShow={10} />
+          ) : selectedSample ? (
+            <div>Calculating features...</div>
+          ) : (
+            <div>Select a sample to compute features.</div>
+          )}
         </section>
 
         <section>
