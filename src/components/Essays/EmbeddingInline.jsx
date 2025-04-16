@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../../lib/apiService';
+// import { apiService } from '../../lib/apiService';
+import { maybeCachedCalcTokenizedEmbeddings } from '../../lib/cachedApiService';
 // import EmbeddingVis from './Embedding';
 import EmbeddingVis from './EmbeddingBarChart';
 import EmbeddingDifferenceChart from './EmbeddingDifferenceChart';
@@ -20,7 +21,7 @@ function EmbeddingVisualizer({
   const fetchEmbedding = async (searchQuery) => {
     setLoading(true);
     try {
-      const response = await apiService.calcTokenizedEmbeddings(searchQuery);
+      const response = await maybeCachedCalcTokenizedEmbeddings(searchQuery);
       setEmbedding(response.embedding);
     } catch (error) {
       console.error('Error fetching embedding:', error);
@@ -53,6 +54,7 @@ function EmbeddingVisualizer({
   // Handle example clicks
   const handleExampleClick = useCallback((example) => {
     setQuery(example);
+    setLoading(true);
   }, []);
 
   return (
@@ -72,14 +74,8 @@ function EmbeddingVisualizer({
       </div>
 
       {embedding ? (
-        <div>
-          <EmbeddingVis
-            style={{ opacity: loading ? 0.5 : 1 }}
-            embedding={embedding}
-            rows={8}
-            domain={[-0.1, 0, 0.1]}
-            height={48}
-          />
+        <div style={{ opacity: loading ? 0.5 : 1 }}>
+          <EmbeddingVis embedding={embedding} rows={8} domain={[-0.1, 0, 0.1]} height={48} />
           {compareEmbedding && (
             <EmbeddingDifferenceChart
               embedding1={embedding}
@@ -89,9 +85,10 @@ function EmbeddingVisualizer({
             />
           )}
         </div>
-      ) : (
+      ) : !loading ? (
         <div>Enter a query to see its embedding</div>
-      )}
+      ) : null}
+      {loading && <div className={styles.loadingIndicator}>Loading embedding...</div>}
     </div>
   );
 }

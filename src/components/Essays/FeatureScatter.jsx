@@ -107,7 +107,7 @@ function FeatureScatter({ features, selectedFeature, onFeature, height = 400 }) 
         feature.count,
       ];
     });
-    console.log('PTS', pts[0]);
+    // console.log('PTS', pts[0]);
     return pts;
   }, [features]);
 

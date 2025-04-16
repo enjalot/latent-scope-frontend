@@ -25,11 +25,6 @@ import EmbeddingInline from '../components/Essays/EmbeddingInline';
 import EmbeddingDifferenceChart from '../components/Essays/EmbeddingDifferenceChart';
 import CompareFeatureBars from '../components/Essays/CompareFeatureBars';
 // import EmbeddingVis from '../components/Essays/EmbeddingBarChart';
-import TokenEmbeddings, {
-  AnimatedTokenEmbeddings,
-  AverageTokenEmbeddings,
-} from '../components/Essays/TokenEmbeddings';
-import FeatureAutocomplete from '../components/Essays/FeatureAutocomplete';
 
 import { cosineSimilarity } from '../utils';
 
@@ -42,6 +37,15 @@ import styles from './essays.module.scss';
 // import styles from './nav-by-sim.module.scss';
 
 import { apiService } from '../lib/apiService';
+import {
+  maybeCachedCalcFeatures,
+  // maybeCachedGetDatasetFeatures,
+  // maybeCachedCalcTokenizedEmbeddings,
+  maybeCachedCalcSteering,
+  maybeCachedGetNNEmbed,
+  // maybeCachedGetSaeFeatures,
+  saveCurrentCacheToConsole,
+} from '../lib/cachedApiService';
 import hilbert from './cached/hilbert.json';
 import catAndCalculator from './cached/acatandacalculator.json';
 import catAndCalculatorEmbedding from './cached/embedding-acatandacalculator.json';
@@ -73,7 +77,8 @@ function NavBySim() {
   const [steeredResults, setSteeredResults] = useState(null);
   const [saeFeatures, setSaeFeatures] = useState(null);
   const [selectedFeature, setSelectedFeature] = useState(null);
-  const [steeredEmbedding, setSteeredEmbedding] = useState(null);
+  const [reconstructedEmbedding, setReconstructedEmbedding] = useState(null);
+  const [catCalculatorModifiedEmbedding, setCatCalculatorModifiedEmbedding] = useState(null);
 
   const [selectedVector, setSelectedVector] = useState({
     vector: [0.5, 0.3],
@@ -81,13 +86,7 @@ function NavBySim() {
   });
 
   useEffect(() => {
-    apiService.calcFeatures(catAndCalculatorEmbedding.embedding).then(async (features) => {
-      const se = await apiService.calcSteering(features);
-      setSteeredEmbedding(se);
-    });
-  }, []);
-
-  useEffect(() => {
+    // maybeCachedGetSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
     apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
       // console.log('SAE FEATURES', fts);
       setSaeFeatures(fts);
@@ -112,7 +111,7 @@ function NavBySim() {
           };
         });
         // .sort((a, b) => b.count - a.count);
-        console.log('filtered features', filteredFeatures);
+        // console.log('filtered features', filteredFeatures);
         setDatasetFilteredFeatures(filteredFeatures);
         setSelectedFeature(filteredFeatures[6864]); //domestic wildlife
       })
@@ -122,64 +121,41 @@ function NavBySim() {
   }, [saeFeatures]);
 
   useEffect(() => {
-    apiService.calcFeatures(catAndCalculatorEmbedding.embedding).then((features) => {
+    maybeCachedCalcFeatures(catAndCalculatorEmbedding.embedding).then((features) => {
       // console.log('FEATURES');
-      console.log(features);
+      // console.log(features);
       setCatAndCalculatorFeatures(features);
+      // also calculate the reconstructed embedding and search results with the reconstruction
+      maybeCachedCalcSteering(features).then((embed) => {
+        setReconstructedEmbedding(embed);
+        maybeCachedGetNNEmbed('enjalot/ls-dadabase', 'scopes-001', embed).then((results) => {
+          setReconstructedResults(results);
+        });
+      });
+
       let catCalculatorModified = {
         ...features,
         top_acts: [...features.top_acts],
         top_indices: [...features.top_indices],
       };
-      catCalculatorModified.top_acts[0] = cows[0].sae_acts[0];
+      // catCalculatorModified.top_acts[0] = cows[0].sae_acts[0];
       catCalculatorModified.top_indices[0] = cows[0].sae_indices[0];
       setCatCalculatorModified(catCalculatorModified);
-      apiService.calcSteering(catCalculatorModified).then((embed) => {
-        apiService.getNNEmbed('enjalot/ls-dadabase', 'scopes-001', embed).then((results) => {
+      maybeCachedCalcSteering(catCalculatorModified).then((embed) => {
+        setCatCalculatorModifiedEmbedding(embed);
+        maybeCachedGetNNEmbed('enjalot/ls-dadabase', 'scopes-001', embed).then((results) => {
           // console.log('steered results', results);
           setSteeredResults(results);
         });
       });
     });
   }, []);
-  // useEffect(() => {
-  //   apiService.getNNEmbed('enjalot/ls-dadabase', 'scopes-001', steeredEmbedding).then((results) => {
-  //     // console.log('reconstructed results', results);
-  //     setReconstructedResults(results);
-  //   });
-  // }, [steeredEmbedding]);
 
-  // const [tokenFeatures, setTokenFeatures] = useState([]);
-  // useEffect(() => {
-  //   apiService
-  //     .calcFeatures(
-  //       catAndCalculatorEmbedding.hidden_states[0].map((hs) => {
-  //         let norm = Math.sqrt(hs.reduce((sum, val) => sum + val * val, 0));
-  //         let normalized = hs.map((val) => val / norm);
-  //         return normalized;
-  //       })
-  //     )
-  //     .then((features) => {
-  //       // console.log('TOKEN FEATURES', features);
-  //       let tokfs = features.top_acts.map((act, i) => {
-  //         return {
-  //           top_acts: act,
-  //           top_indices: features.top_indices[i],
-  //         };
-  //       });
-  //       // console.log('TOKFS', tokfs);
-  //       setTokenFeatures(tokfs);
-  //     });
-  // }, []);
   const [selectedResult, setSelectedResult] = useState(catAndCalculator[0]);
 
   const handleFeatureSelect = useCallback((feature) => {
     console.log('Selected feature:', feature);
     setSelectedFeature(feature);
-  }, []);
-
-  const handleSteer = useCallback((embedding) => {
-    setSteeredEmbedding(embedding);
   }, []);
 
   return (
@@ -192,6 +168,7 @@ function NavBySim() {
         <div className={styles.meta}>
           <span className={styles.author}>By Ian Johnson</span>
           <span className={styles.date}>Published on March 17, 2025</span>
+          <button onClick={saveCurrentCacheToConsole}>Save Cache</button>
         </div>
 
         <section>
@@ -204,15 +181,20 @@ function NavBySim() {
 
           <ScopeProvider userParam="enjalot" datasetParam="ls-dadabase" scopeParam="scopes-001">
             <SearchProvider>
+              {/* <div className={styles.fullWidth}>
+                <div className={styles.fullWidthInner}> */}
               <SteeringPlayground
                 saeFeatures={datasetFilteredFeatures}
                 defaultQuery="A cat and a calculator"
               />
+
               <Caption>
                 Type in any query into the search bar above and see the top 5 dad jokes that are
                 most similar to your query. You can also adjust the concepts found in your query by
                 either changing their strength or changing the concepts themselves.
               </Caption>
+              {/* </div>
+              </div> */}
             </SearchProvider>
           </ScopeProvider>
           <P>
@@ -288,6 +270,13 @@ function NavBySim() {
             When we talk about similarity search, we're talking about using cosine similarity to
             compare a query with a bunch of documents. But what is the actual computation being done
             to do this comparison? What are the inputs to the cosine similarity function?
+          </P>
+          <P>
+            <img src="/navbysim/embedding.png" className={styles.diagram} />
+            <Caption>
+              An embedding model is like a lens that converts text into a vector. Focusing an
+              arbitrary amount of text data into a single high-dimensional point.
+            </Caption>
           </P>
           <P>
             When we submit our query we are actually converting it into a vector using an embedding
@@ -374,6 +363,13 @@ function NavBySim() {
         <section>
           <H3>Sparse Autoencoders</H3>
           <P>
+            <img src="/navbysim/features.png" className={styles.diagram} />
+            <Caption>
+              An SAE is like a prism, scattering an embedding into it's component concepts, allowing
+              us to see how it is composed.
+            </Caption>
+          </P>
+          <P>
             A particularly helpful tool is called a Sparse Autoencoder, or SAE. An SAE allow us to
             automatically decompose embeddings into interpretable directions (i.e. concepts) that we
             can then use to navigate our data. For example, our query:
@@ -401,13 +397,6 @@ function NavBySim() {
               training data. So this example activates the cat and the calculator about as strongly
               as they are ever activated.
             </Caption>
-          </P>
-          <P>
-            One way to think about the SAE is that it is like a prism, decomposing an embedding into
-            it's component concepts.
-            <br />
-            <img src="/images/essays/sae-diagram.png" />
-            <br />
           </P>
 
           <Expandable
@@ -610,18 +599,19 @@ function NavBySim() {
             totally different directions that we may become curious about.
           </P>
 
-          <H3>Steering 🐮</H3>
-
+          <H3>Reconstruction</H3>
           <P>
-            A very interesting technique we can do with an SAE is called steering. Steering in our
-            context means we will change our embedding in a way that will affect the search results.
-            In order to change our embedding we need to know that we can reconstruct our embedding
-            from the SAE features. Reconstruction is when we take a query, run it through the SAE to
-            get the features, and then run it backwards through the SAE to get a new embedding:
-            <br />
-            <img src="/images/essays/reconstruction-diagram.png" />
-            <br />
-            which will give us an approximation of our original embedding:
+            <img src="/navbysim/reconstruction.png" className={styles.diagram} />
+            <Caption>
+              We can also put features back into the SAE to reconstruct an embedding.
+            </Caption>
+          </P>
+          <P>
+            One more important concept we need to understand is reconstruction. In order to change
+            our embedding we need to know that we can reconstruct our embedding from the SAE
+            features. Reconstruction is when we take a query, run it through the SAE to get the
+            features, and then run it backwards through the SAE to get a new embedding: which will
+            give us an approximation of our original embedding:
             <br />
             <Query>A cat and a calculator</Query>
             <EmbeddingVis
@@ -630,26 +620,34 @@ function NavBySim() {
               domain={[-0.1, 0, 0.1]}
               height={48}
             ></EmbeddingVis>
-            <br />
+            <EmbeddingDifferenceChart
+              embedding1={catAndCalculatorEmbedding.embedding}
+              embedding2={reconstructedEmbedding}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            />
+            <EmbeddingVis
+              embedding={reconstructedEmbedding}
+              rows={8}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            ></EmbeddingVis>
             <Query>A cat and a calculator</Query>{' '}
             <em style={{ fontSize: '0.8em' }}>(reconstructed)</em>
-            {steeredEmbedding && (
-              <EmbeddingVis
-                embedding={steeredEmbedding}
-                rows={8}
-                domain={[-0.1, 0, 0.1]}
-                height={48}
-              ></EmbeddingVis>
-            )}
+            <Caption>
+              The difference between the original embedding and the reconstructed embedding is shown
+              in red.
+            </Caption>
           </P>
           <P>
             You may be able to spot small differences in the visualization, but the cosine
             similarity between the two embeddings is{' '}
             <b>
-              {steeredEmbedding
-                ? cosineSimilarity(catAndCalculatorEmbedding.embedding, steeredEmbedding)?.toFixed(
-                    3
-                  )
+              {reconstructedEmbedding
+                ? cosineSimilarity(
+                    catAndCalculatorEmbedding.embedding,
+                    reconstructedEmbedding
+                  )?.toFixed(3)
                 : 'N/A'}
             </b>
             , which is pretty close to 1. It isn't exactly 1 because the SAE isn't able to
@@ -666,23 +664,70 @@ function NavBySim() {
             )}
           </P>
 
+          <H3>Steering 🐮</H3>
           <P>
-            Now let's take a look at a totally different query, showing just the top 5 directions:
+            A very interesting technique we can do with reconstruction is called steering. Steering
+            in our context means we will change our embedding in a way that will affect the search
+            results. What if we were to take the{' '}
+            <em>
+              {datasetFilteredFeatures && (
+                <>
+                  <FeaturePill feature={datasetFilteredFeatures[6215]} /> characteristics and
+                  significance of cows
+                </>
+              )}
+            </em>{' '}
+            and replace the top feature of our cat and calculator query with it:
             <br />
-            <code>cows</code>
-            <FeatureBars topk={cows[0]} features={datasetFilteredFeatures} numToShow={5} />
-            What if we were to take the top feature of this query{' '}
-            <em>(6215 "characteristics and significance of cows")</em> and replace the top feature
-            of our cat and calculator query:
-            <br />
-            <FeatureBars
+            {/* <FeatureBars
               topk={catCalculatorModified}
               features={datasetFilteredFeatures}
               numToShow={10}
-            />
+            /> */}
+            <div className={styles.fullWidth}>
+              <div className={styles.fullWidthInner}>
+                <CompareFeatureBars
+                  queryA="A cat and a calculator"
+                  queryB="*edited version with cow feature*"
+                  topkA={catAndCalculatorFeatures}
+                  topkB={catCalculatorModified}
+                  features={datasetFilteredFeatures}
+                  numToShow={10}
+                />
+              </div>
+            </div>
           </P>
           <P>
-            Now let's do similarity search using the reconstructed embedding of our modified query:
+            <Query>
+              A cat and a calculator
+              <em style={{ fontSize: '0.8em' }}>(reconstructed)</em>
+            </Query>
+            <EmbeddingVis
+              embedding={reconstructedEmbedding}
+              rows={8}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            ></EmbeddingVis>
+            <EmbeddingDifferenceChart
+              embedding1={reconstructedEmbedding}
+              embedding2={catCalculatorModifiedEmbedding}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            />
+            <EmbeddingVis
+              embedding={catCalculatorModifiedEmbedding}
+              rows={8}
+              domain={[-0.1, 0, 0.1]}
+              height={48}
+            ></EmbeddingVis>
+            <Query>*edited version with cow feature*</Query>{' '}
+            <Caption>
+              The difference between the original reconstructed embedding and the steered embedding
+              is shown in red.
+            </Caption>
+          </P>
+          <P>
+            Now let's do similarity search using the reconstructed embedding of our steered query:
             <br />
             {steeredResults && (
               <SearchResults
@@ -694,18 +739,15 @@ function NavBySim() {
               />
             )}
           </P>
-          <P>
-            Now we get several jokes about cowculators! Notice the Calcugator joke is still #4 in
-            the search results.
-          </P>
+          <P>We get several jokes about cowculators!</P>
         </section>
 
         <section>
           <H3>Steering Playground</H3>
-
           <P>
-            Now you can explore the Sparse Autoencoder features yourself and see how adjusting
-            different semantic dimensions affects search results:
+            At this point we can revisit the steering playground from the start of the article. Try
+            exploring the Sparse Autoencoder features yourself and see how adjusting different
+            semantic dimensions affects search results:
           </P>
           <ScopeProvider userParam="enjalot" datasetParam="ls-dadabase" scopeParam="scopes-001">
             <SearchProvider>
@@ -715,20 +757,13 @@ function NavBySim() {
               />
             </SearchProvider>
           </ScopeProvider>
-          <P>
-            Something you may have noticed is that before you start editing the steered features,
-            your search results might be slightly different from the original query search results.
-            This is beause when we use the SAE to reconstruct the original embedding it doesn't do a
-            perfect job. Let's take a closer look, we can see the two embeddings visually are
-            similar:
-          </P>
         </section>
 
         <section>
           <H3>Look closer at your data</H3>
           <P>
             Use latent scope to run your own dataset through the same process to access these. The A
-            live demo of thedad jokes scope is available{' '}
+            live demo of the dad jokes scope is available{' '}
             <a href="https://latent.estate/scope/enjalot/ls-dadabase/scopes-001">on this site</a>
           </P>
         </section>

@@ -62,6 +62,7 @@ export const apiService = {
         onComplete: (data) => {
           data.forEach((row, i) => {
             row.feature = parseInt(row.feature_id);
+            row.feature_id = parseInt(row.feature_id);
             row.max_activation = parseFloat(row.max_activation);
             row.avg_activation = parseFloat(row.avg_activation);
             row.count = parseInt(row.count);

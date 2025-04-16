@@ -46,8 +46,6 @@ const EmbeddingDifferenceChart = ({
 
     // Calculate differences between embeddings
     const differences = embedding1.map((val, idx) => Math.abs(val - embedding2[idx]));
-    console.log('DIFFS', max(differences));
-    console.log('DOMAIN', domain);
 
     // Calculate bar width based on available space
     const barWidth = containerWidth / differences.length;

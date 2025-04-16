@@ -6,6 +6,12 @@ import FeatureBars from './FeatureBars';
 import EditableFeatureBars from './EditableFeatureBars';
 import styles from './SteeringPlayground.module.scss';
 import { apiService } from '../../lib/apiService';
+import {
+  maybeCachedCalcTokenizedEmbeddings,
+  maybeCachedCalcFeatures,
+  maybeCachedGetNNEmbed,
+  maybeCachedCalcSteering,
+} from '../../lib/cachedApiService';
 import { cosineSimilarity } from '../../utils';
 import { Button } from 'react-element-forge';
 
@@ -34,11 +40,11 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
   const getEmbedding = useCallback(async (query) => {
     setQueryFeaturesLoading(true); // Start loading
     try {
-      const emb = await apiService.calcTokenizedEmbeddings(query);
+      const emb = await maybeCachedCalcTokenizedEmbeddings(query);
       setQueryEmbedding(emb);
 
       // Calculate features from embedding
-      const features = await apiService.calcFeatures(emb.embedding);
+      const features = await maybeCachedCalcFeatures(emb.embedding);
       // setUserHasEditedFeatures(true);
       setQueryFeatures(features);
       setEditedFeatures(features);
@@ -62,13 +68,13 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
       try {
         // Calculate steering to get reconstructed embedding
         // console.log('editedFeatures', editedFeatures);
-        const se = await apiService.calcSteering(editedFeatures);
+        const se = await maybeCachedCalcSteering(editedFeatures);
         // console.log('steeringEmbedding', se);
         setSteeringEmbedding(se);
         // onSteer(steeringEmbedding);
         // Search with this embedding
         // TODO: this should be set by useSearch probably. its due to using the modal backend directly not via scope
-        const res = await apiService.getNNEmbed('enjalot/ls-dadabase', 'scopes-001', se);
+        const res = await maybeCachedGetNNEmbed('enjalot/ls-dadabase', 'scopes-001', se);
 
         setSteeringResults(res);
       } catch (error) {
@@ -82,7 +88,7 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
   }, [editedFeatures, scope, userHasEditedFeatures]);
 
   const handleFeaturesChange = useCallback((newFeatures) => {
-    console.log('FEATURES CHANGED??', newFeatures);
+    // console.log('FEATURES CHANGED??', newFeatures);
     setEditedFeatures(newFeatures);
     setUserHasEditedFeatures(true);
   }, []);
