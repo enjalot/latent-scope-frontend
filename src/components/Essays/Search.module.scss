@@ -69,10 +69,16 @@
 }
 
 .example {
-  color: #0066cc;
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  color: #333;
   cursor: pointer;
+  margin: 0.2rem 0.2rem;
   
   &:hover {
-    text-decoration: underline;
+    background-color: #e0e0e0;
+    text-decoration: none;
   }
 } 

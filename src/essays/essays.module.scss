@@ -70,7 +70,7 @@
   font-family: var(--font-secondary), var(--font-backup);
   font-size: 1.2rem;
   line-height: 1.8;
-  margin-bottom: .5rem;
+  margin-bottom: 1.5rem;
   
   @media (max-width: 767px) {
     font-size: 1.05rem;
@@ -147,6 +147,7 @@
   
   .caption {
     margin-top: 0.8rem;
+    margin-bottom: 1.5rem;
     font-size: 0.9rem;
     color: var(--color-text-subtle);
     text-align: center;
@@ -313,6 +314,7 @@
   font-size: 12px;
   color: var(--color-text-subtle);
   margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .diagram {

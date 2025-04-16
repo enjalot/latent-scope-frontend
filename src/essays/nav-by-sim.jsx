@@ -168,7 +168,7 @@ function NavBySim() {
         <div className={styles.meta}>
           <span className={styles.author}>By Ian Johnson</span>
           <span className={styles.date}>Published on March 17, 2025</span>
-          <button onClick={saveCurrentCacheToConsole}>Save Cache</button>
+          {/* <button onClick={saveCurrentCacheToConsole}>Save Cache</button> */}
         </div>
 
         <section>
@@ -237,7 +237,7 @@ function NavBySim() {
           </P>
 
           <P>
-            Let's try a query that contains two distince concepts:
+            Let's try a query that contains two distinct concepts:
             <br />
           </P>
           <Query>A cat and a calculator</Query>
@@ -340,8 +340,8 @@ function NavBySim() {
               defaultQuery="winter holidays"
               examples={[
                 'winter holidays',
-                'A cat and a calculator',
                 'Where do cats write notes? Scratch Paper!',
+                'What kind of cat passes an exam without studying? Cheetah',
               ]}
               compareEmbedding={catAndCalculatorEmbedding.embedding}
             />
@@ -373,7 +373,8 @@ function NavBySim() {
             A particularly helpful tool is called a Sparse Autoencoder, or SAE. An SAE allow us to
             automatically decompose embeddings into interpretable directions (i.e. concepts) that we
             can then use to navigate our data. For example, our query:
-            <br />
+          </P>
+          <P>
             <Query>A cat and a calculator</Query>
             <EmbeddingVis
               embedding={catAndCalculatorEmbedding.embedding}
@@ -381,23 +382,23 @@ function NavBySim() {
               domain={[-0.1, 0, 0.1]}
               height={48}
             ></EmbeddingVis>
-            Becomes:
-            <Scrollable height={255}>
-              <FeatureBars
-                topk={catAndCalculatorFeatures}
-                features={datasetFilteredFeatures}
-                numToShow={64}
-              />
-            </Scrollable>
-            <Caption>
-              The visualization above shows each of the directions as a bar. The number on the left{' '}
-              <span className={styles.featureIdPill}>13557</span>is the feature index, and the
-              number on the right <code>0.371</code> is the activation strength of that feature for
-              the query. The bar's length is relative to the maximum activation seen on the SAE's
-              training data. So this example activates the cat and the calculator about as strongly
-              as they are ever activated.
-            </Caption>
           </P>
+          <P>Decomposes into:</P>
+          <Scrollable height={255}>
+            <FeatureBars
+              topk={catAndCalculatorFeatures}
+              features={datasetFilteredFeatures}
+              numToShow={64}
+            />
+          </Scrollable>
+          <Caption>
+            The visualization above shows each of the directions as a bar. The number on the left{' '}
+            <span className={styles.featureIdPill}>13557</span>is the feature index, and the number
+            on the right <code>0.371</code> is the activation strength of that feature for the
+            query. The bar's length is relative to the maximum activation seen on the SAE's training
+            data. So this example activates the cat and the calculator about as strongly as they are
+            ever activated.
+          </Caption>
 
           <Expandable
             title="An interactive refresher on high-dimensional vector composition"
@@ -565,34 +566,36 @@ function NavBySim() {
 
           <H3>Comparisons</H3>
           <P>
-            Now we are equiped to examine our similarity search in more detail. Let's start by
-            looking at the features in our query and compare them with the features in our search
-            results:
-          </P>
-          <br />
-          <div className={styles.fullWidth}>
-            <div className={styles.fullWidthInner}>
-              <CompareFeatureBars
-                queryA="A cat and a calculator"
-                queryB={selectedResult.joke}
-                topkA={catAndCalculatorFeatures}
-                topkB={selectedResult}
-                features={datasetFilteredFeatures}
-                numToShow={10}
-              />
+            Now we are equipped to examine our similarity search in more detail. Let's start by
+            comparing the concepts found in two embeddings. We take our search query and get it's
+            features, and then we take a search result and get it's features. We can then see which
+            features are shared, and how strongly they may be activated.
+            <div className={styles.fullWidth}>
+              <div className={styles.fullWidthInner}>
+                <CompareFeatureBars
+                  queryA="A cat and a calculator"
+                  queryB={selectedResult.joke}
+                  topkA={catAndCalculatorFeatures}
+                  topkB={selectedResult}
+                  features={datasetFilteredFeatures}
+                  numToShow={10}
+                />
+              </div>
             </div>
-          </div>
-          <em>Try selecting other results to see how the directions compare with the query.</em>
-          <SearchResults
-            results={catAndCalculator}
-            loading={false}
-            dataset={{ text_column: 'joke' }}
-            numToShow={5}
-            showIndex={false}
-            onSelect={setSelectedResult}
-            selectedResult={selectedResult}
-            selectable={true}
-          />
+            <SearchResults
+              results={catAndCalculator}
+              loading={false}
+              dataset={{ text_column: 'joke' }}
+              numToShow={5}
+              showIndex={false}
+              onSelect={setSelectedResult}
+              selectedResult={selectedResult}
+              selectable={true}
+            />
+            <Caption>
+              Try selecting other results to see how the directions compare with the query.
+            </Caption>
+          </P>
           <P>
             You may notice that many of the top features in our query are also contained in the top
             features of our search results! We can also see that some of our results contain some
