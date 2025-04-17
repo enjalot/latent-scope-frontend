@@ -11,6 +11,7 @@ function EmbeddingVisualizer({
   defaultQuery = 'winter holidays',
   examples = ['cows', 'feline stuff', 'Will Smith', 'winter holidays'],
   compareEmbedding = null,
+  height = 48,
 }) {
   const [query, setQuery] = useState(defaultQuery);
   const [embedding, setEmbedding] = useState(null);
@@ -75,13 +76,13 @@ function EmbeddingVisualizer({
 
       {embedding ? (
         <div style={{ opacity: loading ? 0.5 : 1 }}>
-          <EmbeddingVis embedding={embedding} rows={8} domain={[-0.1, 0, 0.1]} height={48} />
+          <EmbeddingVis embedding={embedding} rows={8} domain={[-0.1, 0, 0.1]} height={height} />
           {compareEmbedding && (
             <EmbeddingDifferenceChart
               embedding1={embedding}
               embedding2={compareEmbedding}
               domain={[-0.1, 0, 0.1]}
-              height={48}
+              height={height}
             />
           )}
         </div>

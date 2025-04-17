@@ -10,12 +10,13 @@
   text-align: center;
   white-space: nowrap;
   display: inline-block;
-  color: black !important;
-  text-shadow: 0 0 1px white,
-  // 0 0 1px white,
-  // 0 0 1px white,
-  // 0 0 1px white,
-  // 0 0 1px white,
-  // 0 0 1px white,
-  0 0 4px white;
+  // color: black !important;
+  text-shadow: var(--text-shadow-for-bars, 
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 4px white);
 } 

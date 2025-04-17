@@ -42,13 +42,14 @@
   pointer-events: none;
   width: calc(100% - 8px);
   overflow: hidden;
-  text-shadow: 0 0 1px white,
+  text-shadow: var(--text-shadow-for-bars, 
     0 0 1px white,
     0 0 1px white,
     0 0 1px white,
     0 0 1px white,
     0 0 1px white,
-    0 0 4px white;
+    0 0 1px white,
+    0 0 4px white);
 }
 
 .labelContainer {
@@ -184,13 +185,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 4px;
-  text-shadow: 0 0 1px white,
-  0 0 1px white,
-  0 0 1px white,
-  0 0 1px white,
-  0 0 1px white,
-  0 0 1px white,
-  0 0 4px white;
+  text-shadow: var(--text-shadow-for-bars, 
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 4px white);
 }
 
 .editableFeatureContainer {

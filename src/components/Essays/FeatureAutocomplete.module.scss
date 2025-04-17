@@ -1,3 +1,29 @@
+:root {
+  --feature-bg: white;
+  --feature-text: #333;
+  --feature-border: #ccc;
+  --feature-dropdown-border: #ddd;
+  --feature-hover-bg: #f5f5f5;
+  --feature-id-pill-bg: rgba(0, 0, 0, 0.1);
+  --feature-count-bg: #f0f0f0;
+  --feature-count-text: #666;
+  --feature-shadow: rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --feature-bg: #222;
+    --feature-text: #ffffff;
+    --feature-border: #444;
+    --feature-dropdown-border: #555;
+    --feature-hover-bg: #333;
+    --feature-id-pill-bg: rgba(255, 255, 255, 0.15);
+    --feature-count-bg: #444;
+    --feature-count-text: #ccc;
+    --feature-shadow: rgba(0, 0, 0, 0.3);
+  }
+}
+
 .featureSelector {
   position: relative;
   width: calc(100% - 8px);
@@ -5,24 +31,37 @@
 
 .featureSearch {
   width: 100%;
-  border: 1px solid #ccc;
+  border: 1px solid var(--feature-border);
   border-radius: 4px;
   font-size: 14px;
   padding: 0px 4px;
   margin: 0;
   min-width: 100px;
   outline: none;
+  background-color: var(--feature-bg);
+  color: var(--feature-text);
+  
+  &::placeholder {
+    color: var(--feature-text);
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .featureSearch::placeholder {
+    opacity: 0.9;
+  }
 }
 
 .featureDropdown {
   position: fixed;
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--feature-bg);
+  border: 1px solid var(--feature-dropdown-border);
   border-radius: 4px;
   max-height: 300px;
   overflow-y: auto;
   z-index: 1000;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px var(--feature-shadow);
   // min-width: 100%;
   width: 400px;
 }
@@ -34,14 +73,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  color: var(--feature-text);
   
   &:hover {
-    background-color: #f5f5f5;
+    background-color: var(--feature-hover-bg);
   }
 }
 
 .featureIdPill {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: var(--feature-id-pill-bg);
   border-radius: 12px;
   padding: 2px 8px;
   margin-right: 8px;
@@ -59,11 +99,11 @@
 }
 
 .featureCount {
-  background-color: #f0f0f0;
+  background-color: var(--feature-count-bg);
   border-radius: 12px;
   padding: 2px 8px;
   font-size: 12px;
-  color: #666;
+  color: var(--feature-count-text);
   font-weight: 500;
   min-width: 24px;
   text-align: center;

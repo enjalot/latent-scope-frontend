@@ -84,6 +84,7 @@ function NavBySim() {
     vector: [0.5, 0.3],
     label: 'R1',
   });
+  const [embeddingVisHeight, setEmbeddingVisHeight] = useState(64);
 
   useEffect(() => {
     // maybeCachedGetSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
@@ -304,7 +305,7 @@ function NavBySim() {
               embedding={catAndCalculatorEmbedding.embedding}
               rows={8}
               domain={[-0.1, 0, 0.1]}
-              height={48}
+              height={embeddingVisHeight}
             ></EmbeddingVis>
             <Caption>
               This visualization is a bar chart converting each number to a bar where the color is
@@ -323,13 +324,13 @@ function NavBySim() {
                   embedding={joke.vector}
                   rows={8}
                   domain={[-0.1, 0, 0.1]}
-                  height={48}
+                  height={embeddingVisHeight}
                 ></EmbeddingVis>
                 {/* <EmbeddingDifferenceChart
                   embedding1={catAndCalculatorEmbedding.embedding}
                   embedding2={joke.vector}
                   domain={[-0.1, 0, 0.1]}
-                  height={48}
+                  height={embeddingVisHeight}
                 ></EmbeddingDifferenceChart> */}
               </div>
             ))}
@@ -344,6 +345,7 @@ function NavBySim() {
                 'What kind of cat passes an exam without studying? Cheetah',
               ]}
               compareEmbedding={catAndCalculatorEmbedding.embedding}
+              height={embeddingVisHeight}
             />
             <Caption>
               We show the difference between the original search term{' '}
@@ -357,7 +359,7 @@ function NavBySim() {
             dimensions, whether we visualize them or not! We need more tools to see what is
             happening inside these representations.
           </P>
-          {/* <EmbeddingVis embedding={catConstructed} rows={8} domain={[-0.2, 0, 0.2]} height={48} /> */}
+          {/* <EmbeddingVis embedding={catConstructed} rows={8} domain={[-0.2, 0, 0.2]} height={embeddingVisHeight} /> */}
         </section>
 
         <section>
@@ -380,7 +382,7 @@ function NavBySim() {
               embedding={catAndCalculatorEmbedding.embedding}
               rows={8}
               domain={[-0.1, 0, 0.1]}
-              height={48}
+              height={embeddingVisHeight}
             ></EmbeddingVis>
           </P>
           <P>Decomposes into:</P>
@@ -540,7 +542,8 @@ function NavBySim() {
               />
               <Caption>
                 There are {selectedFeature?.count} jokes that activate on the{' '}
-                <FeaturePill feature={selectedFeature} /> {selectedFeature?.label} feature.
+                <FeaturePill feature={selectedFeature} /> <Query>{selectedFeature?.label}</Query>{' '}
+                feature.
                 <br />
                 See them all in the{' '}
                 <a
@@ -610,30 +613,29 @@ function NavBySim() {
             </Caption>
           </P>
           <P>
-            One more important concept we need to understand is reconstruction. In order to change
-            our embedding we need to know that we can reconstruct our embedding from the SAE
-            features. Reconstruction is when we take a query, run it through the SAE to get the
-            features, and then run it backwards through the SAE to get a new embedding: which will
-            give us an approximation of our original embedding:
+            One more important concept we need to understand is reconstruction. Reconstruction is
+            when we take a query, run it through the SAE to get the features, and then run it
+            backwards through the SAE to get a new embedding: which will give us an approximation of
+            our original embedding:
             <br />
             <Query>A cat and a calculator</Query>
             <EmbeddingVis
               embedding={catAndCalculatorEmbedding.embedding}
               rows={8}
               domain={[-0.1, 0, 0.1]}
-              height={48}
+              height={embeddingVisHeight}
             ></EmbeddingVis>
             <EmbeddingDifferenceChart
               embedding1={catAndCalculatorEmbedding.embedding}
               embedding2={reconstructedEmbedding}
               domain={[-0.1, 0, 0.1]}
-              height={48}
+              height={embeddingVisHeight}
             />
             <EmbeddingVis
               embedding={reconstructedEmbedding}
               rows={8}
               domain={[-0.1, 0, 0.1]}
-              height={48}
+              height={embeddingVisHeight}
             ></EmbeddingVis>
             <Query>A cat and a calculator</Query>{' '}
             <em style={{ fontSize: '0.8em' }}>(reconstructed)</em>
@@ -709,19 +711,19 @@ function NavBySim() {
               embedding={reconstructedEmbedding}
               rows={8}
               domain={[-0.1, 0, 0.1]}
-              height={48}
+              height={embeddingVisHeight}
             ></EmbeddingVis>
             <EmbeddingDifferenceChart
               embedding1={reconstructedEmbedding}
               embedding2={catCalculatorModifiedEmbedding}
               domain={[-0.1, 0, 0.1]}
-              height={48}
+              height={embeddingVisHeight}
             />
             <EmbeddingVis
               embedding={catCalculatorModifiedEmbedding}
               rows={8}
               domain={[-0.1, 0, 0.1]}
-              height={48}
+              height={embeddingVisHeight}
             ></EmbeddingVis>
             <Query>*edited version with cow feature*</Query>{' '}
             <Caption>
@@ -765,52 +767,103 @@ function NavBySim() {
         <section>
           <H3>Look closer at your data</H3>
           <P>
-            Use latent scope to run your own dataset through the same process to access these. The A
-            live demo of the dad jokes scope is available{' '}
-            <a href="https://latent.estate/scope/enjalot/ls-dadabase/scopes-001">on this site</a>
+            If you want to do these same techniques on your own dataset, download{' '}
+            <a href="https://github.com/enjalot/latent-scope">Latent Scope</a> and follow the steps
+            to embed your data and extract SAE features from it. You will be able to explore via the
+            interface demonstrated on the{' '}
+            <a href="https://latent.estate/scope/enjalot/ls-dadabase/scopes-001">
+              dad jokes dataset
+            </a>
+            .
+            <br />
+            <br />
+            Join the <a href="https://discord.gg/x7NvpnM4pY">Latent Interfaces Discord</a> to get
+            support for using Latent Scope and share your explorations with the community!
           </P>
         </section>
 
         <footer className={styles.footnotes}>
-          <div className={styles.footnoteTitle}>Further Reading</div>
+          <H2>Further Reading</H2>
           <P>
-            TODO: A number of articles on embeddings and SAEs:
+            Here is a select list of resources I've found helpful for understanding embeddings and
+            Sparse Autoencoders
             <ul>
               <li>
                 <a href="https://www.jimmymeetsworld.com/embeddings">
                   Why I'm Excited About Embeddings
-                </a>
+                </a>{' '}
+                by Jimmy Zhang
               </li>
-              <li></li>
+              <li>
+                <a href="https://adamkarvonen.github.io/machine_learning/2024/06/11/sae-intuitions.html">
+                  An Intuitive Explanation of Sparse Autoencoders for LLM Interpretability
+                </a>{' '}
+                by Adam Karvonen
+              </li>
+              <li>
+                <a href="https://thesephist.com/posts/prism/">
+                  Prism: mapping interpretable concepts and features in a latent space of language
+                </a>{' '}
+                by Linus Lee
+              </li>
+              <li>
+                <a href="https://arxiv.org/abs/2408.00657">
+                  Disentangling Dense Embeddings with Sparse Autoencoders
+                </a>{' '}
+                by O'Neill et al.
+              </li>
+              <li>
+                <a href="https://transformer-circuits.pub/2023/monosemantic-features">
+                  Towards Monosemanticity: Decomposing Language Models With Dictionary Learning
+                </a>{' '}
+                by Anthropic
+              </li>
+              <li>
+                <a href="https://transformer-circuits.pub/2023/monosemantic-features">
+                  Towards Monosemanticity: Decomposing Language Models With Dictionary Learning
+                </a>{' '}
+                by Anthropic
+              </li>
+              <li>
+                <a href="https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html">
+                  Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet
+                </a>{' '}
+                by Anthropic
+              </li>
+              <li>
+                <a href="https://www.neuronpedia.org/">Neuronpedia</a> by Johnny Lin
+              </li>
             </ul>
+            You can read more about how the SAE used in this article was trained at{' '}
+            <a href="https://enjalot.github.io/latent-taxonomy/articles/about">Latent Taxonomy</a>.
           </P>
 
-          <div className={styles.footnoteTitle}>Acknowledgements</div>
+          <H2>Acknowledgements</H2>
           <P>
-            TODO:
-            <a href="https://www.jimmymeetsworld.com/">Jimmy Zhang</a> for his contributions to
-            Latent Scope, including improvements that made this article possible and his feedback on
-            this article. Thank you to <a href="https://www.ksadov.com/">Konstantine Sadov</a>,{' '}
+            Thank you to <a href="https://www.jimmymeetsworld.com/">Jimmy Zhang</a> for his
+            contributions to Latent Scope, including improvements that made this article possible as
+            well as extensive feedback on this article.
+          </P>
+          <P>
+            Thank you to <a href="https://www.ksadov.com/">Konstantine Sadov</a>,{' '}
             <a href="https://a13x.io/">Alex Bäurle</a>,
             <a href="https://gytis.co/">Gytis Daujotas</a>, and{' '}
             <a href="https://www.linkedin.com/in/johntigue/">John Tigue</a>
             for their thoughtful feedback on this article leading to numerous improvements.
           </P>
           <P>
-            Join the Latent Interfaces Discord!
+            <a href="https://builders.mozilla.org/">Mozilla Builders</a> provided grant funding
+            supporting Latent Scope.
+          </P>
+          <P>
+            <a href="https://modal.com">Modal</a> provided the compute credits to train the SAE and
+            host the API powering the interactive parts of this article.
+          </P>
+          <P>
+            <br />
             <br />
             <br />
           </P>
-
-          {/* <Footnote
-            number="1"
-            text="This note underscores the importance of having a robust base in programming fundamentals."
-          />
-          <Footnote
-            number="2"
-            text="Abstraction not only simplifies complexity but also enables efficient problem decomposition."
-          /> */}
-          <Tooltip id="footnote" />
         </footer>
       </article>
     </div>

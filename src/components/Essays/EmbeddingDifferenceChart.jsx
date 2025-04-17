@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { scaleLinear, scaleSequential } from 'd3-scale';
 import { interpolateRdBu } from 'd3-scale-chromatic';
 import { max } from 'd3-array';
+import scaleCanvas from '../../lib/canvas';
+
 const EmbeddingDifferenceChart = ({
   embedding1,
   embedding2,
@@ -32,6 +34,15 @@ const EmbeddingDifferenceChart = ({
     };
   }, []);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    canvas.width = containerWidth * window.devicePixelRatio;
+    canvas.height = height * window.devicePixelRatio;
+    context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    scaleCanvas(canvas, context, containerWidth, height);
+  }, [containerWidth, height]);
+
   // Drawing effect
   useEffect(() => {
     if (!embedding1 || !embedding2 || !embedding1.length || !embedding2.length || !containerWidth)
@@ -42,7 +53,6 @@ const EmbeddingDifferenceChart = ({
     }
 
     const canvas = canvasRef.current;
-    canvas.width = containerWidth;
 
     // Calculate differences between embeddings
     const differences = embedding1.map((val, idx) => Math.abs(val - embedding2[idx]));

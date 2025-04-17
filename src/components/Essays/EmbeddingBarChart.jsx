@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { scaleDiverging, scaleSequential, scaleLinear } from 'd3-scale';
 import { interpolateBrBG, interpolateCool } from 'd3-scale-chromatic';
-
+import scaleCanvas from '../../lib/canvas';
 const EmbeddingBarChart = ({
   embedding,
   height = 200, // Default height for the chart
@@ -34,12 +34,23 @@ const EmbeddingBarChart = ({
     };
   }, []);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    canvas.width = containerWidth * window.devicePixelRatio;
+    canvas.height = height * window.devicePixelRatio;
+    context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    scaleCanvas(canvas, context, containerWidth, height);
+  }, [containerWidth, height]);
+
   // Drawing effect
   useEffect(() => {
     if (!embedding || !embedding.length || !containerWidth) return;
 
     const canvas = canvasRef.current;
-    canvas.width = containerWidth; // Set canvas width to match container
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, containerWidth, height);
 
     // Set up color scale
     const colorScale = scaleDiverging(domain, interpolateBrBG);
@@ -54,9 +65,6 @@ const EmbeddingBarChart = ({
 
     // Calculate zero position
     const zeroY = heightScale(0);
-
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, containerWidth, height);
 
     // Draw baseline (zero line)
     ctx.strokeStyle = '#ddd';

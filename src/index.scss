@@ -230,6 +230,15 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-y: hidden;
+
+  --text-shadow-for-bars: 
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 1px white,
+    0 0 4px white;
 }
 
 a {
@@ -405,6 +414,8 @@ button:focus-visible {
 
     // Copy button
     --copy-button-text-color: #A0A0A0;
+
+    --text-shadow-for-bars: none;
   }
 
   button {

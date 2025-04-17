@@ -4,7 +4,7 @@
   position: relative;
   width: 100%;
   overflow-y: auto;
-  background-color: #f9f9f9;
+  background-color: var(--color-neutral-1);
   border-radius: 8px;
   max-height: 400px;
   
@@ -23,20 +23,20 @@
 
 .resultCard {
   position: relative;
-  background-color: white;
+  background-color: var(--color-neutral-0);
   border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--color-background-modal-overlay);
   padding: 12px 16px 12px 16px;
   // cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 3px 8px var(--color-background-modal-overlay);
     transform: translateY(-1px);
   }
   
   &.highlighted {
-    background-color: #f0f7ff;
+    background-color: var(--color-background-subtle-callout);
   }
   
   &.expanded {
@@ -50,14 +50,14 @@
   top: 12px;
   // width: 24px;
   height: 24px;
-  background-color: #eaeaea;
+  background-color: var(--color-neutral-2);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
   font-weight: bold;
-  color: #555;
+  color: var(--color-text-subtle);
   padding: 0 6px;
 }
 
@@ -71,7 +71,7 @@
 .cardText {
   font-size: 0.95rem;
   line-height: 1.5;
-  color: #333;
+  color: var(--color-text-main);
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -95,18 +95,18 @@
   position: absolute;
   top: 0;
   right: 0;
-  background: #f0f7ff;
+  background: var(--color-background-subtle-callout);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.8rem;
-  color: #555;
+  color: var(--color-text-subtle);
   font-weight: bold;
 }
 
 .noResults {
   padding: 24px;
   text-align: center;
-  color: #666;
+  color: var(--color-text-subtle);
   font-size: 1rem;
 }
 
@@ -116,11 +116,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.8); /* semi-transparent background */
+  background-color: var(--color-background-modal-overlay);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 10; /* Ensure it's above other content */
+  z-index: 10;
 }
 
 .loadingContainer {
@@ -134,8 +134,8 @@
 .loadingSpinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
+  border: 4px solid var(--color-neutral-2);
+  border-top: 4px solid var(--color-interaction-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -151,9 +151,9 @@
 }
 
 .selected {
-  border: 2px solid #0070f3; /* Bold blue border */
-  background-color: rgba(0, 112, 243, 0.1); /* Light blue background */
-  box-shadow: 0 0 8px rgba(0, 112, 243, 0.3); /* Subtle blue glow */
+  border: 2px solid var(--color-interaction-primary);
+  background-color: var(--color-background-subtle-callout);
+  box-shadow: 0 0 8px var(--color-background-modal-overlay);
 }
 
 .selectable {
@@ -161,7 +161,7 @@
   transition: all 0.2s ease-in-out;
   
   &:hover {
-    border-color: #0070f3;
+    border-color: var(--color-interaction-primary);
     transform: translateY(-2px);
   }
 }
@@ -185,8 +185,7 @@
   text-align: right;
   font-weight: 700;
   font-family: 'Roboto Mono', monospace;
-  text-shadow: 0 0 1px white,
-    0 0 4px white;
+  text-shadow: var(--text-shadow-for-bars);
 }
 
 .showFeatureActivation {
