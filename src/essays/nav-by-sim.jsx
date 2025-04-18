@@ -163,31 +163,6 @@ function NavBySim() {
 
   return (
     <div className={styles.essayContainer}>
-      <Helmet>
-        <title>Navigating by Similarity</title>
-        <meta name="description" content="High-dimensional Wayfinding with Sparse Autoencoders" />
-
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="article" />
-        <meta property="og:url" content="https://latent.estate/essays/nav-by-sim" />
-        <meta property="og:title" content="Navigating by Similarity" />
-        <meta
-          property="og:description"
-          content="High-dimensional Wayfinding with Sparse Autoencoders"
-        />
-        <meta property="og:image" content="https://latent.estate/navbysim.png" />
-
-        {/* Twitter */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://latent.estate/essays/nav-by-sim" />
-        <meta property="twitter:title" content="Navigating by Similarity" />
-        <meta
-          property="twitter:description"
-          content="High-dimensional Wayfinding with Sparse Autoencoders"
-        />
-        <meta property="twitter:image" content="https://latent.estate/navbysim.png" />
-      </Helmet>
-
       <Title title="Navigating by Similarity" />
       <article className={styles.essayContent}>
         <h1 className={styles.title}>Navigating by Similarity</h1>
@@ -873,10 +848,11 @@ function NavBySim() {
           </P>
           <P>
             Thank you to <a href="https://www.ksadov.com/">Konstantine Sadov</a>,{' '}
-            <a href="https://a13x.io/">Alex Bäurle</a>,
-            <a href="https://gytis.co/">Gytis Daujotas</a>, and{' '}
-            <a href="https://www.linkedin.com/in/johntigue/">John Tigue</a>
-            for their thoughtful feedback on this article leading to numerous improvements.
+            <a href="https://a13x.io/">Alex Bäurle</a>,{' '}
+            <a href="https://gytis.co/">Gytis Daujotas</a>,{' '}
+            <a href="http://erikhazzard.com">Erik Hazzard</a> and{' '}
+            <a href="https://www.linkedin.com/in/johntigue/">John Tigue</a> for their thoughtful
+            feedback on this article leading to numerous improvements.
           </P>
           <P>
             <a href="https://builders.mozilla.org/">Mozilla Builders</a> provided grant funding
