@@ -63,6 +63,7 @@ import FeatureScatter from '../components/Essays/FeatureScatter';
 import VectorExample from '../components/Essays/VectorExample';
 import FeatureFilter from '../components/Essays/FeatureFilter';
 import FeaturePill from '../components/Essays/FeaturePill';
+import { Helmet } from 'react-helmet';
 
 function NavBySim() {
   // const embedding = useMemo(async () => {
@@ -162,6 +163,31 @@ function NavBySim() {
 
   return (
     <div className={styles.essayContainer}>
+      <Helmet>
+        <title>Navigating by Similarity</title>
+        <meta name="description" content="High-dimensional Wayfinding with Sparse Autoencoders" />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://yourdomain.com/essays/nav-by-sim" />
+        <meta property="og:title" content="Navigating by Similarity" />
+        <meta
+          property="og:description"
+          content="High-dimensional Wayfinding with Sparse Autoencoders"
+        />
+        <meta property="og:image" content="https://yourdomain.com/essays/navbysim.png" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://yourdomain.com/essays/nav-by-sim" />
+        <meta property="twitter:title" content="Navigating by Similarity" />
+        <meta
+          property="twitter:description"
+          content="High-dimensional Wayfinding with Sparse Autoencoders"
+        />
+        <meta property="twitter:image" content="https://yourdomain.com/essays/navbysim.png" />
+      </Helmet>
+
       <Title title="Navigating by Similarity" />
       <article className={styles.essayContent}>
         <h1 className={styles.title}>Navigating by Similarity</h1>
