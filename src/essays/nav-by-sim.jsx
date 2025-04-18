@@ -549,7 +549,7 @@ function NavBySim() {
                 <br />
                 See them all in the{' '}
                 <a
-                  href={`https://latent.estate/scope/enjalot/ls-dadabase/scopes-001?filter=${selectedFeature?.feature}`}
+                  href={`https://latent.estate/scope/enjalot/ls-dadabase/scopes-001?feature=${selectedFeature?.feature}`}
                 >
                   Latent Scope demo
                 </a>
