@@ -28,6 +28,23 @@ function Home() {
         </p>
       </div>
       <div className={`${styles.section}`}>
+        <h2>Essays</h2>
+        <div className={styles.essay}>
+          <div className={styles.essayImage}>
+            <Link to={`/essays/nav-by-sim`}>
+              <img src={`/navbysim/navbysim.png`} alt="Explore" />
+            </Link>
+          </div>
+          <div className={styles.essayDescription}>
+            <span className={styles.essayLabel}>
+              <Link to={`/essays/nav-by-sim`}>Navigating by Similarity</Link>
+            </span>
+            <p>High-dimensional Wayfinding with Sparse Autoencoders</p>
+          </div>
+        </div>
+      </div>
+
+      <div className={`${styles.section}`}>
         <h2>Scopes</h2>
         <div className={styles.scopes}>
           {scopes.map((scope) => (

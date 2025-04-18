@@ -14,6 +14,7 @@ import {
 } from '../../lib/cachedApiService';
 import { cosineSimilarity } from '../../utils';
 import { Button } from 'react-element-forge';
+import LoadingSpinner from '../LoadingSpinner';
 
 function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
   const { query, results, loading, handleSearch, setQuery, dataset, scope } = useSearch();
@@ -46,8 +47,8 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
       // Calculate features from embedding
       const features = await maybeCachedCalcFeatures(emb.embedding);
       // setUserHasEditedFeatures(true);
-      setQueryFeatures(features);
-      setEditedFeatures(features);
+      setQueryFeatures({ ...features });
+      setEditedFeatures({ ...features });
     } finally {
       setQueryFeaturesLoading(false); // End loading
     }
@@ -61,19 +62,17 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
 
   // Perform search with edited features
   useEffect(() => {
-    if (!editedFeatures || !scope) return;
+    if (!scope) return;
 
     const performSteeringSearch = async () => {
       setSteeringLoading(true);
       try {
         // Calculate steering to get reconstructed embedding
-        // console.log('editedFeatures', editedFeatures);
         const se = await maybeCachedCalcSteering(editedFeatures);
         // console.log('steeringEmbedding', se);
         setSteeringEmbedding(se);
         // onSteer(steeringEmbedding);
         // Search with this embedding
-        // TODO: this should be set by useSearch probably. its due to using the modal backend directly not via scope
         const res = await maybeCachedGetNNEmbed('enjalot/ls-dadabase', 'scopes-001', se);
 
         setSteeringResults(res);
@@ -85,7 +84,7 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
     };
 
     performSteeringSearch();
-  }, [editedFeatures, scope, userHasEditedFeatures]);
+  }, [editedFeatures, scope]);
 
   const handleFeaturesChange = useCallback((newFeatures) => {
     // console.log('FEATURES CHANGED??', newFeatures);
@@ -131,25 +130,20 @@ function SteeringPlayground({ saeFeatures, defaultQuery, onSteer }) {
               )}
             </span>
           </div>
-          {queryFeaturesLoading ? (
-            <div className={styles.loadingOverlay}>
-              <div className={styles.loadingContainer}>
-                <div className={styles.loadingSpinner}></div>
-                <div>Loading features...</div>
-              </div>
-            </div>
-          ) : (
-            queryFeatures &&
-            saeFeatures && (
-              <>
-                <EditableFeatureBars
-                  topk={queryFeatures}
-                  features={saeFeatures}
-                  numToShow={10}
-                  onFeaturesChange={handleFeaturesChange}
-                />
-              </>
+
+          {saeFeatures ? (
+            queryFeaturesLoading ? (
+              <LoadingSpinner message="Loading features..." height={250} position="relative" />
+            ) : (
+              <EditableFeatureBars
+                topk={queryFeatures}
+                features={saeFeatures}
+                numToShow={10}
+                onFeaturesChange={handleFeaturesChange}
+              />
             )
+          ) : (
+            <LoadingSpinner message="Loading features..." height={250} position="relative" />
           )}
           <div className={styles.resultsContainer}>
             <SearchResults

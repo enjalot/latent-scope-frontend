@@ -2,6 +2,11 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { useParams } from 'react-router-dom';
 
 import { apiService } from '../lib/apiService';
+import {
+  maybeCachedGetSaeFeatures,
+  maybeCachedGetDatasetFeatures,
+  maybeCachedGetScopeRows,
+} from '../lib/cachedApiService';
 import { saeAvailable } from '../lib/SAE';
 
 const ScopeContext = createContext(null);
@@ -39,8 +44,10 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
 
   useEffect(() => {
     if (scope?.sae_id) {
-      apiService.getSaeFeatures(saeAvailable[scope.embedding?.model_id], (fts) => {
-        apiService.getDatasetFeatures(userId, datasetId, scope.sae_id).then((dsfts) => {
+      // apiService.getSaeFeatures(saeAvailable[scope.embedding?.model_id], (fts) => {
+      //   apiService.getDatasetFeatures(userId, datasetId, scope.sae_id).then((dsfts) => {
+      maybeCachedGetSaeFeatures(saeAvailable[scope.embedding?.model_id], (fts) => {
+        maybeCachedGetDatasetFeatures(userId, datasetId, scope.sae_id).then((dsfts) => {
           dsfts.forEach((ft, i) => {
             fts[i].dataset_max = ft.max_activation;
             fts[i].dataset_avg = ft.avg_activation;
@@ -61,8 +68,9 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
   const [deletedIndices, setDeletedIndices] = useState([]);
 
   const fetchScopeRows = useCallback(() => {
-    apiService
-      .getScopeRows(userId, datasetId, scope.id)
+    // apiService
+    //   .getScopeRows(userId, datasetId, scope.id)
+    maybeCachedGetScopeRows(userId, datasetId, scope.id)
       .then((scopeRows) => {
         setScopeRows(scopeRows);
         let clusterMap = {};

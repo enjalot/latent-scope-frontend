@@ -21,6 +21,9 @@ const generateCacheKey = (method, params) => {
   }
 };
 
+// Track pending parquet requests to deduplicate concurrent requests
+const pendingParquetRequests = new Map();
+
 // Generic wrapper for any API call that adds caching
 const withCache = async (method, params, apiCall) => {
   const cacheKey = generateCacheKey(method, params);
@@ -39,6 +42,32 @@ const withCache = async (method, params, apiCall) => {
   }
 
   return response;
+};
+
+// Special wrapper for parquet fetch operations that deduplicates in-flight requests
+const withParquetRequestDeduplication = async (method, key, fetchFn) => {
+  const requestKey = `${method}:${key}`;
+
+  // Check if this request is already in progress
+  if (pendingParquetRequests.has(requestKey)) {
+    // Wait for the existing request to complete
+    return pendingParquetRequests.get(requestKey);
+  }
+
+  // Create a new promise for this request
+  const requestPromise = fetchFn();
+
+  // Store the promise so other requests can wait on it
+  pendingParquetRequests.set(requestKey, requestPromise);
+
+  try {
+    // Wait for the request to complete
+    const result = await requestPromise;
+    return result;
+  } finally {
+    // Clean up the pending request entry
+    pendingParquetRequests.delete(requestKey);
+  }
 };
 
 // Create cached versions of each API endpoint
@@ -61,51 +90,69 @@ export const maybeCachedGetHoverText = async (userId, datasetId, scopeId, index)
 };
 
 export const maybeCachedGetScopeRows = async (userId, datasetId, scopeId) => {
-  return withCache('getScopeRows', { userId, datasetId, scopeId }, () =>
-    apiService.getScopeRows(userId, datasetId, scopeId)
-  );
+  const requestKey = `${userId}/${datasetId}/${scopeId}`;
+
+  return withParquetRequestDeduplication('getScopeRows', requestKey, async () => {
+    // Still use the regular cache for persistence across page loads
+    return withCache('getScopeRows', { userId, datasetId, scopeId }, () =>
+      apiService.getScopeRows(userId, datasetId, scopeId)
+    );
+  });
 };
 
 export const maybeCachedGetDatasetFeatures = async (userId, datasetId, saeId) => {
-  return withCache('getDatasetFeatures', { userId, datasetId, saeId }, () =>
-    apiService.getDatasetFeatures(userId, datasetId, saeId)
-  );
+  const requestKey = `${userId}/${datasetId}/${saeId}`;
+
+  return withParquetRequestDeduplication('getDatasetFeatures', requestKey, async () => {
+    return withCache('getDatasetFeatures', { userId, datasetId, saeId }, () =>
+      apiService.getDatasetFeatures(userId, datasetId, saeId)
+    );
+  });
 };
 
 export const maybeCachedGetSaeFeatures = async (saeMeta, callback) => {
-  // Special handling for callback-based API
-  return withCache(
-    'getSaeFeatures',
-    { saeMeta: JSON.stringify(saeMeta).slice(0, 100) }, // Use part of saeMeta as cache key
-    async () => {
+  const requestKey = saeMeta.model_id;
+
+  // For callback-based API with request deduplication
+  const result = await withParquetRequestDeduplication('getSaeFeatures', requestKey, async () => {
+    return withCache('getSaeFeatures', { saeMetaId: saeMeta.model_id }, async () => {
       return new Promise((resolve) => {
         apiService.getSaeFeatures(saeMeta, (data) => {
           resolve(data);
-          callback(data);
         });
       });
-    }
-  ).then((data) => data); // The callback is still called via the withCache function
+    });
+  });
+
+  // Always call the callback with the result
+  callback(result);
+  return result;
 };
 
 export const maybeCachedGetSaeTopSamples = async (saeMeta, sample, feature, callback) => {
-  // Similar special handling for callback API
-  return withCache(
-    'getSaeTopSamples',
-    {
-      saeMeta: JSON.stringify(saeMeta).slice(0, 100),
-      sample,
-      feature: feature.feature,
-    },
-    async () => {
-      return new Promise((resolve) => {
-        apiService.getSaeTopSamples(saeMeta, sample, feature, (data) => {
-          resolve(data);
-          callback(data);
+  const requestKey = `${saeMeta.model_id}_${sample}_${feature.feature}`;
+
+  const result = await withParquetRequestDeduplication('getSaeTopSamples', requestKey, async () => {
+    return withCache(
+      'getSaeTopSamples',
+      {
+        saeMetaId: saeMeta.model_id,
+        sample,
+        feature: feature.feature,
+      },
+      async () => {
+        return new Promise((resolve) => {
+          apiService.getSaeTopSamples(saeMeta, sample, feature, (data) => {
+            resolve(data);
+          });
         });
-      });
-    }
-  ).then((data) => data);
+      }
+    );
+  });
+
+  // Always call the callback with the result
+  callback(result);
+  return result;
 };
 
 export const maybeCachedColumnFilter = async (userId, datasetId, scopeId, query) => {
@@ -156,6 +203,7 @@ export const maybeCachedCalcFeatures = async (embedding) => {
 };
 
 export const maybeCachedCalcSteering = async (features) => {
+  if (!features) return null;
   return withCache(
     'calcSteering',
     {
@@ -167,6 +215,7 @@ export const maybeCachedCalcSteering = async (features) => {
 };
 
 export const maybeCachedGetNNEmbed = async (db, scope, embedding) => {
+  if (!embedding) return null;
   return withCache(
     'getNNEmbed',
     {

@@ -23,9 +23,13 @@ const FeatureAutocomplete = ({ currentFeature, features, onSelect, placeholder }
   useEffect(() => {
     if (showDropdown && inputRef.current && dropdownRef.current) {
       const rect = inputRef.current.getBoundingClientRect();
+      let w = rect.width;
+      if (w < 300) {
+        w = 300;
+      }
       dropdownRef.current.style.top = `${rect.bottom}px`;
       dropdownRef.current.style.left = `${rect.left}px`;
-      dropdownRef.current.style.width = `${rect.width}px`;
+      dropdownRef.current.style.width = `${w}px`;
     }
   }, [showDropdown, filteredFeatures]);
 

@@ -3,6 +3,9 @@ const dev = '';
 
 const { asyncBufferFromUrl, parquetRead } = await import('hyparquet');
 
+// Add a cache object at the module level
+const saeFeatureCache = {};
+
 export const apiService = {
   getScope: async (userId, datasetId, scopeId) => {
     // return fetch(`https://enjalot--latent-scope-api-app-scope-meta${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}`).then((response) =>
@@ -73,6 +76,12 @@ export const apiService = {
     });
   },
   getSaeFeatures: async (saeMeta, callback) => {
+    // Check if we have cached features for this model
+    if (saeMeta.model_id && saeFeatureCache[saeMeta.model_id]) {
+      callback(saeFeatureCache[saeMeta.model_id]);
+      return;
+    }
+
     const buffer = await asyncBufferFromUrl(saeMeta.url);
     parquetRead({
       file: buffer,
@@ -87,6 +96,12 @@ export const apiService = {
             grid_y: f[9],
           };
         });
+
+        // Store in cache if model_id is available
+        if (saeMeta.model_id) {
+          saeFeatureCache[saeMeta.model_id] = fts;
+        }
+
         callback(fts);
       },
     });

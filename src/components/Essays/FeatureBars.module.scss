@@ -168,15 +168,21 @@
 
 .editableActivationBar {
   width: 100%; 
-  border: 1px solid lightgray;
+  // border: 1px solid lightgray;
   height: 20px;
   font-size: 14px;
   font-weight: 600;
   position: relative;
-  margin: 1px;
+  padding: 2px;
   display: flex;
   align-items: center;
+  background-color: var(--color-neutral-1);
+  
+:hover {
+    background-color: var(--color-neutral-0);
+  }
 }
+
 
 .editableActivationBarLabel {
   display: flex;
@@ -193,6 +199,7 @@
     0 0 1px white,
     0 0 1px white,
     0 0 4px white);
+  
 }
 
 .editableFeatureContainer {

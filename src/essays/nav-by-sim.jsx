@@ -39,11 +39,11 @@ import styles from './essays.module.scss';
 import { apiService } from '../lib/apiService';
 import {
   maybeCachedCalcFeatures,
-  // maybeCachedGetDatasetFeatures,
   // maybeCachedCalcTokenizedEmbeddings,
   maybeCachedCalcSteering,
   maybeCachedGetNNEmbed,
-  // maybeCachedGetSaeFeatures,
+  maybeCachedGetSaeFeatures,
+  maybeCachedGetDatasetFeatures,
   saveCurrentCacheToConsole,
 } from '../lib/cachedApiService';
 import hilbert from './cached/hilbert.json';
@@ -87,8 +87,8 @@ function NavBySim() {
   const [embeddingVisHeight, setEmbeddingVisHeight] = useState(64);
 
   useEffect(() => {
-    // maybeCachedGetSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
-    apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
+    maybeCachedGetSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
+      // apiService.getSaeFeatures(saeAvailable['🤗-nomic-ai___nomic-embed-text-v1.5'], (fts) => {
       // console.log('SAE FEATURES', fts);
       setSaeFeatures(fts);
     });
@@ -98,8 +98,9 @@ function NavBySim() {
   useEffect(() => {
     if (!saeFeatures) return;
     // Fetch the dataset features to see which features are actually present
-    apiService
-      .getDatasetFeatures('enjalot', 'ls-dadabase', 'sae-001')
+    // apiService
+    //   .getDatasetFeatures('enjalot', 'ls-dadabase', 'sae-001')
+    maybeCachedGetDatasetFeatures('enjalot', 'ls-dadabase', 'sae-001')
       .then((dataFeatures) => {
         // console.log('data features', dataFeatures);
         // const filtered = dataFeatures.filter((f) => f.count > 0);

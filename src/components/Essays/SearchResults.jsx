@@ -1,7 +1,7 @@
 import React, { useState, useCallback, memo, useRef, useEffect, useMemo } from 'react';
 import styles from './SearchResults.module.scss';
 import { rgb } from 'd3-color';
-
+import LoadingSpinner from '../LoadingSpinner';
 const ResultRow = memo(
   ({
     result,
@@ -155,14 +155,7 @@ function SearchResults({
               />
             ))}
       </div>
-      {loading && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.loadingContainer}>
-            <div className={styles.loadingSpinner}></div>
-            <div>Loading results...</div>
-          </div>
-        </div>
-      )}
+      {loading && <LoadingSpinner message="Loading results..." />}
     </div>
   );
 }

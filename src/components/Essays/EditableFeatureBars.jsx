@@ -99,6 +99,7 @@ const EditableFeatureBars = ({ topk, features, numToShow = 10, onFeaturesChange 
   };
 
   const handleFeatureChange = (oldFeature, newFeature) => {
+    initialLoadRef.current = false;
     setEditedFeatures((prev) =>
       prev.map((item) => {
         if (item.feature.feature === oldFeature.feature) {
