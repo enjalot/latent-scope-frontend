@@ -169,23 +169,23 @@ function NavBySim() {
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="article" />
-        <meta property="og:url" content="https://yourdomain.com/essays/nav-by-sim" />
+        <meta property="og:url" content="https://latent.estate/essays/nav-by-sim" />
         <meta property="og:title" content="Navigating by Similarity" />
         <meta
           property="og:description"
           content="High-dimensional Wayfinding with Sparse Autoencoders"
         />
-        <meta property="og:image" content="https://yourdomain.com/essays/navbysim.png" />
+        <meta property="og:image" content="https://latent.estate/navbysim.png" />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://yourdomain.com/essays/nav-by-sim" />
+        <meta property="twitter:url" content="https://latent.estate/essays/nav-by-sim" />
         <meta property="twitter:title" content="Navigating by Similarity" />
         <meta
           property="twitter:description"
           content="High-dimensional Wayfinding with Sparse Autoencoders"
         />
-        <meta property="twitter:image" content="https://yourdomain.com/essays/navbysim.png" />
+        <meta property="twitter:image" content="https://latent.estate/navbysim.png" />
       </Helmet>
 
       <Title title="Navigating by Similarity" />
