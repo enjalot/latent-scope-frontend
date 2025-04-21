@@ -1,0 +1,233 @@
+import Title from '../components/Title.jsx';
+import styles from './essays.module.scss';
+import Components from '../components/Essays/latent-scope/Components';
+import { Caption } from '../components/Essays/Basics.jsx';
+
+<Title title="Latent Scope" />
+
+{/* <Components /> */}
+<div className={styles.essayContent}>
+    <h1 className={styles.title}>Latent Scope</h1>
+    <p className={styles.subtitle}>Visually Exploring Unstructured Data</p>
+
+    <div className={styles.meta}>
+        <span className={styles.author}>By Jimmy Zhang</span>
+        <span className={styles.date}>Published on April 21, 2025</span>
+    </div>
+
+    <section>
+         Latent Scope is an open-source web application for exploring unstructured datasets using embeddings. I use Latent Scope to "visually explore" datasets for interesting insights.
+
+        Latent Scope has two modes:
+
+        1. A Setup Process that converts a dataset into a "scope"
+        2. An Explore Interface for exploring that scope visually. This [site](https://www.latent.estate) hosts a few demos of the Explore Interface.
+        
+        In this essay, I show how I use Latent Scope to explore The Founders Dataset. I start with a walkthrough of the Setup Process, but the focus is on how I use the Explore Interface. While I include a few interactive visualizations of the Explore Interface, you can find the complete demo [here](https://latent.estate/scope/jzhang621/ls-founders-1/scopes-003).
+
+        Let's get started!
+
+        ## Ian Johnson
+
+        Latent Scope excites me for multiple reasons, so let's begin with the first one.
+
+        [Ian Johnson](https://www.x.com/enjalot/) is the creator of Latent Scope. Latent Scope is the "tool he wishes he had" from 8 years of experience using embeddings to explore unstructured datasets. Ian is an absolute joy to collaborate with, which I first discovered a few years ago when we were co-workers at Observable. I've been helping him build Latent Scope for the past few months - and it's exciting to be collaborating with him again!
+
+        The best way to understand Latent Scope is to see it in action. But before we see what that looks like, let's first talk about the next thing on my list that I find exciting - The Founders Dataset.
+
+        ## The Founders Dataset
+
+        Each week, David Senra reads a biography of one of history's greatest entrepreneurs, and then shares his top 10 highlights from the book on his [website](https://world.hey.com/davidsenra). (He also records a fantastic podcast called [*Founders*](https://www.founderspodcast.com/) which he's much more widely known for).
+
+        I love browsing through these highlights. I feel like each one gives me a little glimpse into the mindsets of history's most extraordinary people. Senra has been reading biographies and collecting these highlights since 2016, so there's a lot of wisdom to learn from. I compiled all the highlights on the website into **The Founders Dataset**, which has the following schema:
+
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Highlight</th>
+              <th>URL</th>
+              <th>Title of Book</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>He personally met with every single person the company hired through the first three thousand employees.</td>
+              <td><a target="_blank" href="https://world.hey.com/davidsenra/liftoff-elon-musk-and-the-desperate-early-days-that-launched-spacex-433923a0">URL</a></td>
+              <td>Liftoff: Elon Musk and the Desperate Early Days That Launched SpaceX</td>
+              <td>November 9, 2024</td>
+            </tr>
+            <tr>
+              <td>I've never met a man so laser focused on his vision for what he wanted. He's very intense, and he's intimidating as hell.</td>
+              <td><a target="_blank" href="https://world.hey.com/davidsenra/liftoff-elon-musk-and-the-desperate-early-days-that-launched-spacex-433923a0">URL</a></td>
+              <td>Liftoff: Elon Musk and the Desperate Early Days That Launched SpaceX</td>
+              <td>November 9, 2024</td>
+            </tr>
+            <tr>
+              <td>He didn't want to fail, but he wasn't afraid of it.</td>
+              <td><a target="_blank" href="https://world.hey.com/davidsenra/liftoff-elon-musk-and-the-desperate-early-days-that-launched-spacex-433923a0">URL</a></td>
+              <td>Liftoff: Elon Musk and the Desperate Early Days That Launched SpaceX</td>
+              <td>November 9, 2024</td>
+            </tr>
+          </tbody>
+        </table> 
+
+        This dataset is the intellectual property of David Senra. In total, it contains 3291 rows (i.e. highlights), which come from 176 unique biographies (some of his earlier posts contain up to 60 highlights each).
+
+        ## Latent Scope
+
+        Once my dataset is in this format, I can upload it to Latent Scope, which takes me to the Setup Process. To run the Setup Process for your own datasets, you need to install Latent Scope [(instructions here)](https://enjalot.github.io/latent-scope/install-and-config) via `pip install latentscope` or by building it from source [Github link](https://github.com/enjalot/latent-scope).
+
+         The Setup Process takes the dataset and converts it into a format that is suitable for "visual exploration". Here's a GIF of what that looks like for the Founders Dataset:
+
+        
+
+        I'm going to cover the details of the Setup Process for those who are already familiar with Machine Learning terminology. If you're unfamiliar with the terminology, feel free to skip this section, and pick up from the Explore Interface, which is the main focus of this post.
+
+        ### The Setup Process
+
+        The are 5 steps to the Setup Process:
+
+        1.  Calculate <span style={{ color: '#FF9B50', fontWeight: 'bold' }}>embeddings</span> for a chosen text column of each row in our dataset (in our case, we chose the <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>highlight</span> column)
+        2.  <span style={{ color: '#FF9B50', fontWeight: 'bold' }}>Project</span> those embeddings down to two-dimensional coordinates using <a href="https://umap-learn.readthedocs.io/en/latest/index.html" target="_blank">UMAP</a>
+        3.  <span style={{ color: '#FF9B50', fontWeight: 'bold' }}>Cluster</span> those coordinates via the <a href="https://hdbscan.readthedocs.io/en/latest/api.html" target="_blank">HDBSCAN</a> clustering algorithm
+        4.  Generate a representative <span style={{ color: '#FF9B50', fontWeight: 'bold' }}>label</span> for all the highlights in each cluster using an LLM
+        5.  Create a <span style={{ color: '#FF9B50', fontWeight: 'bold' }}>scope</span> that packages everything together for the Explore Interface
+
+        <div style={{padding: '10px 0px'}}>
+            <img src="/latent-scope/setup.png" className={styles.diagram} alt="Setup Process Options" />
+        </div>        
+
+        The Setup Process lets you choose amongst different options for each of these steps. For example, you can specify which embedding model to use, customize the UMAP and HDBSCAN parameters beyond the provided defaults, and choose which LLM to use to generate the labels.
+
+        For the examples you'll see in this post, I chose [jina-embedding-v3](https://huggingface.co/jinaai/jina-embeddings-v3) as the embedding model and [gpt-4o mini](https://platform.openai.com/docs/models/gpt-4o-mini) from OpenAl as the LLM to generate the labels. (gpt-4o mini requires an OpenAI API key - it cost me less than a cent to generate these labels)
+
+         <div style={{padding: '10px 0px'}}>
+            <img src="/latent-scope/options.png" className={styles.diagram} alt="gpt-4o mini + jina-embedding-v3" />
+        </div>        
+
+        The Setup Process is designed to support experimentation. For example, I can go back and choose a different embedding model, which will create a new scope that remains associated with the original Founders dataset. This allows me to easily compare scopes that reflect different choices of the process.
+
+        <div style={{padding: '10px 0px'}}>
+            <img src="/latent-scope/experiment.png" className={styles.diagram} alt="Different scopes for the same dataset" />
+            <Caption>Each scope reflects different choices of the Setup Process.</Caption>
+        </div>        
+
+        ## The Explore Interface
+
+        Here's a screenshot of what the Founders Dataset looks like when viewed in the Explore Interface. Hover over any row in the table to see the point's location in the visual map.
+
+        <div style={{padding: '10px 0px'}}>
+            <img src="/latent-scope/labeled.png" className={styles.diagram} alt="Latent Scope Explore Interface with labeled components: Search Bar, Table, Visual Map" />
+            <Caption>The Latent Scope Explore Interface consists of three main components: a search bar for queries, a table showing results, and a visual map for exploring the dataset.</Caption>
+        </div>
+
+        We see 3 primary UI components:
+
+        1.  The <span style={{color: '#FF9B50', fontWeight: 'bold'}}>table</span> on the left. This contains all the columns in our original Founders dataset, plus additional columns that were added during the Setup process.
+        2.  Above the table, we see the <span style={{color: '#FF9B50', fontWeight: 'bold'}}>Search Bar</span>
+        3.  The <span style={{color: '#FF9B50', fontWeight: 'bold'}}>visual map</span> of the dataset on the right.
+
+        For the purposes of this post, here's what you need to know about this "visual map":
+
+        * The map consists of a bunch of points, one for each individual highlight in our Founders dataset.
+        * These points are arranged such that highlights with "similar meanings" sit next to each other in the map (i.e. these points are UMAP-ed embeddings)
+        * These points are then automatically grouped into clusters based on their positions in the map
+        * Each cluster is assigned a label. This label is generated by an LLM which reads each highlight in a cluster and generates it as a representative label.
+
+        By default, the table displays the first 20 rows in our dataset, and their corresponding locations in the visual map are bolded in green. Hover over any row in the table to see the point's location in the visual map.
+    
+    </section>
+</div>
+
+
+<div style={{width: '66%', margin: '0 auto', height: '480px', padding: '10px 0px'}}>
+    <Components />
+</div>
+
+
+<div className={styles.essayContent}>
+    <section>
+        This demonstrates the key idea behind Latent Scope - being able to "see" data points on the map enables us to explore a dataset visually. I didn't realize this was possible before Latent Scope, and it's what excites the most about using it.
+
+        ## Clusters: Reigniting My Love for Reading
+
+        Because David Senra has spent the last 8 years studying entrepreneurs, he's able to identify any mindsets and beliefs that they share. A few of these shared mindsets and behaviors are reflected via the clusters that have been automatically identified by Latent Scope.
+
+        My personal favorite cluster is at the bottom left corner of the map - labeled, Love for Reading. Here we our table filtered to only include the rows belonging to this cluster:
+      </section>
+</div>
+
+<div style={{width: '66%', margin: '0 auto', height: '480px', padding: '10px 0px'}}>
+    <Components initialClusterId={33} />
+</div>
+
+<div className={styles.essayContent}>
+    <section>
+        If we look at all the rows in this cluster, we can see that they aren't all directly related to a love for reading. For example, row 436 seems to be less relevant. This is to be expected - embeddings and UMAP sometimes behave in mysterious ways.
+
+        <div style={{padding: '10px 0px'}}>
+            <img src="/latent-scope/row-346.png" className={styles.diagram} alt="Row 436" />
+            <Caption>Row 436 is about "Tommy the Cork" and Lyndon B. Johnson is less relevant to a love for reading.</Caption>
+        </div>
+   
+        However, when I look at the table for the rows that are related to a love for reading, I can see that they are densley grouped in a particular region in the cluster. **This is an example of visual exploration - I'm using what I notice visually to direct my attention to relevant rows in the dataset.**
+
+        Here are three of my favorites rows in this cluster that are about successful figures and their love for reading:
+
+        1. "One of the best ways to find creative people is to ask a simple question: "What books do you like?" I've never met a creative person in my life that didn't respond with enthusiasm to a question about reading habits." - [Finding the Next Steve Jobs: How to Find, Keep, and Nurture Talent](https://world.hey.com/davidsenra/finding-the-next-steve-jobs-how-to-find-keep-and-nurture-talent-99578702)
+
+        2. "In my whole life, I have known no wise people who didn't read all the time-none, zero. You'd be amazed at how much Warren reads-and at how much I read." - [Poor Charlie's Almanack: The Wit and Wisdom of Charles T. Munger](https://world.hey.com/davidsenra/poor-charlie-s-almanack-the-wit-and-wisdom-of-charles-t-munger-081f0013)
+
+        3. "The most striking part of Elon's character as a young boy was his compulsion to read. From a very young age, he seemed to have a book in his hands at all times. It was not unusual for him to read ten hours a day. If it was the weekend, he could go through two books in a day. The family went on numerous shopping excursions in which they realized mid-trip that Elon had gone missing. Maye or Kimbal would pop into the nearest bookstore and find Elon somewhere near the back sitting on the floor and reading in one of his trancelike states." - [Elon Musk: Tesla, SpaceX, and the Quest for a Fantastic Future](https://world.hey.com/davidsenra/elon-musk-tesla-spacex-and-the-quest-for-a-fantastic-future-6a3d365f)
+
+        ### Buying a New Book
+
+        Highlights from The Alamanck of Naval Ravikant show up 3 times in this "Love for Reading" cluster, which inspired me to click on the [URL](https://world.hey.com/davidsenra/the-almanack-of-naval-ravikant-a-guide-to-wealth-and-happiness-00146123) to the original post containing the highlights from Senra's website. I've always been a fan of Naval's - reading through the highlights again inspired me to go out and buy the book. Here it is on my shelf:
+
+        <div style={{padding: '10px 0px'}}>
+            <img src="/latent-scope/shelf.jpeg" className={styles.diagram} alt="The Alamanck of Naval Ravikant on bookshelf" />
+        </div>
+
+        ## General Takeaways
+
+        I showed above how I use Latent Scope as a way to visually guide me towards the books that are most interesting to me, but I think this use case generalizes into a broader use case, where:
+
+        * You have a collection of primary sources (books, research papers)
+        * You extract a bunch of "representative samples" (abstracts, highlights, quotes) from those primary sources. You can have LLMs do this for you.
+        * Each of these representative samples becomes a row in your dataset, along with a link to the original primary source + any relevant metadata (see schema below)
+        * You create a scope from this dataset, embedded on the "representative sample" column.
+
+        Here's an example row:
+
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Sample</th>
+              <th>Primary Source Link</th>
+              <th>Date</th>
+              <th>Keywords</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>This paper proposes a new theory of curiosity, novelty, surprise, interestingness, attention, creativity, art, science, music, and jokes based on the idea that data becomes temporarily interesting once an observer learns to predict or compress it in a better way, thus making it subjectively simpler and more beautiful.</td>
+              <td><a target="_blank" href="https://arxiv.org/pdf/0812.4360">URL</a></td>
+              <td>23 Dec, 2008</td>
+              <td>Artificial curiosity, Intrinsic motivation, Reinforcement learning, Compression</td>
+            </tr>
+          </tbody>
+        </table>
+
+        Once you have this dataset, you can upload it to Latent Scope, and use Latent Scope to visually explore your primary sources, which I can imagine being an excellent tool for doing research, or even just following your own curiosity.
+
+        What's nice about this approach is that you can extract as many representative samples as you want. In the Founders dataset, I don't mind that there are a lot of highlights that are irrelevant to my interests - such as the highlights in the cluster that aren't exactly related to a love for reading. The ones that I do manage to find that are relevant matter a lot more!
+
+        ## Try it Yourself!
+
+        You can install Latent Scope [(instructions here)](https://enjalot.github.io/latent-scope/install-and-config) via `pip install latentscope` or by building it from source [Github link](https://github.com/enjalot/latent-scope), or check out the demos [here](https://latent.estate).
+
+        Please check it out - we're excited to hear what interesting things you find!
+
+    </section>
+</div>

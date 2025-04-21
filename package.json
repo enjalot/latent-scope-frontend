@@ -12,6 +12,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mdx-js/react": "^3.1.0",
+    "@mdx-js/rollup": "^3.1.0",
     "@tanstack/match-sorter-utils": "^8.11.8",
     "@tanstack/react-table": "^8.15.0",
     "compare-versions": "^6.1.1",

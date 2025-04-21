@@ -50,6 +50,7 @@ function VisualizationPane({
   selectedAnnotations,
   hoveredCluster,
   dataTableRows,
+  showVizConfig = true,
 }) {
   const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope, features } = useScope();
 
@@ -266,27 +267,29 @@ function VisualizationPane({
   return (
     // <div style={{ width, height }} ref={umapRef}>
     <div ref={umapRef} style={{ width: '100%', height: '100%' }}>
-      <div className={styles.configToggleContainer}>
-        <Button
-          className={styles['configToggle']}
-          onClick={() => setIsPanelOpen(!isPanelOpen)}
-          aria-label="Toggle configuration panel"
-          icon={'settings'}
-          size="small"
-          // color="#333"
-        />
+      {showVizConfig && (
+        <div className={styles.configToggleContainer}>
+          <Button
+            className={styles['configToggle']}
+            onClick={() => setIsPanelOpen(!isPanelOpen)}
+            aria-label="Toggle configuration panel"
+            icon={'settings'}
+            size="small"
+            // color="#333"
+          />
 
-        <ConfigurationPanel
-          isOpen={isPanelOpen}
-          onClose={() => setIsPanelOpen(false)}
-          title="View Settings"
-          vizConfig={vizConfig}
-          toggleShowHeatMap={toggleShowHeatMap}
-          toggleShowClusterOutlines={toggleShowClusterOutlines}
-          updatePointSize={updatePointSize}
-          updatePointOpacity={updatePointOpacity}
-        />
-      </div>
+          <ConfigurationPanel
+            isOpen={isPanelOpen}
+            onClose={() => setIsPanelOpen(false)}
+            title="View Settings"
+            vizConfig={vizConfig}
+            toggleShowHeatMap={toggleShowHeatMap}
+            toggleShowClusterOutlines={toggleShowClusterOutlines}
+            updatePointSize={updatePointSize}
+            updatePointOpacity={updatePointOpacity}
+          />
+        </div>
+      )}
 
       <div className={styles.scatters + ' ' + (isFullScreen ? styles.fullScreen : '')}>
         {scope && (

@@ -34,7 +34,12 @@ const styles = {
 };
 
 // Create a new component that wraps the main content
-function DesktopExplore() {
+function DesktopExplore({
+  showVizConfig = true,
+  initialSearchTerm = '',
+  initialClusterId = null,
+  updateUrlParams = true,
+}) {
   // Get scope-related state from ScopeContext
   const {
     userId,
@@ -52,7 +57,6 @@ function DesktopExplore() {
 
   // Get filter-related state from FilterContext
   const {
-    // filterLoading,
     loading: filterLoading,
     shownIndices,
     setFilterQuery,
@@ -263,13 +267,59 @@ function DesktopExplore() {
       setFilterConfig({ type: filterConstants.FEATURE, value: featIdx, label });
       featureFilter.setFeature(featIdx);
       setFilterActive(true);
-      setUrlParams((prev) => {
-        prev.set('feature', featIdx);
-        return new URLSearchParams(prev);
-      });
+      if (updateUrlParams) {
+        setUrlParams((prev) => {
+          prev.set('feature', featIdx);
+          return new URLSearchParams(prev);
+        });
+      }
     },
-    [featureFilter.setFeature, setFilterQuery, setFilterConfig, setFilterActive, setUrlParams]
+    [
+      featureFilter.setFeature,
+      setFilterQuery,
+      setFilterConfig,
+      setFilterActive,
+      setUrlParams,
+      updateUrlParams,
+    ]
   );
+
+  // Initialize search term or cluster if provided
+  useEffect(() => {
+    if (scopeLoaded && (initialSearchTerm || initialClusterId)) {
+      if (initialSearchTerm) {
+        setFilterQuery(initialSearchTerm);
+        setFilterConfig({
+          type: filterConstants.SEARCH,
+          value: initialSearchTerm,
+          label: initialSearchTerm,
+        });
+        setFilterActive(true);
+        if (updateUrlParams) {
+          setUrlParams((prev) => {
+            prev.set('q', initialSearchTerm);
+            return new URLSearchParams(prev);
+          });
+        }
+      } else if (initialClusterId && clusterLabels) {
+        const cluster = clusterLabels.find((c) => c.cluster === initialClusterId);
+        if (cluster) {
+          setFilterConfig({
+            type: filterConstants.CLUSTER,
+            value: cluster.cluster,
+            label: cluster.label,
+          });
+          setFilterActive(true);
+          if (updateUrlParams) {
+            setUrlParams((prev) => {
+              prev.set('cluster', cluster.cluster);
+              return new URLSearchParams(prev);
+            });
+          }
+        }
+      }
+    }
+  }, [scopeLoaded, initialSearchTerm, initialClusterId, clusterLabels, updateUrlParams]);
 
   if (!dataset)
     return (
@@ -342,6 +392,7 @@ function DesktopExplore() {
                 selectedAnnotations={selectedAnnotations}
                 hoveredCluster={hoveredCluster}
                 dataTableRows={dataTableRows}
+                showVizConfig={showVizConfig}
               />
             ) : null}
           </div>
