@@ -34,12 +34,7 @@ const styles = {
 };
 
 // Create a new component that wraps the main content
-function DesktopExplore({
-  showVizConfig = true,
-  initialSearchTerm = '',
-  initialClusterId = null,
-  updateUrlParams = true,
-}) {
+function DesktopExplore({ showVizConfig = true, readOnly = false, clusterId = null }) {
   // Get scope-related state from ScopeContext
   const {
     userId,
@@ -267,59 +262,51 @@ function DesktopExplore({
       setFilterConfig({ type: filterConstants.FEATURE, value: featIdx, label });
       featureFilter.setFeature(featIdx);
       setFilterActive(true);
-      if (updateUrlParams) {
-        setUrlParams((prev) => {
-          prev.set('feature', featIdx);
-          return new URLSearchParams(prev);
-        });
-      }
+      setUrlParams((prev) => {
+        prev.set('feature', featIdx);
+        return new URLSearchParams(prev);
+      });
     },
-    [
-      featureFilter.setFeature,
-      setFilterQuery,
-      setFilterConfig,
-      setFilterActive,
-      setUrlParams,
-      updateUrlParams,
-    ]
+    [featureFilter.setFeature, setFilterQuery, setFilterConfig, setFilterActive, setUrlParams]
   );
 
-  // Initialize search term or cluster if provided
+  // Add effect to handle initial cluster selection
   useEffect(() => {
-    if (scopeLoaded && (initialSearchTerm || initialClusterId)) {
-      if (initialSearchTerm) {
-        setFilterQuery(initialSearchTerm);
+    if (clusterId !== null && scopeLoaded && clusterLabels) {
+      const cluster = clusterLabels.find((c) => c.cluster === clusterId);
+      if (cluster) {
+        // Set the filter query to the cluster label
+        setFilterQuery(cluster.label);
+
+        // Set the filter configuration
         setFilterConfig({
-          type: filterConstants.SEARCH,
-          value: initialSearchTerm,
-          label: initialSearchTerm,
+          type: filterConstants.CLUSTER,
+          value: clusterId,
+          label: cluster.label,
         });
+
+        // Activate the filter
         setFilterActive(true);
-        if (updateUrlParams) {
+
+        // Only update URL params if not in readOnly mode
+        if (!readOnly) {
           setUrlParams((prev) => {
-            prev.set('q', initialSearchTerm);
+            prev.set('cluster', clusterId);
             return new URLSearchParams(prev);
           });
         }
-      } else if (initialClusterId && clusterLabels) {
-        const cluster = clusterLabels.find((c) => c.cluster === initialClusterId);
-        if (cluster) {
-          setFilterConfig({
-            type: filterConstants.CLUSTER,
-            value: cluster.cluster,
-            label: cluster.label,
-          });
-          setFilterActive(true);
-          if (updateUrlParams) {
-            setUrlParams((prev) => {
-              prev.set('cluster', cluster.cluster);
-              return new URLSearchParams(prev);
-            });
-          }
-        }
       }
     }
-  }, [scopeLoaded, initialSearchTerm, initialClusterId, clusterLabels, updateUrlParams]);
+  }, [
+    clusterId,
+    scopeLoaded,
+    clusterLabels,
+    setFilterQuery,
+    setFilterConfig,
+    setFilterActive,
+    setUrlParams,
+    readOnly,
+  ]);
 
   if (!dataset)
     return (
@@ -350,6 +337,7 @@ function DesktopExplore({
                 scatter={scatter}
                 scope={scope}
                 dataset={dataset}
+                readOnly={readOnly}
               />
             </div>
             <div

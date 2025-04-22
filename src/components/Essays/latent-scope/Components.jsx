@@ -12,11 +12,7 @@ function Components({ initialSearchTerm, initialClusterId = null }) {
         {isSmallScreen ? (
           <MobileExplore />
         ) : (
-          <DesktopExplore
-            showVizConfig={false}
-            initialClusterId={initialClusterId}
-            updateUrlParams={false}
-          />
+          <DesktopExplore showVizConfig={false} readOnly={true} clusterId={initialClusterId} />
         )}
       </FilterProvider>
     </ScopeProvider>
