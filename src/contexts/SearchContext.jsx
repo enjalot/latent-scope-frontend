@@ -39,16 +39,27 @@ export function SearchProvider({ children }) {
         searchQuery,
         true
       );
-      // console.log('DATA');
-      // console.log(data);
-      // const rows = await apiService.getRowsByIndices(userId, datasetId, scope.id, data.indices);
-      // Only update state if this is the latest request.
-      const rowsWithIdx = data.map((row, idx) => ({
-        ...row,
-        idx,
-        ls_index: row.index,
-        ls_distance: row._distance,
-      }));
+      // The nearest-neighbor endpoint only returns { index, _distance } (no text),
+      // so hydrate the top matches with getRowsByIndices to pull in the text column.
+      const topMatches = (data || []).slice(0, 100);
+      const indices = topMatches.map((match) => match.index);
+      const rows = indices.length
+        ? await apiService.getRowsByIndices(userId, datasetId, scope.id, indices)
+        : [];
+      const rowByIndex = new Map(rows.map((row) => [row.index, row]));
+      const rowsWithIdx = topMatches
+        .map((match, idx) => {
+          const row = rowByIndex.get(match.index);
+          if (!row) return null;
+          return {
+            ...row,
+            idx,
+            ls_index: row.index,
+            ls_distance: match._distance,
+            _distance: match._distance,
+          };
+        })
+        .filter(Boolean);
       setResults(rowsWithIdx);
     } catch (error) {
       console.error('Error searching nearest neighbors:', error);
