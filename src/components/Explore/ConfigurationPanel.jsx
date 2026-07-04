@@ -8,10 +8,12 @@ const ConfigurationPanel = ({
   vizConfig,
   toggleShowHeatMap,
   toggleShowClusterOutlines,
+  toggleShowImages,
+  isImageScope = false,
   updatePointSize,
   updatePointOpacity,
 }) => {
-  const { showHeatMap, showClusterOutlines, pointSize, pointOpacity } = vizConfig;
+  const { showHeatMap, showClusterOutlines, showImages, pointSize, pointOpacity } = vizConfig;
 
   return (
     <div className={`${styles.panel} ${isOpen ? styles.open : ''}`}>
@@ -60,6 +62,16 @@ const ConfigurationPanel = ({
             className={styles.slider}
           />
         </div>
+
+        {isImageScope && (
+          <Switch
+            value={showImages}
+            onChange={toggleShowImages}
+            defaultState={showImages}
+            color="secondary"
+            label="Show Images"
+          />
+        )}
 
         <Switch
           value={showClusterOutlines}

@@ -7,6 +7,9 @@ import Scatter from '../ScatterGL';
 import AnnotationPlot from '../AnnotationPlot';
 import HullPlot from '../HullPlot';
 import TilePlot from '../TilePlot';
+import AtlasOverlay from './AtlasOverlay';
+import PointsOverlay from './PointsOverlay';
+import { atlasLod } from '../../lib/atlas';
 import { Tooltip } from 'react-tooltip';
 import CrossHair from '../Crosshair';
 import { processHulls } from '../../utils';
@@ -51,7 +54,21 @@ function VisualizationPane({
   hoveredCluster,
   dataTableRows,
 }) {
-  const { scopeRows, clusterLabels, clusterMap, deletedIndices, scope, features } = useScope();
+  const {
+    scopeRows,
+    clusterLabels,
+    clusterMap,
+    deletedIndices,
+    scope,
+    features,
+    userId,
+    datasetId,
+    scopeImages,
+    imageColumn,
+    isImageScope,
+    thumbUrl,
+    atlasManifest,
+  } = useScope();
 
   const isSmallScreen = useSmallScreen();
 
@@ -201,6 +218,8 @@ function VisualizationPane({
   const [vizConfig, setVizConfig] = useState({
     showHeatMap: false,
     showClusterOutlines: true,
+    // atlas image layer for image scopes; only used when the scope has images
+    showImages: true,
     pointSize: 1,
     pointOpacity: 1,
   });
@@ -224,6 +243,27 @@ function VisualizationPane({
   const toggleShowClusterOutlines = useCallback(() => {
     setVizConfig((prev) => ({ ...prev, showClusterOutlines: !prev.showClusterOutlines }));
   }, []);
+
+  const toggleShowImages = useCallback(() => {
+    setVizConfig((prev) => ({ ...prev, showImages: !prev.showImages }));
+  }, []);
+
+  // ====================================================================================================
+  // Image scopes: atlas image layer (LOD over the sprite-atlas pyramid)
+  // ====================================================================================================
+  const atlasResolutions = useMemo(
+    () => (atlasManifest?.resolutions || []).map((r) => r.num_tiles),
+    [atlasManifest]
+  );
+  const imagesVisible =
+    isImageScope && vizConfig.showImages && !!atlasManifest && atlasResolutions.length > 0;
+  // Which pyramid level fits the current zoom, and whether we're past the
+  // finest level (points get drawn back on top).
+  const lod = useMemo(
+    () => atlasLod(transform?.k || 1, width, atlasResolutions),
+    [transform, width, atlasResolutions]
+  );
+  const pointsOverlayVisible = imagesVisible && lod.deepest;
 
   const updatePointSize = useCallback((value) => {
     setVizConfig((prev) => ({ ...prev, pointSize: value }));
@@ -283,6 +323,8 @@ function VisualizationPane({
           vizConfig={vizConfig}
           toggleShowHeatMap={toggleShowHeatMap}
           toggleShowClusterOutlines={toggleShowClusterOutlines}
+          toggleShowImages={toggleShowImages}
+          isImageScope={isImageScope}
           updatePointSize={updatePointSize}
           updatePointOpacity={updatePointOpacity}
         />
@@ -302,6 +344,36 @@ function VisualizationPane({
             featureIsSelected={featureIsSelected}
             maxZoom={maxZoom}
             isSmallScreen={isSmallScreen}
+          />
+        )}
+        {/* Image scopes: representative-image atlas drawn over the scatter
+            (unpopulated cells are transparent, so points show through gaps).
+            pointer-events: none — hover/zoom still go to the ScatterGL canvas. */}
+        {imagesVisible && (
+          <AtlasOverlay
+            userId={userId}
+            datasetId={datasetId}
+            atlasPath={scopeImages.atlas?.[imageColumn]?.path}
+            xDomain={xDomain}
+            yDomain={yDomain}
+            width={width}
+            height={height}
+            transform={transform}
+            manifest={atlasManifest}
+          />
+        )}
+        {/* Points drawn back on top of the images once zoomed past the finest
+            pyramid level, so individual rows can be pinpointed. */}
+        {pointsOverlayVisible && (
+          <PointsOverlay
+            scopeRows={scopeRows}
+            xDomain={xDomain}
+            yDomain={yDomain}
+            width={width}
+            height={height}
+            enabled={pointsOverlayVisible}
+            opacity={vizConfig.pointOpacity}
+            pointSize={vizConfig.pointSize}
           />
         )}
         {/* show all the hulls */}
@@ -447,6 +519,19 @@ function VisualizationPane({
             )}
             <br></br>
             <span>Index: {hovered.index}</span>
+            {isImageScope && thumbUrl(hovered.index) && (
+              <div>
+                <img
+                  src={thumbUrl(hovered.index)}
+                  alt=""
+                  style={{ maxWidth: 128, maxHeight: 128, marginTop: 4, display: 'block' }}
+                  onError={(e) => {
+                    // rows with no thumbnail (missing/undecodable image) 404
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
             <p className="tooltip-text">{hovered.text}</p>
           </div>
         </Tooltip>

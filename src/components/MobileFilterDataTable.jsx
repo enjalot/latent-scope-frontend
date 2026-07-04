@@ -6,7 +6,32 @@ import { useFilter } from '../contexts/FilterContext';
 import { useScope } from '../contexts/ScopeContext';
 import ClusterIcon from './Explore/Search/ClusterIcon';
 
-const DataRow = memo(({ dataset, row, isHighlighted, onHover, onClick, clusterMap, index }) => {
+// Small leading thumbnail for image scopes; missing thumbs (404/403) just
+// collapse away.
+const RowThumb = ({ src }) => {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  if (!src || failed) return null;
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      style={{
+        width: 44,
+        height: 44,
+        objectFit: 'contain',
+        borderRadius: 4,
+        marginRight: 8,
+        flexShrink: 0,
+        alignSelf: 'center',
+      }}
+      onError={() => setFailed(true)}
+    />
+  );
+};
+
+const DataRow = memo(({ dataset, row, isHighlighted, onHover, onClick, clusterMap, index, thumbSrc }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const expand = useCallback(() => setIsExpanded(!isExpanded), [isExpanded]);
 
@@ -20,6 +45,7 @@ const DataRow = memo(({ dataset, row, isHighlighted, onHover, onClick, clusterMa
       <div className={styles.rowIndex}>
         <div className={styles.indexCircle}>{index + 1}</div>
       </div>
+      {thumbSrc ? <RowThumb src={thumbSrc} /> : null}
       <div className={styles.rowPreview}>
         <div className={`${styles.rowText} ${isExpanded ? styles.expandedText : ''}`}>
           {row[dataset.text_column]}
@@ -36,7 +62,7 @@ const DataRow = memo(({ dataset, row, isHighlighted, onHover, onClick, clusterMa
 });
 
 function MobileFilterDataTable({ dataset, onHover = () => {}, filterLoading = false, onClick }) {
-  const { clusterMap } = useScope();
+  const { clusterMap, isImageScope, thumbUrl } = useScope();
   const { dataTableRows, totalPages, page, setPage, loading } = useFilter();
 
   const DEFAULT_HEIGHT = 150;
@@ -114,6 +140,7 @@ function MobileFilterDataTable({ dataset, onHover = () => {}, filterLoading = fa
                 onClick={onClick}
                 dataset={dataset}
                 clusterMap={clusterMap}
+                thumbSrc={isImageScope ? thumbUrl(row.ls_index) : null}
               />
             ))}
           </div>

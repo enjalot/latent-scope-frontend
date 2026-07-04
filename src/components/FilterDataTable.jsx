@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import PropTypes from 'prop-types';
 import { Tooltip } from 'react-tooltip';
 import { useFilter } from '../contexts/FilterContext';
+import { useScope } from '../contexts/ScopeContext';
 // import DataTable from './DataTable';
 import 'react-data-grid/lib/styles.css';
 
@@ -51,6 +52,10 @@ function FilterDataTable({
   const { dataTableRows, page, setPage, totalPages, filterConfig, filterActive, loading } =
     useFilter();
 
+  // Image scopes: binary image columns are excluded from rows-by-index
+  // responses, so their cells are rendered from the static per-row thumbnails.
+  const { isImageScope, scopeImages, thumbUrl } = useScope();
+
   // Track expanded rows by index
   const [expandedRows, setExpandedRows] = useState({});
 
@@ -81,12 +86,20 @@ function FilterDataTable({
 
     columns.push(dataset.text_column);
 
+    // Image scopes: surface the image column(s) right after the text column
+    // so the thumbnails are visible without horizontal scrolling.
+    if (scopeImages?.columns?.length) {
+      columns = columns.concat(scopeImages.columns.filter((c) => dataset.columns.includes(c)));
+    }
+
     if (distances && distances.length) columns.push('ls_similarity');
     if (sae_id) columns.push(ls_features_column);
     if (clusterMap && Object.keys(clusterMap).length) columns.push('ls_cluster');
     // if (tagset && Object.keys(tagset).length) columns.push('tags');
 
-    columns = columns.concat(dataset.columns.filter((d) => d !== dataset.text_column));
+    columns = columns.concat(
+      dataset.columns.filter((d) => d !== dataset.text_column && !columns.includes(d))
+    );
 
     function renderUrl(text) {
       const key = 'http';
@@ -126,6 +139,16 @@ function FilterDataTable({
       // }
 
       if (metadata?.image) {
+        // Binary image columns (scope.images) never arrive in row data —
+        // render the static thumbnail by row index instead.
+        if (scopeImages?.columns?.includes(col)) {
+          return {
+            ...baseCol,
+            width: 100,
+            renderCell: ({ row }) => <ThumbCell src={thumbUrl(row.ls_index, col)} />,
+          };
+        }
+        // legacy path: image columns whose value is a URL string
         return {
           ...baseCol,
           renderCell: ({ row }) => (
@@ -242,7 +265,18 @@ function FilterDataTable({
     // Add index column as first column
     return [indexColumn, ...columnDefs];
     // return columnDefs;
-  }, [dataset, clusterMap, distances, features, feature, sae_id, expandedRows, handleRowExpand]);
+  }, [
+    dataset,
+    clusterMap,
+    distances,
+    features,
+    feature,
+    sae_id,
+    expandedRows,
+    handleRowExpand,
+    scopeImages,
+    thumbUrl,
+  ]);
 
   // Row height calculation
   const getRowHeight = useCallback(
@@ -257,9 +291,11 @@ function FilterDataTable({
         if (text.length > 100) return 100;
         if (text.length > 50) return 60;
       }
+      // image scopes get taller rows so the thumbnails aren't clipped
+      if (isImageScope) return 96;
       return sae_id ? 50 : 35;
     },
-    [expandedRows, sae_id, dataset.text_column]
+    [expandedRows, sae_id, dataset.text_column, isImageScope]
   );
 
   const renderRowWithHover = useCallback(
@@ -368,6 +404,37 @@ function FilterDataTable({
     </div>
   );
 }
+
+// Thumbnail cell for binary image columns. Missing thumbs (rows with
+// null/undecodable images 404 on GCS/local, 403 on GCS) degrade to an empty
+// placeholder rather than a broken-image icon.
+const ThumbCell = ({ src }) => {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  if (!src || failed) {
+    return (
+      <div
+        style={{
+          width: 88,
+          height: 88,
+          margin: '4px 0',
+          borderRadius: 4,
+          background: 'var(--neutrals-color-neutral-2, #eee)',
+        }}
+        title="no image"
+      />
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      style={{ maxHeight: 88, maxWidth: 88, margin: '4px 0', borderRadius: 4 }}
+      onError={() => setFailed(true)}
+    />
+  );
+};
 
 const IndexCircleCell = ({ row }) => {
   return (

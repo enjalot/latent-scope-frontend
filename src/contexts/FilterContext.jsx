@@ -131,39 +131,49 @@ export function FilterProvider({ children }) {
         console.log('FILTER CONFIG', filterConfig);
         const { type, value } = filterConfig;
 
-        switch (type) {
-          case filterConstants.CLUSTER: {
-            const { setCluster, filter } = clusterFilter;
-            const cluster = clusterLabels.find((cluster) => cluster.cluster === value);
-            if (cluster) {
-              setCluster(cluster);
-              indices = filter(cluster);
+        try {
+          switch (type) {
+            case filterConstants.CLUSTER: {
+              const { setCluster, filter } = clusterFilter;
+              const cluster = clusterLabels.find((cluster) => cluster.cluster === value);
+              if (cluster) {
+                setCluster(cluster);
+                indices = filter(cluster);
+              }
+              break;
             }
-            break;
-          }
-          case filterConstants.SEARCH: {
-            const { filter } = searchFilter;
-            indices = await filter(value);
-            break;
-          }
-          case filterConstants.FEATURE: {
-            const { setFeature, filter } = featureFilter;
-            const featureLabel = findFeatureLabel(features, parseInt(value));
-            if (featureLabel) {
-              setFeature(value);
-              indices = await filter();
+            case filterConstants.SEARCH: {
+              const { filter } = searchFilter;
+              indices = await filter(value);
+              break;
             }
-            break;
+            case filterConstants.FEATURE: {
+              const { setFeature, filter } = featureFilter;
+              const featureLabel = findFeatureLabel(features, parseInt(value));
+              if (featureLabel) {
+                setFeature(value);
+                indices = await filter();
+              }
+              break;
+            }
+            case filterConstants.COLUMN: {
+              const { filter } = columnFilter;
+              const { column } = filterConfig;
+              indices = await filter(column, value);
+              break;
+            }
+            default: {
+              indices = baseIndices;
+            }
           }
-          case filterConstants.COLUMN: {
-            const { filter } = columnFilter;
-            const { column } = filterConfig;
-            indices = await filter(column, value);
-            break;
-          }
-          default: {
-            indices = baseIndices;
-          }
+          // API filters return JSON error objects (not arrays) when the
+          // backing table is missing — treat those as an empty result too.
+          if (!Array.isArray(indices)) indices = [];
+        } catch (error) {
+          // A failed filter (e.g. the scope's LanceDB table isn't deployed
+          // yet) shows an empty result rather than crashing the page.
+          console.error('Filter request failed', filterConfig, error);
+          indices = [];
         }
       }
       setFilteredIndices(indices);
@@ -227,27 +237,58 @@ export function FilterProvider({ children }) {
         }
       }
 
-      apiService.getRowsByIndices(userId, datasetId, scope.id, nonDeletedIndices).then((rows) => {
-        // Only update state if this is the latest request.
-        if (lastRequestRef.current !== requestTimestamp) {
-          // Discard stale result.
-          return;
-        }
-        const rowsWithIdx = rows.map((row, idx) => ({
-          ...row,
-          idx,
-          ls_index: row.index,
-        }));
-        setDataTableRows(rowsWithIdx);
-        setLoading(false);
+      // When the rows-by-index API is unavailable for this scope (e.g. the
+      // LanceDB table hasn't been deployed yet), synthesize minimal rows from
+      // the already-loaded scope parquet + the static .bin hover text so the
+      // table still shows something useful instead of wedging in a loading
+      // state. Image thumbnails are rendered from the static thumb URLs by
+      // row index, so they work regardless.
+      const fallbackRows = async (indices) => {
+        const textColumn = scope?.dataset?.text_column;
+        return Promise.all(
+          indices.map(async (index) => {
+            const row = { index, ...scopeRows[index] };
+            if (textColumn) {
+              try {
+                const text = await apiService.getHoverText(userId, datasetId, scope.id, index);
+                row[textColumn] = text?.trim();
+              } catch (e) {
+                // leave the text cell empty
+              }
+            }
+            return row;
+          })
+        );
+      };
 
-        // only cache the result if there is no filter config
-        // i.e. we are showing the default set of rows
+      apiService
+        .getRowsByIndices(userId, datasetId, scope.id, nonDeletedIndices)
+        .then((rows) => (Array.isArray(rows) ? rows : Promise.reject(new Error('bad response'))))
+        .catch((error) => {
+          console.error('rows-by-index failed, falling back to static row data', error);
+          return fallbackRows(nonDeletedIndices);
+        })
+        .then((rows) => {
+          // Only update state if this is the latest request.
+          if (lastRequestRef.current !== requestTimestamp) {
+            // Discard stale result.
+            return;
+          }
+          const rowsWithIdx = rows.map((row, idx) => ({
+            ...row,
+            idx,
+            ls_index: row.index,
+          }));
+          setDataTableRows(rowsWithIdx);
+          setLoading(false);
 
-        if (!filterConfig) {
-          rowsCache.current.set(cacheKey, rowsWithIdx);
-        }
-      });
+          // only cache the result if there is no filter config
+          // i.e. we are showing the default set of rows
+
+          if (!filterConfig) {
+            rowsCache.current.set(cacheKey, rowsWithIdx);
+          }
+        });
     } else {
       setDataTableRows([]);
     }

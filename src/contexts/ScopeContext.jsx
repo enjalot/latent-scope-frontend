@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { apiService } from '../lib/apiService';
+import { apiService, scopeAssetUrl } from '../lib/apiService';
 import {
   maybeCachedGetSaeFeatures,
   maybeCachedGetDatasetFeatures,
@@ -39,6 +39,50 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
       console.log('=== Scope ===', scope);
     });
   }, [userId, datasetId, scopeId]);
+
+  // ==== Image scopes ====
+  // scope.json for image scopes carries an `images` block describing where the
+  // static atlas pyramid + per-row thumbnails live (paths relative to
+  // {user}/{dataset}/ on the static base). See pipeline/FORMAT.md §4.
+  const scopeImages = scope?.images || null;
+  // first image column drives the map atlas + hover/table thumbnails
+  const imageColumn = scopeImages?.columns?.[0] || null;
+
+  // Build the per-row thumbnail URL from the thumbs template ({index} = row
+  // position in {scope}.parquet, == ls_index).
+  const thumbUrl = useCallback(
+    (index, column = imageColumn) => {
+      const template = scopeImages?.thumbs?.[column]?.template;
+      if (!template || index === null || index === undefined) return null;
+      return scopeAssetUrl(userId, datasetId, template.replace('{index}', index));
+    },
+    [scopeImages, imageColumn, userId, datasetId]
+  );
+
+  // Atlas manifest (grid geometry + which tiles exist) for the image column.
+  const [atlasManifest, setAtlasManifest] = useState(null);
+  useEffect(() => {
+    setAtlasManifest(null);
+    const manifestPath = scopeImages?.atlas?.[imageColumn]?.manifest;
+    if (!manifestPath) return;
+    let cancelled = false;
+    fetch(scopeAssetUrl(userId, datasetId, manifestPath))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((manifest) => {
+        if (!cancelled) setAtlasManifest(manifest);
+      })
+      .catch((e) => {
+        console.error('Failed to load atlas manifest', e);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [scopeImages, imageColumn, userId, datasetId]);
+
+  const isImageScope = useMemo(
+    () => !!(scopeImages && imageColumn),
+    [scopeImages, imageColumn]
+  );
 
   const [features, setFeatures] = useState([]);
 
@@ -130,6 +174,12 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
     deletedIndices,
     features,
     setFeatures,
+    // image-scope support
+    scopeImages,
+    imageColumn,
+    isImageScope,
+    thumbUrl,
+    atlasManifest,
   };
 
   return <ScopeContext.Provider value={value}>{children}</ScopeContext.Provider>;

@@ -1,6 +1,23 @@
 // const dev = import.meta.env.MODE == "development" ? "-dev" : ""
 const dev = '';
 
+// Base URL for the static scope assets ({scope}.json/.parquet/.bin, atlas
+// pyramid, thumbs). Layout under the base is `{user}/{dataset}/...`, matching
+// the GCS tree at `demos/`. Override with VITE_STATIC_BASE to test against a
+// locally served export (e.g. `VITE_STATIC_BASE=http://localhost:8787/` with
+// `npx serve --cors pipeline/out -l 8787` — note the exporter's out/ tree has
+// no `demos/` prefix, so the override base points directly at out/), or to
+// re-host the data elsewhere. Defaults to the production GCS bucket.
+const DEFAULT_STATIC_BASE = 'https://storage.googleapis.com/fun-data/latent-scope/demos/';
+const rawStaticBase = import.meta.env.VITE_STATIC_BASE || DEFAULT_STATIC_BASE;
+export const STATIC_BASE = rawStaticBase.endsWith('/') ? rawStaticBase : rawStaticBase + '/';
+
+// URL for a static asset that lives under a scope's dataset directory,
+// `relPath` being relative to `{user}/{dataset}/` (e.g. the atlas manifest
+// and thumb paths in a scope.json `images` block).
+export const scopeAssetUrl = (userId, datasetId, relPath) =>
+  `${STATIC_BASE}${userId}/${datasetId}/${relPath}`;
+
 const { asyncBufferFromUrl, parquetRead } = await import('hyparquet');
 
 // Add a cache object at the module level
@@ -9,9 +26,9 @@ const saeFeatureCache = {};
 export const apiService = {
   getScope: async (userId, datasetId, scopeId) => {
     // return fetch(`https://enjalot--latent-scope-api-app-scope-meta${dev}.modal.run/?db=${userId}/${datasetId}&scope=${scopeId}`).then((response) =>
-    return fetch(
-      `https://storage.googleapis.com/fun-data/latent-scope/demos/${userId}/${datasetId}/${scopeId}.json`
-    ).then((response) => response.json());
+    return fetch(`${STATIC_BASE}${userId}/${datasetId}/${scopeId}.json`).then((response) =>
+      response.json()
+    );
   },
   getRowsByIndices: async (userId, datasetId, scopeId, indices) => {
     return fetch(
@@ -20,9 +37,7 @@ export const apiService = {
   },
   getHoverText: async (userId, datasetId, scopeId, index) => {
     const ranges = `bytes=${index * 1000}-${(index + 1) * 1000 - 1}`;
-    return fetch(
-      `https://storage.googleapis.com/fun-data/latent-scope/demos/${userId}/${datasetId}/${scopeId}.bin`,
-      {
+    return fetch(`${STATIC_BASE}${userId}/${datasetId}/${scopeId}.bin`, {
         headers: {
           Range: ranges,
         },
@@ -35,7 +50,7 @@ export const apiService = {
     });
   },
   getScopeRows: async (userId, datasetId, scopeId) => {
-    const url = `https://storage.googleapis.com/fun-data/latent-scope/demos/${userId}/${datasetId}/${scopeId}.parquet`;
+    const url = `${STATIC_BASE}${userId}/${datasetId}/${scopeId}.parquet`;
     const buffer = await asyncBufferFromUrl(url);
     return new Promise((resolve) => {
       parquetRead({
@@ -56,7 +71,7 @@ export const apiService = {
     });
   },
   getDatasetFeatures: async (userId, datasetId, saeId) => {
-    const url = `https://storage.googleapis.com/fun-data/latent-scope/demos/${userId}/${datasetId}/${saeId}_features.parquet?cachebust=1`;
+    const url = `${STATIC_BASE}${userId}/${datasetId}/${saeId}_features.parquet?cachebust=1`;
     const buffer = await asyncBufferFromUrl(url);
     return new Promise((resolve) => {
       parquetRead({
