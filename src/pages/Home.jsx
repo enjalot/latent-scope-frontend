@@ -1,16 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import scopes from '../lib/scopes.js';
+import essays from '../essays/manifest';
 
 import styles from './Home.module.css';
 
 function Home() {
-  const [datasets, setDatasets] = useState([]);
-
-  // useEffect(() => {
-  //   apiService.fetchDatasets().then(setDatasets);
-  // }, []);
-
   return (
     <div className={styles.container}>
       <div className={styles.section}>
@@ -29,19 +23,25 @@ function Home() {
       </div>
       <div className={`${styles.section}`}>
         <h2>Essays</h2>
-        <div className={styles.essay}>
-          <div className={styles.essayImage}>
-            <Link to={`/essays/nav-by-sim`}>
-              <img src={`/navbysim/navbysim.png`} alt="Explore" />
-            </Link>
-          </div>
-          <div className={styles.essayDescription}>
-            <span className={styles.essayLabel}>
-              <Link to={`/essays/nav-by-sim`}>Navigating by Similarity</Link>
-            </span>
-            <p>High-dimensional Wayfinding with Sparse Autoencoders</p>
-          </div>
-        </div>
+        {essays
+          .filter((essay) => !essay.hidden)
+          .map((essay) => (
+            <div className={styles.essay} key={essay.slug}>
+              {essay.image && (
+                <div className={styles.essayImage}>
+                  <Link to={`/essays/${essay.slug}`}>
+                    <img src={essay.image} alt={essay.title} />
+                  </Link>
+                </div>
+              )}
+              <div className={styles.essayDescription}>
+                <span className={styles.essayLabel}>
+                  <Link to={`/essays/${essay.slug}`}>{essay.title}</Link>
+                </span>
+                <p>{essay.description}</p>
+              </div>
+            </div>
+          ))}
       </div>
 
       <div className={`${styles.section}`}>
@@ -65,7 +65,12 @@ function Home() {
                 <br />
                 <br />
                 {scope.dataUrl && (
-                  <a className={styles.dataUrl} href={scope.dataUrl} target="_blank">
+                  <a
+                    className={styles.dataUrl}
+                    href={scope.dataUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Dataset details
                   </a>
                 )}
@@ -81,7 +86,7 @@ function Home() {
           created locally they are converted to <a href="https://lancedb.com/">LanceDB</a> and
           uploaded to <a href="https://modal.com">Modal</a>. The API powering the nearest neighbor
           search is hosted on Modal, powering embedding queries via Sentence Transformers and
-          passing them to LanceDB's vector search.
+          passing them to LanceDB&apos;s vector search.
         </p>
         <p>
           The frontend code for these demos lives in{' '}

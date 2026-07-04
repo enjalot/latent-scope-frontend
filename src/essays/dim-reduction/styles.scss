@@ -1,0 +1,400 @@
+/* dim-reduction essay figure styles.
+ *
+ * Ported from the source project's src/styles/article.css section
+ * "dim-reduction project additions" (the 2026-06-12 template vintage kept
+ * figure-support CSS in article.css; the shared runtime stylesheet does
+ * not carry per-essay figure styles). Scoped under .mn-article-root so
+ * nothing leaks into the rest of the app. Imported by this essay's
+ * index.tsx, so it rides in the essay's lazy chunk.
+ */
+
+/* New tree generation blooming in during the hierarchy "grow" animation.
+   Globally zeroed under prefers-reduced-motion (runtime tokens.scss). */
+@keyframes hyp-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.mn-article-root {
+  /* Palette tokens the dim-reduction figures use that the shared runtime
+     tokens.scss does not define (values from the source tokens.css). */
+  --text-3: #8a8a9e;
+  --warm: #ea580c;
+  --warm-light: #ffedd5;
+  --green: #059669;
+  --purple: #7c3aed;
+  --border-2: #c5c5d1;
+  --muted: #e8e8ee;
+
+  @media (prefers-color-scheme: dark) {
+    --text-3: #74748a;
+    --warm: #fb923c;
+    --warm-light: #4a2a18;
+    --green: #34d399;
+    --purple: #a78bfa;
+    --border-2: #56566f;
+    --muted: #303048;
+  }
+
+  /* Figure controls (sliders, toggle groups) ------------------------ */
+
+  .figure .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem 1.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-family: var(--heading-font);
+    font-size: 0.85rem;
+    color: var(--text-2);
+  }
+
+  .figure .controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .figure .controls .value {
+    font-family: var(--mono-font);
+    color: var(--text);
+    min-width: 2.2rem;
+    display: inline-block;
+  }
+
+  .figure .controls input[type='range'] {
+    width: 140px;
+    accent-color: var(--accent);
+  }
+
+  .figure .toggle-group {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .figure .toggle-group button {
+    font-family: var(--heading-font);
+    font-size: 0.8rem;
+    padding: 0.35rem 0.7rem;
+    background: var(--fig-bg);
+    color: var(--text-2);
+    border: none;
+    border-right: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+  }
+  .figure .toggle-group button:last-child {
+    border-right: none;
+  }
+  .figure .toggle-group button:hover {
+    background: var(--accent-light);
+  }
+  .figure .toggle-group button.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  .figure svg text {
+    font-family: var(--heading-font);
+  }
+  .figure svg .axis text {
+    font-size: 11px;
+    fill: var(--text-2);
+  }
+  .figure svg .axis line,
+  .figure svg .axis path {
+    stroke: var(--border);
+    shape-rendering: crispEdges;
+  }
+  .figure svg .axis-label {
+    font-size: 12px;
+    fill: var(--text-2);
+    font-weight: 600;
+  }
+
+  /* Taxonomy figure ----------------------------------------------- */
+
+  .taxonomy {
+    font-family: var(--heading-font);
+  }
+  .taxonomy-header {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .taxonomy-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .taxonomy-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 1.4fr;
+    gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+    align-items: baseline;
+  }
+  .taxonomy-row:last-child {
+    border-bottom: none;
+  }
+  .taxonomy-num {
+    font-family: var(--mono-font);
+    font-size: 0.85rem;
+    color: var(--text-2);
+  }
+  .taxonomy-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .taxonomy-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .taxonomy-title:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .taxonomy-preserves {
+    font-size: 0.82rem;
+    color: var(--text-2);
+  }
+  .taxonomy-methods {
+    font-size: 0.85rem;
+    color: var(--text-2);
+    font-family: var(--heading-font);
+  }
+
+  @media (max-width: 640px) {
+    .taxonomy-row {
+      grid-template-columns: 28px 1fr;
+    }
+    .taxonomy-methods {
+      grid-column: 2;
+    }
+  }
+
+  /* Inline lens-mini: small visual prepended to each lens-description
+     paragraph as a visual reminder of which lens is being discussed. */
+
+  .inline-viz .lens-mini-svg {
+    margin-right: 0.35em;
+    border-radius: 2px;
+    /* Pull slightly upward so the baseline lines up with the cap-line
+       of the body text. */
+    vertical-align: -0.6em;
+  }
+
+  /* TrustContinuity: two-panel comparison ------------------------ */
+
+  .tc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .tc-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .tc-panel svg {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  .tc-label {
+    font-family: var(--heading-font);
+    font-size: 0.8rem;
+    color: var(--text-2);
+    letter-spacing: 0.02em;
+  }
+
+  .tc-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--heading-font);
+    font-size: 0.85rem;
+    color: var(--text-2);
+    border-top: 1px solid var(--border);
+    padding-top: 0.4rem;
+  }
+
+  .tc-num {
+    font-family: var(--mono-font);
+    font-size: 1.1rem;
+    color: var(--text);
+  }
+
+  .tc-foot {
+    font-family: var(--heading-font);
+    font-size: 0.72rem;
+    color: var(--text-2);
+    font-style: italic;
+  }
+
+  @media (max-width: 640px) {
+    .tc-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ShepardDiagram footer note ----------------------------------- */
+
+  .shepard-note {
+    margin-top: 0.5rem;
+    font-family: var(--heading-font);
+    font-size: 0.85rem;
+    color: var(--text-2);
+  }
+
+  /* Series port figures ------------------------------------------ */
+
+  .series-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .series-grid-3,
+  .series-grid-4 {
+    display: grid;
+    gap: 0.8rem;
+    align-items: start;
+  }
+  .series-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .series-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .series-panel-title {
+    font-family: var(--heading-font);
+    font-size: 0.82rem;
+    color: var(--text-2);
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+  }
+
+  .matrix-wrap {
+    overflow-x: auto;
+  }
+
+  .design-matrix {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-family: var(--heading-font);
+    font-size: 0.82rem;
+  }
+  .design-matrix th,
+  .design-matrix td {
+    border: 1px solid var(--border);
+    padding: 0.45rem 0.5rem;
+    text-align: center;
+  }
+  .design-matrix th:first-child {
+    text-align: left;
+    color: var(--text);
+    font-weight: 700;
+    background: var(--bg);
+  }
+  .design-matrix thead th {
+    color: var(--text-2);
+    font-weight: 600;
+    background: var(--bg);
+    white-space: nowrap;
+  }
+  .design-matrix td {
+    font-family: var(--mono-font);
+    font-size: 1rem;
+  }
+  .design-matrix td.m-2 {
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .design-matrix td.m-1 {
+    color: var(--warm);
+    background: rgba(234, 88, 12, 0.08);
+  }
+  .design-matrix td.m-0 {
+    color: var(--text-2);
+    opacity: 0.75;
+  }
+
+  @media (max-width: 700px) {
+    .series-two,
+    .series-grid-3,
+    .series-grid-4 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Faithful ports of original dim-reduction figures -------------- */
+
+  .figure-button {
+    font-family: var(--heading-font);
+    font-size: 0.8rem;
+    padding: 0.35rem 0.7rem;
+    background: var(--fig-bg);
+    color: var(--text-2);
+    border: 1px solid var(--border-2);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .figure-button:hover {
+    background: var(--muted);
+  }
+  .figure-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .hyp-pop {
+    animation: hyp-pop 360ms ease-out;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .stat-bar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    font-family: var(--heading-font);
+    font-size: 0.82rem;
+    color: var(--text-2);
+    margin-top: 0.75rem;
+  }
+  .stat-bar .bar-bg {
+    flex: 1;
+    height: 8px;
+    background: var(--muted);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .stat-bar .bar-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.2s;
+  }
+}
