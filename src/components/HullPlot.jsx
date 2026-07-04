@@ -106,6 +106,8 @@ const HullPlot = ({
 
     // Draw hulls
     hulls.forEach((hullPoints) => {
+      // scopes without precomputed hulls (e.g. image scopes) have empty arrays
+      if (!hullPoints || !hullPoints.length) return;
       ctx.globalAlpha = opacity * Math.pow((maxZoom - k) / maxZoom, 2) + 0.05;
       ctx.beginPath();
       // Move to first point

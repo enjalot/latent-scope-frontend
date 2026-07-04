@@ -19,7 +19,6 @@ import useDebounce from '../hooks/useDebounce';
 import { useScope } from '../contexts/ScopeContext';
 
 import PropTypes from 'prop-types';
-import { reSplitAlphaNumeric } from '@tanstack/react-table';
 ScatterGL.propTypes = {
   points: PropTypes.array.isRequired, // an array of [x,y] points
   width: PropTypes.number.isRequired,

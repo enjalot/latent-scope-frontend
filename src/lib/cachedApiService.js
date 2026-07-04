@@ -1,15 +1,29 @@
 import { apiService } from './apiService';
 
-// Import cached responses if they exist
+// Pre-baked responses (essays/cached/initial.json, ~4.4MB) are loaded
+// lazily so they stay out of the main bundle and are only fetched when a
+// cached-service consumer (an essay) actually makes a request. The promise
+// is memoized so the JSON is imported at most once; every maybeCached*
+// wrapper awaits it before resolving, preserving the old top-level-await
+// behavior where the cache is seeded before any request resolves.
 let cachedResponses = {};
 let keepCaching = true;
-try {
-  cachedResponses = await import('../essays/cached/initial.json').then((module) => module.default);
-  keepCaching = false;
-} catch (error) {
-  console.log('No cache file found or unable to load cache');
-  cachedResponses = {};
-}
+let cachePromise = null;
+
+const ensureCache = () => {
+  if (!cachePromise) {
+    cachePromise = import('../essays/cached/initial.json')
+      .then((module) => {
+        cachedResponses = module.default;
+        keepCaching = false;
+      })
+      .catch(() => {
+        console.log('No cache file found or unable to load cache');
+        cachedResponses = {};
+      });
+  }
+  return cachePromise;
+};
 
 // Create a function to generate cache keys from API parameters
 const generateCacheKey = (method, params) => {
@@ -26,6 +40,7 @@ const pendingParquetRequests = new Map();
 
 // Generic wrapper for any API call that adds caching
 const withCache = async (method, params, apiCall) => {
+  await ensureCache();
   const cacheKey = generateCacheKey(method, params);
 
   if (cacheKey && cachedResponses[cacheKey]) {
