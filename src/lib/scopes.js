@@ -1,5 +1,12 @@
 const scopes = [
   {
+    id: 'enjalot/marqo-ge-sample/scopes-002',
+    label: 'Marqo E-commerce Images',
+    description:
+      '20,000 product images (Google Shopping + Amazon) embedded with CLIP, in 73 labeled product categories',
+    dataUrl: 'https://huggingface.co/datasets/Marqo/marqo-ge-sample',
+  },
+  {
     id: 'enjalot/ls-dadabase/scopes-001',
     label: 'Dadabase',
     description: '50,000 r/dadjokes, lightly curated',
