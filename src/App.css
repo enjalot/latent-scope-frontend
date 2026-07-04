@@ -10,6 +10,10 @@
 .page {
   padding-top: 40px;
   height: calc(100vh - 84px); /* 40 + 44 (subnav height) */
+  /* html/body are overflow:hidden (app-shell for the full-screen scope map),
+     so tall document routes (Home, essays) need .page itself to scroll. The
+     scope map fills this box exactly, so no scrollbar shows there. */
+  overflow-y: auto;
 }
 
 .docs-banner {

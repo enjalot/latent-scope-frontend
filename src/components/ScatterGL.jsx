@@ -19,23 +19,6 @@ import useDebounce from '../hooks/useDebounce';
 import { useScope } from '../contexts/ScopeContext';
 
 import PropTypes from 'prop-types';
-ScatterGL.propTypes = {
-  points: PropTypes.array.isRequired, // an array of [x,y] points
-  width: PropTypes.number.isRequired,
-  maxZoom: PropTypes.number,
-  pointScale: PropTypes.number,
-  quadtreeRadius: PropTypes.number,
-  ignoreNotSelected: PropTypes.bool,
-  height: PropTypes.number.isRequired,
-  onView: PropTypes.func,
-  onSelect: PropTypes.func,
-  onHover: PropTypes.func,
-  isSmallScreen: PropTypes.bool,
-  centerOnShownIndices: PropTypes.bool,
-  centerMargin: PropTypes.number,
-  calculatePointColor: PropTypes.func,
-  disablePan: PropTypes.bool,
-};
 
 const calculateDynamicPointScale = (pointCount, width, height) => {
   // Calculate area per point
@@ -692,5 +675,27 @@ function ScatterGL({
     />
   );
 }
+
+// Assigned after the declaration on purpose: when any module in a shared
+// chunk uses top-level await, Vite wraps the chunk and converts function
+// declarations to in-order assignments, so a propTypes assignment placed
+// above `function ScatterGL` would run before the binding exists.
+ScatterGL.propTypes = {
+  points: PropTypes.array.isRequired, // an array of [x,y] points
+  width: PropTypes.number.isRequired,
+  maxZoom: PropTypes.number,
+  pointScale: PropTypes.number,
+  quadtreeRadius: PropTypes.number,
+  ignoreNotSelected: PropTypes.bool,
+  height: PropTypes.number.isRequired,
+  onView: PropTypes.func,
+  onSelect: PropTypes.func,
+  onHover: PropTypes.func,
+  isSmallScreen: PropTypes.bool,
+  centerOnShownIndices: PropTypes.bool,
+  centerMargin: PropTypes.number,
+  calculatePointColor: PropTypes.func,
+  disablePan: PropTypes.bool,
+};
 
 export default ScatterGL;
