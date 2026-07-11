@@ -74,6 +74,8 @@ function ScatterGL({
   onView,
   onSelect,
   onHover,
+  onCursor,
+  onCursorClick,
   featureIsSelected,
   ignoreNotSelected = false,
   isSmallScreen = false,
@@ -106,6 +108,10 @@ function ScatterGL({
   const debouncedSetCenteredIndices = useDebounce(setCenteredIndices, 50);
 
   const canvasRef = useRef(null);
+  // Pointer-down position, used to distinguish a click from a pan-drag (so tile
+  // clicks under the heatmap don't fire at the end of a drag).
+  const pointerDownRef = useRef(null);
+  const CLICK_DRAG_THRESHOLD = 4; // px
   const reglRef = useRef(null);
   const drawPointsRef = useRef(null);
   const xScaleRef = useRef(scaleLinear().domain([-1, 1]).range([0, width]));
@@ -511,33 +517,70 @@ function ScatterGL({
 
   const handleMouseMove = useCallback(
     (event) => {
-      if (!points || !onHover) return;
+      if (!points) return;
 
       const rect = canvasRef.current.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
-      const nearestPoint = findNearestPoint(x, y);
-      onHover(nearestPoint === -1 ? null : nearestPoint);
+      if (onHover) {
+        const nearestPoint = findNearestPoint(x, y);
+        onHover(nearestPoint === -1 ? null : nearestPoint);
+      }
+
+      // Surface the data-space cursor position so overlays (e.g. the heatmap)
+      // can derive what the pointer is over WITHOUT stealing pointer events
+      // from this canvas. The scatter stays the single interactive layer.
+      if (onCursor) {
+        const { x: dataX, y: dataY } = screenToDataCoordinates(
+          x,
+          y,
+          transform,
+          xScaleRef.current,
+          yScaleRef.current
+        );
+        onCursor({ x: dataX, y: dataY, clientX: event.clientX, clientY: event.clientY });
+      }
     },
-    [points, onHover, findNearestPoint]
+    [points, onHover, onCursor, findNearestPoint, transform]
   );
 
   // Add click handler
   const handleClick = useCallback(
     (event) => {
-      if (!points || !onSelect) return;
+      if (!points) return;
 
       const rect = canvasRef.current.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
-      const nearestPoint = findNearestPoint(x, y);
-      if (nearestPoint !== -1) {
-        onSelect([nearestPoint]);
+      // Click-vs-drag guard: if the pointer moved past the threshold since
+      // mousedown, this "click" is the tail of a pan — ignore it.
+      const down = pointerDownRef.current;
+      const isDrag =
+        down && Math.hypot(event.clientX - down.x, event.clientY - down.y) > CLICK_DRAG_THRESHOLD;
+
+      if (onSelect && !isDrag) {
+        const nearestPoint = findNearestPoint(x, y);
+        if (nearestPoint !== -1) {
+          onSelect([nearestPoint]);
+        }
+      }
+
+      // Report the data-space click for overlays that act on empty space too
+      // (e.g. opening the heatmap cell drawer for the tile under the cursor).
+      if (onCursorClick && !isDrag) {
+        const { x: dataX, y: dataY } = screenToDataCoordinates(
+          x,
+          y,
+          transform,
+          xScaleRef.current,
+          yScaleRef.current
+        );
+        onCursorClick({ x: dataX, y: dataY });
       }
     },
-    [points, onSelect, findNearestPoint]
+    [points, onSelect, onCursorClick, findNearestPoint, transform]
   );
 
   const updateCenteredIndices = useCallback(
@@ -648,7 +691,8 @@ function ScatterGL({
   }, [shownIndices, points, width, height, minZoom, maxZoom, centerOnShownIndices, centerMargin]);
 
   // Add handlers to reset programmatic zoom flag on user interaction
-  const handleMouseDown = useCallback(() => {
+  const handleMouseDown = useCallback((event) => {
+    pointerDownRef.current = { x: event.clientX, y: event.clientY };
     if (isZoomingProgrammatically.current) {
       isZoomingProgrammatically.current = false;
     }
@@ -668,7 +712,10 @@ function ScatterGL({
       style={{ width, height }}
       className={styles.scatter}
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => onHover && onHover(null)}
+      onMouseLeave={() => {
+        if (onHover) onHover(null);
+        if (onCursor) onCursor(null);
+      }}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
@@ -691,6 +738,8 @@ ScatterGL.propTypes = {
   onView: PropTypes.func,
   onSelect: PropTypes.func,
   onHover: PropTypes.func,
+  onCursor: PropTypes.func,
+  onCursorClick: PropTypes.func,
   isSmallScreen: PropTypes.bool,
   centerOnShownIndices: PropTypes.bool,
   centerMargin: PropTypes.number,

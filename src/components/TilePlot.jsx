@@ -30,13 +30,8 @@ const TilePlot = ({
   yDomain,
   width,
   height,
-  onTileHover,
-  onTileClick,
 }) => {
   const container = useRef();
-  // Screen-space rect per tile (built during draw), so hit-testing reuses the
-  // exact same coordinates as the draw pass — no duplicated math.
-  const rectsRef = useRef([]);
 
   useEffect(() => {
     if(xDomain && yDomain) {
@@ -70,14 +65,11 @@ const TilePlot = ({
       let colorScale = scaleSequential(interpolateOranges)
         .domain(countExtent)
 
-      const rects = [];
-
       tiles.map((tile, i) => {
         if(!tile) return;
         let tx = xScale(tile.tile_index % tileMeta.cols * tileMeta.size - tileMeta.cols * tileMeta.size / 2)
         let ty = yScale(Math.floor(tile.tile_index / tileMeta.cols) * tileMeta.size - tileMeta.cols * tileMeta.size / 2 + tileMeta.size)
         // if(i < 5) console.log("tile", tile, tx, ty, rw)
-        rects.push({ tile_index: tile.tile_index, x: tx, y: ty, w: rw, h: rw });
 
         if(fill){
           // calculate color based on the count
@@ -89,48 +81,22 @@ const TilePlot = ({
         if(stroke){
           ctx.strokeRect(tx, ty, rw, rw);
         }
-        
+
       })
-      rectsRef.current = rects
     }
 
   }, [tiles, tileMeta, fill, stroke, size, xDomain, yDomain, width, height])
 
-  const hitTest = (e) => {
-    const canvas = container.current;
-    if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    // rects are top-left anchored with width/height w; tolerate small tiles.
-    for (const r of rectsRef.current) {
-      const w = Math.max(r.w, 3);
-      if (mx >= r.x && mx <= r.x + w && my >= r.y && my <= r.y + w) return r.tile_index;
-    }
-    return null;
-  };
-
-  const interactive = !!(onTileHover || onTileClick);
-
+  // Purely presentational: pointer-events: none (see TilePlot.module.scss) so
+  // hover/zoom/click pass through to the ScatterGL canvas underneath. Tile
+  // hover/click are derived from the scatter's cursor pipeline in
+  // VisualizationPane, not from this overlay.
   return (
     <canvas
       className={styles['tile-plot']}
       ref={container}
       width={width}
       height={height}
-      style={interactive ? { pointerEvents: 'auto', cursor: 'pointer' } : undefined}
-      onMouseMove={
-        onTileHover ? (e) => onTileHover(hitTest(e), e.clientX, e.clientY) : undefined
-      }
-      onMouseLeave={onTileHover ? () => onTileHover(null) : undefined}
-      onClick={
-        onTileClick
-          ? (e) => {
-              const t = hitTest(e);
-              if (t !== null && t !== undefined) onTileClick(t);
-            }
-          : undefined
-      }
     />
   );
 };

@@ -264,6 +264,44 @@ function VisualizationPane({
     });
   }, [scopeRows]);
 
+  // Invert the TilePlot draw math: map a data-space (x,y) to the tile_index_64
+  // it falls in. The grid spans [-1,1] on both axes (cols*size/2 = 1), matching
+  // how TilePlot positions each tile. Returns null when outside the grid.
+  const tileIndexFromData = useCallback(
+    (dataX, dataY) => {
+      const { size, cols } = tileMeta;
+      const half = (cols * size) / 2;
+      const col = Math.floor((dataX + half) / size);
+      const row = Math.floor((dataY + half) / size);
+      if (col < 0 || col >= cols || row < 0 || row >= cols) return null;
+      return row * cols + col;
+    },
+    [tileMeta]
+  );
+
+  // Drive the heatmap tile tooltip/drawer from the ScatterGL cursor pipeline
+  // (the scatter stays the single interactive layer; TilePlot is pointer-events:
+  // none). onCursor reports the data-space cursor + client coords on every move.
+  const handleScatterCursor = useCallback(
+    (cursor) => {
+      if (!cursor) {
+        handleTileHover(null);
+        return;
+      }
+      const tileIndex = tileIndexFromData(cursor.x, cursor.y);
+      handleTileHover(tileIndex, cursor.clientX, cursor.clientY);
+    },
+    [handleTileHover, tileIndexFromData]
+  );
+  const handleScatterCursorClick = useCallback(
+    (cursor) => {
+      if (!cursor) return;
+      const tileIndex = tileIndexFromData(cursor.x, cursor.y);
+      if (tileIndex !== null) handleTileClick(tileIndex);
+    },
+    [handleTileClick, tileIndexFromData]
+  );
+
   // ====================================================================================================
   // Configuration Panel
   // ====================================================================================================
@@ -447,6 +485,8 @@ function VisualizationPane({
                 onView={handleView}
                 onSelect={onSelect}
                 onHover={onHover}
+                onCursor={vizConfig.showHeatMap ? handleScatterCursor : undefined}
+                onCursorClick={vizConfig.showHeatMap ? handleScatterCursorClick : undefined}
                 featureIsSelected={featureIsSelected}
                 maxZoom={maxZoom}
                 isSmallScreen={isSmallScreen}
@@ -569,8 +609,6 @@ function VisualizationPane({
                 height={height}
                 fill="gray"
                 // stroke="black"
-                onTileHover={handleTileHover}
-                onTileClick={handleTileClick}
               />
             )}
             <PointLabel
