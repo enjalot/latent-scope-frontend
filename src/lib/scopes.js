@@ -1,5 +1,11 @@
 const scopes = [
   {
+    id: 'enjalot/fineweb-edu-100k-3d/scopes-002',
+    label: 'FineWeb-Edu 100k — 3D',
+    description: '100,000 sample of FineWeb-Edu projected into 3D',
+    dataUrl: 'https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1',
+  },
+  {
     id: 'enjalot/marqo-ge-sample/scopes-002',
     label: 'Marqo E-commerce Images',
     description: '20,000 product images embedded with CLIP',
