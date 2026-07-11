@@ -19,7 +19,7 @@ const COLLAPSED_CHARS = 120;
  * collapsible (a ~120-char preview that expands to the full text).
  */
 function CellDetail({ selectedCell, onClose, onOpenPoint }) {
-  const { scopeRows, scope, clusterMap, userId, datasetId } = useScope();
+  const { scopeRows, scope, clusterMap, userId, datasetId, isImageScope, thumbUrl } = useScope();
   const isOpen = !!selectedCell;
 
   // scopeRow positions whose cell column matches the clicked key.
@@ -206,14 +206,27 @@ function CellDetail({ selectedCell, onClose, onOpenPoint }) {
                   </button>
                 )}
               </div>
-              <div className={`${styles.entryText} ${isExp ? styles.expanded : ''}`}>
-                {preview == null ? (
-                  <span className={styles.muted}>loading…</span>
-                ) : preview === '' ? (
-                  <span className={styles.muted}>(empty)</span>
-                ) : (
-                  preview
+              <div className={styles.entryBody}>
+                {isImageScope && thumbUrl && thumbUrl(row?.ls_index) && (
+                  <img
+                    className={styles.entryThumb}
+                    src={thumbUrl(row?.ls_index)}
+                    alt=""
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
                 )}
+                <div className={`${styles.entryText} ${isExp ? styles.expanded : ''}`}>
+                  {preview == null ? (
+                    <span className={styles.muted}>loading…</span>
+                  ) : preview === '' ? (
+                    <span className={styles.muted}>(empty)</span>
+                  ) : (
+                    preview
+                  )}
+                </div>
               </div>
             </div>
           );

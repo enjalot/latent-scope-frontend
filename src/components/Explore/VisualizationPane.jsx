@@ -102,6 +102,7 @@ function VisualizationPane({
     setActiveCell: setHeatmapCell,
     active: heatmapActive,
     snippets: heatmapSnippets,
+    snippetIndices: heatmapSnippetIndices,
     loadingSnippets: heatmapLoading,
   } = useCellMembers({
     scopeRows,
@@ -639,6 +640,9 @@ function VisualizationPane({
           summary={heatmapActive.summary}
           snippets={heatmapSnippets}
           loading={heatmapLoading}
+          isImageScope={isImageScope}
+          thumbUrl={thumbUrl}
+          indices={heatmapSnippetIndices}
         />
       )}
 

@@ -171,12 +171,31 @@
   }
 }
 
+// Image scopes: thumbnail + text laid out side by side.
+.entryBody {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.entryThumb {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  margin-top: 4px;
+}
+
 .entryText {
   margin-top: 4px;
   font-size: 13px;
   line-height: 1.45;
   color: #3a332d;
   overflow-wrap: anywhere;
+  flex: 1;
+  min-width: 0;
 
   &.expanded {
     white-space: pre-wrap;

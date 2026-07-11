@@ -50,6 +50,22 @@
   opacity: 0.7;
 }
 
+// Thumbnail grid for image scopes (up to ~6 sampled members).
+.thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  display: block;
+}
+
 @media (prefers-color-scheme: dark) {
   .tooltip {
     background: #2a2320;

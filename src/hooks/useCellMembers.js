@@ -79,6 +79,7 @@ export function useCellMembers({
 
   const [active, setActive] = useState(null); // { key, summary }
   const [snippets, setSnippets] = useState([]); // string[]
+  const [snippetIndices, setSnippetIndices] = useState([]); // ls_index[] (for thumbnails)
   const [loadingSnippets, setLoadingSnippets] = useState(false);
   const cacheRef = useRef(new Map()); // key -> string[]
   const dwellTimer = useRef(null);
@@ -99,6 +100,7 @@ export function useCellMembers({
       if (key === null || key === undefined) {
         setActive(null);
         setSnippets([]);
+        setSnippetIndices([]);
         setLoadingSnippets(false);
         return;
       }
@@ -106,10 +108,17 @@ export function useCellMembers({
       if (!summary) {
         setActive(null);
         setSnippets([]);
+        setSnippetIndices([]);
         setLoadingSnippets(false);
         return;
       }
       setActive({ key, summary });
+
+      // Sampled member ls_indices are known synchronously (used both for the
+      // snippet fetch below and for image thumbnails, which need no fetch).
+      const idxs = membership.get(key) || [];
+      const sample = sampleEven(idxs, maxSnippets).map((i) => scopeRows[i].ls_index);
+      setSnippetIndices(sample);
 
       // Warm cache hit -> render instantly, no fetch.
       if (cacheRef.current.has(key)) {
@@ -122,8 +131,6 @@ export function useCellMembers({
       setLoadingSnippets(true);
       const seq = ++reqSeq.current;
       dwellTimer.current = setTimeout(() => {
-        const idxs = membership.get(key) || [];
-        const sample = sampleEven(idxs, maxSnippets).map((i) => scopeRows[i].ls_index);
         apiService
           .getSnippets(userId, datasetId, scope.id, sample)
           .then((texts) => {
@@ -142,7 +149,15 @@ export function useCellMembers({
 
   useEffect(() => () => clearDwell(), []);
 
-  return { membership, summarize, setActiveCell, active, snippets, loadingSnippets };
+  return {
+    membership,
+    summarize,
+    setActiveCell,
+    active,
+    snippets,
+    snippetIndices,
+    loadingSnippets,
+  };
 }
 
 export default useCellMembers;

@@ -7,7 +7,16 @@ import styles from './MembersTooltip.module.scss';
 // useCellMembers, renders a floating card "N datapoints · dominant label" plus a
 // few sampled snippets. Rendered into a portal (position: fixed) so it floats
 // above the canvas and never gets clipped by the viz pane's overflow.
-function MembersTooltip({ x, y, summary, snippets, loading }) {
+function MembersTooltip({
+  x,
+  y,
+  summary,
+  snippets,
+  loading,
+  isImageScope = false,
+  thumbUrl = null,
+  indices = [],
+}) {
   if (!summary) return null;
 
   // Flip to the left of the cursor if we're close to the right edge.
@@ -16,6 +25,11 @@ function MembersTooltip({ x, y, summary, snippets, loading }) {
   const left = x + width + 24 > vw ? x - width - 16 : x + 16;
   const top = Math.max(8, y - 12);
 
+  // Image scopes: a small grid of representative thumbnails (no fetch needed —
+  // the thumbnail URL is derived from each member's ls_index). Falls back to the
+  // text-snippet list for text scopes (unchanged behavior).
+  const showThumbs = isImageScope && thumbUrl && indices.length > 0;
+
   return createPortal(
     <div className={styles.tooltip} style={{ left, top, width }}>
       <div className={styles.header}>
@@ -23,16 +37,37 @@ function MembersTooltip({ x, y, summary, snippets, loading }) {
         {summary.count === 1 ? '' : 's'}
         <span className={styles.label}> · {summary.label}</span>
       </div>
-      <div className={styles.snippets}>
-        {loading && snippets.length === 0 && (
-          <span className={styles.muted}>loading snippets…</span>
-        )}
-        {snippets.map((t, i) => (
-          <div key={i} className={styles.snippet}>
-            {t == null || t === '' ? <span className={styles.muted}>(empty)</span> : String(t)}
-          </div>
-        ))}
-      </div>
+      {showThumbs ? (
+        <div className={styles.thumbs}>
+          {indices.map((idx, i) => {
+            const src = thumbUrl(idx);
+            if (!src) return null;
+            return (
+              <img
+                key={i}
+                className={styles.thumb}
+                src={src}
+                alt=""
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.style.visibility = 'hidden';
+                }}
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className={styles.snippets}>
+          {loading && snippets.length === 0 && (
+            <span className={styles.muted}>loading snippets…</span>
+          )}
+          {snippets.map((t, i) => (
+            <div key={i} className={styles.snippet}>
+              {t == null || t === '' ? <span className={styles.muted}>(empty)</span> : String(t)}
+            </div>
+          ))}
+        </div>
+      )}
     </div>,
     document.body
   );
