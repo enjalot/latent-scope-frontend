@@ -106,8 +106,10 @@ const HullPlot = ({
 
     // Draw hulls
     hulls.forEach((hullPoints) => {
-      // scopes without precomputed hulls (e.g. image scopes) have empty arrays
-      if (!hullPoints || !hullPoints.length) return;
+      // Skip degenerate/empty hulls — image scopes have empty arrays, and 3D
+      // scopes whose cluster_labels_lookup carries no precomputed hull points —
+      // so we never deref hullPoints[0].
+      if (!hullPoints || hullPoints.length < 3) return;
       ctx.globalAlpha = opacity * Math.pow((maxZoom - k) / maxZoom, 2) + 0.05;
       ctx.beginPath();
       // Move to first point
