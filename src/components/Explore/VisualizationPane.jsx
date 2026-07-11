@@ -4,6 +4,10 @@ import PropTypes from 'prop-types';
 // import Scatter from '../Scatter';
 // import Scatter from '../ScatterCanvas';
 import Scatter from '../ScatterGL';
+import Scatter3D from './Scatter3D';
+import VoxelView from './VoxelView';
+import CellDetail from './CellDetail';
+import MembersTooltip from './MembersTooltip';
 import AnnotationPlot from '../AnnotationPlot';
 import HullPlot from '../HullPlot';
 import TilePlot from '../TilePlot';
@@ -15,6 +19,7 @@ import CrossHair from '../Crosshair';
 import { processHulls } from '../../utils';
 import PointLabel from './PointLabel';
 import { filterConstants } from './Search/utils';
+import { useCellMembers } from '../../hooks/useCellMembers';
 
 // import { useColorMode } from '../../hooks/useColorMode';
 
@@ -74,6 +79,68 @@ function VisualizationPane({
 
   const { featureFilter, clusterFilter, shownIndices, filterConfig, setCenteredIndices } =
     useFilter();
+
+  // ====================================================================================================
+  // View mode (2D scatter / 3D scatter / Voxels). The 3D + Voxels modes are only
+  // available when the scope's projection is 3-dimensional (dimensions === 3).
+  // ====================================================================================================
+  const is3D = scope?.dimensions === 3;
+  // Default to the 3D scatter for 3D scopes (lazy init covers the case where the
+  // scope is already cached on first render); the effect below covers the async
+  // load. An explicit toggle (userChoseView) always wins over the default.
+  const [viewMode, setViewMode] = useState(() => (scope?.dimensions === 3 ? '3d' : '2d'));
+  const userChoseViewRef = useRef(false);
+  const chooseViewMode = useCallback((mode) => {
+    userChoseViewRef.current = true;
+    setViewMode(mode);
+  }, []);
+  useEffect(() => {
+    if (userChoseViewRef.current) return; // respect an explicit user choice
+    setViewMode(is3D ? '3d' : '2d');
+  }, [is3D]);
+  // Safety clamp: a non-3D scope can only show the 2D view.
+  useEffect(() => {
+    if (!is3D && viewMode !== '2d') setViewMode('2d');
+  }, [is3D, viewMode]);
+
+  // Cell-detail drawer (shared by voxels + the 2D heatmap). { key, column }.
+  const [selectedCell, setSelectedCell] = useState(null);
+  const handleCellSelect = useCallback((key, column) => {
+    setSelectedCell({ key, column });
+  }, []);
+
+  // Members-in-cell tooltip for the 2D heatmap tiles (voxels have their own).
+  const heatmapCellKeyOf = useCallback((row) => row.tile_index_64, []);
+  const {
+    setActiveCell: setHeatmapCell,
+    active: heatmapActive,
+    snippets: heatmapSnippets,
+    snippetIndices: heatmapSnippetIndices,
+    loadingSnippets: heatmapLoading,
+  } = useCellMembers({
+    scopeRows,
+    scope,
+    userId,
+    datasetId,
+    cellKeyOf: heatmapCellKeyOf,
+  });
+  const [heatmapTooltip, setHeatmapTooltip] = useState(null); // {x,y}
+  const handleTileHover = useCallback(
+    (tileIndex, clientX, clientY) => {
+      if (tileIndex === null || tileIndex === undefined) {
+        setHeatmapCell(null);
+        setHeatmapTooltip(null);
+      } else {
+        setHeatmapCell(tileIndex);
+        setHeatmapTooltip({ x: clientX, y: clientY });
+      }
+    },
+    [setHeatmapCell]
+  );
+  const handleTileClick = useCallback(
+    (tileIndex) => handleCellSelect(tileIndex, 'tile_index_64'),
+    [handleCellSelect]
+  );
 
   // only show the hull if we are filtering by cluster
   const showHull = filterConfig?.type === filterConstants.CLUSTER;
@@ -211,6 +278,44 @@ function VisualizationPane({
     });
   }, [scopeRows]);
 
+  // Invert the TilePlot draw math: map a data-space (x,y) to the tile_index_64
+  // it falls in. The grid spans [-1,1] on both axes (cols*size/2 = 1), matching
+  // how TilePlot positions each tile. Returns null when outside the grid.
+  const tileIndexFromData = useCallback(
+    (dataX, dataY) => {
+      const { size, cols } = tileMeta;
+      const half = (cols * size) / 2;
+      const col = Math.floor((dataX + half) / size);
+      const row = Math.floor((dataY + half) / size);
+      if (col < 0 || col >= cols || row < 0 || row >= cols) return null;
+      return row * cols + col;
+    },
+    [tileMeta]
+  );
+
+  // Drive the heatmap tile tooltip/drawer from the ScatterGL cursor pipeline
+  // (the scatter stays the single interactive layer; TilePlot is pointer-events:
+  // none). onCursor reports the data-space cursor + client coords on every move.
+  const handleScatterCursor = useCallback(
+    (cursor) => {
+      if (!cursor) {
+        handleTileHover(null);
+        return;
+      }
+      const tileIndex = tileIndexFromData(cursor.x, cursor.y);
+      handleTileHover(tileIndex, cursor.clientX, cursor.clientY);
+    },
+    [handleTileHover, tileIndexFromData]
+  );
+  const handleScatterCursorClick = useCallback(
+    (cursor) => {
+      if (!cursor) return;
+      const tileIndex = tileIndexFromData(cursor.x, cursor.y);
+      if (tileIndex !== null) handleTileClick(tileIndex);
+    },
+    [handleTileClick, tileIndexFromData]
+  );
+
   // ====================================================================================================
   // Configuration Panel
   // ====================================================================================================
@@ -330,54 +435,109 @@ function VisualizationPane({
         />
       </div>
 
+      {is3D && (
+        <div className={styles.viewToggle}>
+          <button
+            type="button"
+            className={viewMode === '2d' ? styles.viewToggleActive : ''}
+            onClick={() => chooseViewMode('2d')}
+          >
+            2D
+          </button>
+          <button
+            type="button"
+            className={viewMode === '3d' ? styles.viewToggleActive : ''}
+            onClick={() => chooseViewMode('3d')}
+          >
+            3D
+          </button>
+          <button
+            type="button"
+            className={viewMode === 'voxels' ? styles.viewToggleActive : ''}
+            onClick={() => chooseViewMode('voxels')}
+          >
+            Voxels
+          </button>
+        </div>
+      )}
+
       <div className={styles.scatters + ' ' + (isFullScreen ? styles.fullScreen : '')}>
-        {scope && (
-          <Scatter
-            points={drawingPoints}
-            shownIndices={shownIndices}
-            setCenteredIndices={setCenteredIndices}
+        {viewMode === '3d' && scope && (
+          <Scatter3D
+            scopeRows={scopeRows}
             width={width}
             height={height}
-            onView={handleView}
-            onSelect={onSelect}
+            clusterLabels={clusterLabels}
+            selectedCluster={clusterFilter.cluster}
+            hoveredIndex={hoveredIndex}
             onHover={onHover}
-            featureIsSelected={featureIsSelected}
-            maxZoom={maxZoom}
-            isSmallScreen={isSmallScreen}
+            onSelect={onSelect}
+            pointScale={vizConfig.pointSize}
           />
         )}
-        {/* Image scopes: representative-image atlas drawn over the scatter
-            (unpopulated cells are transparent, so points show through gaps).
-            pointer-events: none — hover/zoom still go to the ScatterGL canvas. */}
-        {imagesVisible && (
-          <AtlasOverlay
+        {viewMode === 'voxels' && scope && (
+          <VoxelView
+            scopeRows={scopeRows}
+            scope={scope}
             userId={userId}
             datasetId={datasetId}
-            atlasPath={scopeImages.atlas?.[imageColumn]?.path}
-            xDomain={xDomain}
-            yDomain={yDomain}
+            clusterLabels={clusterLabels}
             width={width}
             height={height}
-            transform={transform}
-            manifest={atlasManifest}
+            onCellSelect={handleCellSelect}
           />
         )}
-        {/* Points drawn back on top of the images once zoomed past the finest
-            pyramid level, so individual rows can be pinpointed. */}
-        {pointsOverlayVisible && (
-          <PointsOverlay
-            scopeRows={scopeRows}
-            xDomain={xDomain}
-            yDomain={yDomain}
-            width={width}
-            height={height}
-            enabled={pointsOverlayVisible}
-            opacity={vizConfig.pointOpacity}
-            pointSize={vizConfig.pointSize}
-          />
-        )}
-        {/* show all the hulls */}
-        {vizConfig.showClusterOutlines && hulls.length && (
+        {viewMode === '2d' && (
+          <>
+            {scope && (
+              <Scatter
+                points={drawingPoints}
+                shownIndices={shownIndices}
+                setCenteredIndices={setCenteredIndices}
+                width={width}
+                height={height}
+                onView={handleView}
+                onSelect={onSelect}
+                onHover={onHover}
+                onCursor={vizConfig.showHeatMap ? handleScatterCursor : undefined}
+                onCursorClick={vizConfig.showHeatMap ? handleScatterCursorClick : undefined}
+                featureIsSelected={featureIsSelected}
+                maxZoom={maxZoom}
+                isSmallScreen={isSmallScreen}
+              />
+            )}
+            {/* Image scopes: representative-image atlas drawn over the scatter
+                (unpopulated cells are transparent, so points show through gaps).
+                pointer-events: none — hover/zoom still go to the ScatterGL canvas. */}
+            {imagesVisible && (
+              <AtlasOverlay
+                userId={userId}
+                datasetId={datasetId}
+                atlasPath={scopeImages.atlas?.[imageColumn]?.path}
+                xDomain={xDomain}
+                yDomain={yDomain}
+                width={width}
+                height={height}
+                transform={transform}
+                manifest={atlasManifest}
+              />
+            )}
+            {/* Points drawn back on top of the images once zoomed past the finest
+                pyramid level, so individual rows can be pinpointed. */}
+            {pointsOverlayVisible && (
+              <PointsOverlay
+                scopeRows={scopeRows}
+                xDomain={xDomain}
+                yDomain={yDomain}
+                width={width}
+                height={height}
+                enabled={pointsOverlayVisible}
+                opacity={vizConfig.pointOpacity}
+                pointSize={vizConfig.pointSize}
+              />
+            )}
+            {/* show all the hulls */}
+            {vizConfig.showClusterOutlines && hulls.length && (
           <HullPlot
             hulls={hulls}
             // stroke="#E7C7AA"
@@ -453,32 +613,51 @@ function VisualizationPane({
           width={width}
           height={height}
         />
-        {vizConfig.showHeatMap && tiles?.length > 1 && (
-          <TilePlot
-            tiles={tiles}
-            tileMeta={tileMeta}
-            xDomain={xDomain}
-            yDomain={yDomain}
-            width={width}
-            height={height}
-            fill="gray"
-            // stroke="black"
-          />
-        )}
-        <PointLabel
-          selectedPoints={selectedPoints}
-          hovered={hovered}
-          xDomain={xDomain}
-          yDomain={yDomain}
-          width={width}
-          height={height}
-          k={transform.k}
-          maxZoom={maxZoom}
-        />
-        {isSmallScreen && (
-          <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
+            {vizConfig.showHeatMap && tiles?.length > 1 && (
+              <TilePlot
+                tiles={tiles}
+                tileMeta={tileMeta}
+                xDomain={xDomain}
+                yDomain={yDomain}
+                width={width}
+                height={height}
+                fill="gray"
+                // stroke="black"
+              />
+            )}
+            <PointLabel
+              selectedPoints={selectedPoints}
+              hovered={hovered}
+              xDomain={xDomain}
+              yDomain={yDomain}
+              width={width}
+              height={height}
+              k={transform.k}
+              maxZoom={maxZoom}
+            />
+            {isSmallScreen && (
+              <CrossHair xDomain={xDomain} yDomain={yDomain} width={width} height={height} />
+            )}
+          </>
         )}
       </div>
+
+      {/* Cell-detail drawer: opens from a voxel click (3D) or heatmap tile click (2D) */}
+      <CellDetail selectedCell={selectedCell} onClose={() => setSelectedCell(null)} />
+
+      {/* Members-in-cell tooltip for the 2D heatmap tiles */}
+      {viewMode === '2d' && vizConfig.showHeatMap && heatmapTooltip && heatmapActive && (
+        <MembersTooltip
+          x={heatmapTooltip.x}
+          y={heatmapTooltip.y}
+          summary={heatmapActive.summary}
+          snippets={heatmapSnippets}
+          loading={heatmapLoading}
+          isImageScope={isImageScope}
+          thumbUrl={thumbUrl}
+          indices={heatmapSnippetIndices}
+        />
+      )}
 
       {/* Hover information display */}
       {hovered && (

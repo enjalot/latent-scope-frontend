@@ -1,0 +1,288 @@
+// Cell-detail drawer — lists every datapoint in a clicked voxel / heatmap tile.
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  max-width: 85%;
+  display: flex;
+  flex-direction: column;
+  background: #fbfaf8;
+  border-left: 1px solid #d9d4cd;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 30;
+  transform: translateX(105%);
+  visibility: hidden;
+  transition:
+    transform 0.28s ease-in-out,
+    visibility 0.28s;
+
+  &.open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e6e1da;
+  flex-shrink: 0;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2a2320;
+}
+
+.titleCount {
+  font-variant-numeric: tabular-nums;
+}
+
+.cluster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b6259;
+  overflow-wrap: anywhere;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.closeButton {
+  flex-shrink: 0;
+  appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b6259;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+  &:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.entry {
+  padding: 8px 16px;
+  border-bottom: 1px solid #efeae3;
+}
+
+.entryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.entryToggle {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+}
+
+.caret {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: #8a8177;
+  transition: transform 0.15s ease-out;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.caretOpen {
+  transform: rotate(90deg);
+}
+
+.entryIndex {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: #2a2320;
+  flex-shrink: 0;
+}
+
+.entryCluster {
+  font-size: 11px;
+  color: #8a8177;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.openLink {
+  appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  color: #b87333;
+  flex-shrink: 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Image scopes: thumbnail + text laid out side by side.
+.entryBody {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.entryThumb {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  margin-top: 4px;
+}
+
+.entryText {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #3a332d;
+  overflow-wrap: anywhere;
+  flex: 1;
+  min-width: 0;
+
+  &.expanded {
+    white-space: pre-wrap;
+    max-width: 60ch;
+  }
+}
+
+.muted {
+  color: #8a8177;
+  font-style: italic;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-top: 1px solid #e6e1da;
+  flex-shrink: 0;
+}
+
+.pagerBtn {
+  appearance: none;
+  background: none;
+  border: 1px solid #c7bfb5;
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #3a332d;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  &:not(:disabled):hover {
+    background: rgba(184, 115, 51, 0.1);
+  }
+}
+
+.pagerLabel {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #6b6259;
+}
+
+@media (max-width: 640px) {
+  .drawer {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .drawer {
+    background: #1e1e1e;
+    border-left-color: #3a3a3a;
+  }
+  .header {
+    border-bottom-color: #3a3a3a;
+  }
+  .title,
+  .entryIndex {
+    color: #e6ddd4;
+  }
+  .cluster,
+  .pagerLabel {
+    color: #a89f95;
+  }
+  .entry {
+    border-bottom-color: #2c2c2c;
+  }
+  .entryText {
+    color: #cdc5bc;
+  }
+  .closeButton {
+    color: #a89f95;
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+  .pager {
+    border-top-color: #3a3a3a;
+  }
+  .pagerBtn {
+    border-color: #4a4a4a;
+    color: #cdc5bc;
+  }
+}

@@ -26,6 +26,58 @@
   left: 12px;
 }
 
+// Segmented [2D · 3D · Voxels] control, top-centre of the viz pane.
+.viewToggle {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1002;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #d9d4cd;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(4px);
+
+  button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: #6b6259;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(184, 115, 51, 0.1);
+    }
+  }
+}
+
+.viewToggleActive {
+  background: #b87333 !important;
+  color: #fff !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .viewToggle {
+    background: rgba(26, 26, 26, 0.9);
+    border-color: #3a3a3a;
+
+    button {
+      color: #a89f95;
+    }
+  }
+  .viewToggleActive {
+    color: #1a1208 !important;
+  }
+}
+
 @media screen and (max-width: 1024px) {
   .configToggleContainer {
     display: none;

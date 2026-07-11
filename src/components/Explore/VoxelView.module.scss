@@ -1,0 +1,94 @@
+// Floating HUD for the voxel view (slice + resolution controls).
+.hud {
+  position: absolute;
+  left: 12px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #d9d4cd;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(4px);
+  font-size: 12px;
+  color: #2a2320;
+}
+
+.hudBottom {
+  bottom: 12px;
+}
+.hudTop {
+  top: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rowLabel {
+  width: 34px;
+  color: #6b6259;
+  font-weight: 600;
+}
+
+.slider {
+  width: 130px;
+}
+
+.chipBtn {
+  appearance: none;
+  border: 1px solid #c7bfb5;
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+
+  &:hover {
+    background: rgba(184, 115, 51, 0.1);
+  }
+}
+
+.chipSelected {
+  background: #b87333;
+  border-color: #b87333;
+  color: #fff;
+}
+
+.cellCount {
+  margin-left: auto;
+  color: #6b6259;
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  color: #8a8177;
+  font-size: 11px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hud {
+    background: rgba(26, 26, 26, 0.85);
+    border-color: #3a3a3a;
+    color: #e6ddd4;
+  }
+  .rowLabel,
+  .cellCount {
+    color: #a89f95;
+  }
+  .chipBtn {
+    border-color: #4a4a4a;
+  }
+  .chipSelected {
+    color: #1a1208;
+  }
+  .hint {
+    color: #8a8177;
+  }
+}

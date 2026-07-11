@@ -19,20 +19,20 @@ tiles : [
 ]
 */
 
-const TilePlot = ({ 
-  tiles, 
+const TilePlot = ({
+  tiles,
   tileMeta,
   fill,
   stroke,
   size,
   symbol,
-  xDomain, 
-  yDomain, 
-  width, 
-  height
+  xDomain,
+  yDomain,
+  width,
+  height,
 }) => {
   const container = useRef();
-  
+
   useEffect(() => {
     if(xDomain && yDomain) {
       const xScale = scaleLinear()
@@ -65,8 +65,6 @@ const TilePlot = ({
       let colorScale = scaleSequential(interpolateOranges)
         .domain(countExtent)
 
-      console.log("tiles", tiles)
-
       tiles.map((tile, i) => {
         if(!tile) return;
         let tx = xScale(tile.tile_index % tileMeta.cols * tileMeta.size - tileMeta.cols * tileMeta.size / 2)
@@ -83,17 +81,24 @@ const TilePlot = ({
         if(stroke){
           ctx.strokeRect(tx, ty, rw, rw);
         }
-        
+
       })
     }
 
   }, [tiles, tileMeta, fill, stroke, size, xDomain, yDomain, width, height])
 
-  return <canvas 
-    className={styles["tile-plot"]}
-    ref={container} 
-    width={width} 
-    height={height} />;
+  // Purely presentational: pointer-events: none (see TilePlot.module.scss) so
+  // hover/zoom/click pass through to the ScatterGL canvas underneath. Tile
+  // hover/click are derived from the scatter's cursor pipeline in
+  // VisualizationPane, not from this overlay.
+  return (
+    <canvas
+      className={styles['tile-plot']}
+      ref={container}
+      width={width}
+      height={height}
+    />
+  );
 };
 
 export default TilePlot;

@@ -52,7 +52,10 @@ function Home() {
               <div className={styles.scopeImage}>
                 <Link to={`/scope/${scope.id}`}>
                   <img
-                    src={`https://storage.googleapis.com/fun-data/latent-scope/demos/${scope.id}.png`}
+                    src={
+                      scope.image ||
+                      `https://storage.googleapis.com/fun-data/latent-scope/demos/${scope.id}.png`
+                    }
                     alt="Explore"
                   />
                 </Link>
