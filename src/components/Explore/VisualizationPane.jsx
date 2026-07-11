@@ -85,7 +85,20 @@ function VisualizationPane({
   // available when the scope's projection is 3-dimensional (dimensions === 3).
   // ====================================================================================================
   const is3D = scope?.dimensions === 3;
-  const [viewMode, setViewMode] = useState('2d');
+  // Default to the 3D scatter for 3D scopes (lazy init covers the case where the
+  // scope is already cached on first render); the effect below covers the async
+  // load. An explicit toggle (userChoseView) always wins over the default.
+  const [viewMode, setViewMode] = useState(() => (scope?.dimensions === 3 ? '3d' : '2d'));
+  const userChoseViewRef = useRef(false);
+  const chooseViewMode = useCallback((mode) => {
+    userChoseViewRef.current = true;
+    setViewMode(mode);
+  }, []);
+  useEffect(() => {
+    if (userChoseViewRef.current) return; // respect an explicit user choice
+    setViewMode(is3D ? '3d' : '2d');
+  }, [is3D]);
+  // Safety clamp: a non-3D scope can only show the 2D view.
   useEffect(() => {
     if (!is3D && viewMode !== '2d') setViewMode('2d');
   }, [is3D, viewMode]);
@@ -427,21 +440,21 @@ function VisualizationPane({
           <button
             type="button"
             className={viewMode === '2d' ? styles.viewToggleActive : ''}
-            onClick={() => setViewMode('2d')}
+            onClick={() => chooseViewMode('2d')}
           >
             2D
           </button>
           <button
             type="button"
             className={viewMode === '3d' ? styles.viewToggleActive : ''}
-            onClick={() => setViewMode('3d')}
+            onClick={() => chooseViewMode('3d')}
           >
             3D
           </button>
           <button
             type="button"
             className={viewMode === 'voxels' ? styles.viewToggleActive : ''}
-            onClick={() => setViewMode('voxels')}
+            onClick={() => chooseViewMode('voxels')}
           >
             Voxels
           </button>
