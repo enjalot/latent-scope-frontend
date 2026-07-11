@@ -49,6 +49,21 @@ export const apiService = {
       return text;
     });
   },
+  // Fetch text snippets for a list of row indices. Uses the fixed-1000-byte
+  // hover .bin (a ranged fetch per index — exactly what the .bin is for), and
+  // falls back to the rows-by-index modal endpoint if a range fetch fails.
+  getSnippets: async (userId, datasetId, scopeId, indices) => {
+    try {
+      return await Promise.all(
+        indices.map((i) =>
+          apiService.getHoverText(userId, datasetId, scopeId, i).then((t) => t.replace(/\s+$/, ''))
+        )
+      );
+    } catch (e) {
+      const rows = await apiService.getRowsByIndices(userId, datasetId, scopeId, indices);
+      return rows.map((r) => r?.text ?? '');
+    }
+  },
   getScopeRows: async (userId, datasetId, scopeId) => {
     const url = `${STATIC_BASE}${userId}/${datasetId}/${scopeId}.parquet`;
     const buffer = await asyncBufferFromUrl(url);
@@ -64,6 +79,13 @@ export const apiService = {
             row.tile_index_32 = parseInt(row.tile_index_32);
             row.tile_index_64 = parseInt(row.tile_index_64);
             row.tile_index_128 = parseInt(row.tile_index_128);
+            // 3D scopes carry a z coordinate + voxel bucket indices (int64 in
+            // parquet -> may arrive as BigInt from hyparquet). Coerce to Number.
+            if (row.z !== undefined && row.z !== null) row.z = Number(row.z);
+            if (row.voxel_index_32 !== undefined && row.voxel_index_32 !== null)
+              row.voxel_index_32 = Number(row.voxel_index_32);
+            if (row.voxel_index_64 !== undefined && row.voxel_index_64 !== null)
+              row.voxel_index_64 = Number(row.voxel_index_64);
           });
           resolve(data);
         },
