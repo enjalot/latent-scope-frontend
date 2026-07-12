@@ -276,7 +276,7 @@ export function FilterProvider({ children }) {
       // on parent_index (the .bin covers the parent rows, not the tokens).
       const tokenRows = async (indices) => {
         const textColumn = scope?.embedding?.text_column || scope?.dataset?.text_column;
-        return Promise.all(
+        const rows = await Promise.all(
           indices.map(async (index) => {
             const row = { index, ...scopeRows[index] };
             if (textColumn && row.parent_index !== undefined) {
@@ -296,6 +296,34 @@ export function FilterProvider({ children }) {
             return row;
           })
         );
+        // When the token scope declares an SAE, hydrate the visible rows with
+        // their per-token top-k features from the LanceDB-backed rows-by-index
+        // endpoint (returns {index, sae_indices, sae_acts} for token scopes) so
+        // the ls_features plot column + feature modal have data. Merge by index;
+        // a failure just leaves the plots empty rather than wedging the table.
+        if (scope?.sae_id) {
+          try {
+            const saeRows = await apiService.getRowsByIndices(
+              userId,
+              datasetId,
+              scope.id,
+              indices
+            );
+            if (Array.isArray(saeRows)) {
+              const byIndex = new Map(saeRows.map((r) => [r.index, r]));
+              rows.forEach((row) => {
+                const sr = byIndex.get(row.index);
+                if (sr) {
+                  row.sae_indices = sr.sae_indices;
+                  row.sae_acts = sr.sae_acts;
+                }
+              });
+            }
+          } catch (e) {
+            console.error('token sae rows-by-index failed', e);
+          }
+        }
+        return rows;
       };
 
       const fetchRows = isTokenScope

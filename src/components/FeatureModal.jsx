@@ -2,7 +2,7 @@ import { Modal, Button } from 'react-element-forge';
 import { useCallback, useMemo } from 'react';
 import styles from './FeatureModal.module.scss';
 import { useScope } from '../contexts/ScopeContext';
-import { getSaeForModel } from '../lib/SAE';
+import { getLabelSourceForScope } from '../lib/SAE';
 
 function FeatureModal({
   isOpen,
@@ -20,7 +20,7 @@ function FeatureModal({
   // Deep-link features to the latent-taxonomy page for THIS scope's SAE model
   // (falls back to the nomic model for pre-SAE.js-registry scopes).
   const { scope } = useScope();
-  const taxonomyModel = getSaeForModel(scope?.embedding?.model_id)?.label || 'NOMIC_FWEDU_25k';
+  const taxonomyModel = getLabelSourceForScope(scope)?.label || 'NOMIC_FWEDU_25k';
   const baseUrl = `https://enjalot.github.io/latent-taxonomy#model=${taxonomyModel}&feature=`;
 
   // The SAE h5 stores top-k indices/acts in arbitrary order (torch topk with
