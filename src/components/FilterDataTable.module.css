@@ -280,3 +280,57 @@
   overflow: hidden;
 
 }
+/* Token scopes: compact cell showing the token's cleaned surface string */
+.tokenCell {
+  font-family: monospace;
+  font-weight: 600;
+}
+
+/* Token scopes: the token's span highlighted inside its document snippet
+   (copper accent to match the brand tooltips/hulls) */
+.tokenHighlight {
+  background-color: rgba(211, 150, 94, 0.35);
+  box-shadow: inset 0 -2px 0 #c77c37;
+  border-radius: 2px;
+  color: inherit;
+  font-weight: 600;
+  padding: 0 1px;
+}
+
+/* Token scopes: note for tokens with no surface form (CLS/SEP/markers) */
+.tokenSpecialNote {
+  color: var(--text-color-text-subtle, #999);
+  font-style: italic;
+}
+
+/* Token scopes: keep the highlighted token visible at any cell width —
+   context clips from the left before the token and from the right after it */
+.tokenSnippetCell {
+  display: flex;
+  align-items: baseline;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: pre;
+}
+
+.tokenSnippetBefore {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+  /* dir="rtl" on the element puts the ellipsis at the visual left; the inner
+     <bdi dir="ltr"> keeps the text itself rendering left-to-right */
+}
+
+.tokenSnippetCell .tokenHighlight {
+  flex: 0 0 auto;
+}
+
+.tokenSnippetAfter {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+}

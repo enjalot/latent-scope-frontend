@@ -116,8 +116,13 @@ export function useCellMembers({
 
       // Sampled member ls_indices are known synchronously (used both for the
       // snippet fetch below and for image thumbnails, which need no fetch).
+      // Token scopes: the .bin covers the PARENT documents, so snippets are
+      // fetched by parent_index (only present on token-scope rows).
       const idxs = membership.get(key) || [];
-      const sample = sampleEven(idxs, maxSnippets).map((i) => scopeRows[i].ls_index);
+      const sample = sampleEven(idxs, maxSnippets).map((i) => {
+        const row = scopeRows[i];
+        return row.parent_index ?? row.ls_index;
+      });
       setSnippetIndices(sample);
 
       // Warm cache hit -> render instantly, no fetch.

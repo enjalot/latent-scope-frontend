@@ -71,6 +71,7 @@ function VisualizationPane({
     scopeImages,
     imageColumn,
     isImageScope,
+    isTokenScope,
     thumbUrl,
     atlasManifest,
   } = useScope();
@@ -189,10 +190,14 @@ function VisualizationPane({
     return lookup;
   }, [featureIsSelected, dataTableRows, featureFilter.feature, features]);
 
+  // Set membership for the shown page — an Array.includes per point would be
+  // O(N·page) over the whole map (token scopes have ~1.8M points).
+  const shownIndicesSet = useMemo(() => new Set(shownIndices || []), [shownIndices]);
+
   const drawingPoints = useMemo(() => {
     return scopeRows.map((p, i) => {
       if (featureIsSelected) {
-        if (shownIndices?.includes(i)) {
+        if (shownIndicesSet.has(i)) {
           const activation = featureActivationMap.get(p.ls_index);
           return activation !== undefined
             ? [p.x, p.y, mapSelectionKey.selected, activation]
@@ -205,15 +210,15 @@ function VisualizationPane({
         return [-10, -10, mapSelectionKey.hidden, 0.0];
         //   } else if (hoveredIndex === i) {
         //     return [p.x, p.y, mapSelectionKey.hovered, 0.0];
-      } else if (shownIndices?.includes(i)) {
+      } else if (shownIndicesSet.has(i)) {
         return [p.x, p.y, mapSelectionKey.selected, 0.0];
-      } else if (shownIndices?.length) {
+      } else if (shownIndicesSet.size) {
         return [p.x, p.y, mapSelectionKey.notSelected, 0.0];
       } else {
         return [p.x, p.y, mapSelectionKey.normal, 0.0];
       }
     });
-  }, [scopeRows, shownIndices, featureActivationMap, featureIsSelected]);
+  }, [scopeRows, shownIndicesSet, featureActivationMap, featureIsSelected]);
 
   const points = useMemo(() => {
     return scopeRows
@@ -391,8 +396,10 @@ function VisualizationPane({
     if (!shownIndices || !scopeRows) return [];
     return shownIndices
       .map((ls_index, i) => {
-        // Find the point in scopeRows with matching ls_index
-        const point = scopeRows.find((p) => p.ls_index === ls_index);
+        // ls_index === row position in the scope parquet (the loader enforces
+        // it), so index directly instead of an O(N) find per shown row —
+        // token scopes have ~1.8M rows.
+        const point = scopeRows[ls_index];
         return point ? { ...point, index: i } : null;
       })
       .filter((point) => point !== null);
@@ -690,6 +697,22 @@ function VisualizationPane({
           }}
         >
           <div className="tooltip-content">
+            {/* Token scopes: the hovered point is a token — show its cleaned
+                surface string prominently (renders instantly from scopeRows) */}
+            {isTokenScope && hovered.token !== undefined && hovered.token !== null && (
+              <span
+                style={{
+                  display: 'inline-block',
+                  fontFamily: 'monospace',
+                  fontWeight: 700,
+                  fontSize: '1.2em',
+                  marginBottom: 4,
+                }}
+              >
+                {hovered.token}
+              </span>
+            )}
+            {isTokenScope && <br></br>}
             {hoveredCluster && (
               <span>
                 <span className="key">Cluster {hoveredCluster.cluster}: </span>
@@ -711,7 +734,29 @@ function VisualizationPane({
                 />
               </div>
             )}
-            <p className="tooltip-text">{hovered.text}</p>
+            {hovered.tokenSnippet ? (
+              /* Token scopes: the parent joke with the token's span highlighted */
+              <p className="tooltip-text">
+                {hovered.tokenSnippet.truncatedStart ? '…' : ''}
+                {hovered.tokenSnippet.before}
+                <mark
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    boxShadow: 'inset 0 -2px 0 #7a4a1f',
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    color: 'inherit',
+                    padding: '0 1px',
+                  }}
+                >
+                  {hovered.tokenSnippet.match}
+                </mark>
+                {hovered.tokenSnippet.after}
+                {hovered.tokenSnippet.truncatedEnd ? '…' : ''}
+              </p>
+            ) : (
+              <p className="tooltip-text">{hovered.text}</p>
+            )}
           </div>
         </Tooltip>
       )}

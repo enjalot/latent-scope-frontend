@@ -15,6 +15,7 @@ import { useFilter } from '../contexts/FilterContext';
 import useDebounce from '../hooks/useDebounce';
 
 import { filterConstants } from '../components/Explore/Search/utils';
+import { tokenSnippet, cleanTokenString } from '../lib/tokenSnippet';
 
 const styles = {
   dragHandle: {
@@ -48,6 +49,7 @@ function DesktopExplore() {
     clusterLabels,
     features,
     sae,
+    isTokenScope,
   } = useScope();
 
   // Get filter-related state from FilterContext
@@ -91,12 +93,55 @@ function DesktopExplore() {
 
   const debouncedHydrateHoverText = useDebounce(hydrateHoverText, 5);
 
+  // Token scopes: hydrate the hovered token's passage context — the parent
+  // joke's text (ranged .bin read on parent_index; the .bin covers the parent
+  // rows, not the tokens) windowed around the token's char span.
+  const hydrateTokenHover = useCallback(
+    (index, setter) => {
+      latestHoverIndexRef.current = index;
+      const row = scopeRows[index];
+      if (!row || row.parent_index === undefined) return;
+      apiService.getHoverText(userId, datasetId, scope?.id, row.parent_index).then((data) => {
+        if (latestHoverIndexRef.current !== index) return;
+        const text = data?.replace(/\s+$/, '');
+        setter({
+          text,
+          snippet: tokenSnippet(text, row.char_start, row.char_end, 120),
+        });
+      });
+    },
+    [userId, datasetId, scope, scopeRows]
+  );
+
+  const debouncedHydrateTokenHover = useDebounce(hydrateTokenHover, 5);
+
   useEffect(() => {
     if (
       hoveredIndex !== null &&
       hoveredIndex !== undefined &&
       !deletedIndices.includes(hoveredIndex)
     ) {
+      if (isTokenScope) {
+        // The token string + cluster render instantly from scopeRows
+        // (scopeRows[i].ls_index === i); the passage context hydrates behind.
+        const token = cleanTokenString(scopeRows[hoveredIndex]?.token_str);
+        setHovered({
+          text: null,
+          token,
+          index: hoveredIndex,
+          cluster: clusterMap[hoveredIndex],
+        });
+        debouncedHydrateTokenHover(hoveredIndex, ({ text, snippet }) => {
+          setHovered({
+            text,
+            tokenSnippet: snippet,
+            token,
+            index: hoveredIndex,
+            cluster: clusterMap[hoveredIndex],
+          });
+        });
+        return;
+      }
       debouncedHydrateHoverText(hoveredIndex, (text) => {
         setHovered({
           text: text,
@@ -108,7 +153,15 @@ function DesktopExplore() {
       setHovered(null);
       latestHoverIndexRef.current = null; // Reset the ref when hover is cleared
     }
-  }, [hoveredIndex, deletedIndices, clusterMap, debouncedHydrateHoverText]);
+  }, [
+    hoveredIndex,
+    deletedIndices,
+    clusterMap,
+    debouncedHydrateHoverText,
+    debouncedHydrateTokenHover,
+    isTokenScope,
+    scopeRows,
+  ]);
 
   // Update hover annotations
   useEffect(() => {

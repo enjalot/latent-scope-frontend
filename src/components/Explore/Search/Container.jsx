@@ -21,7 +21,7 @@ const Container = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [urlParams, setUrlParams] = useSearchParams();
 
-  const { clusterLabels, scopeLoaded } = useScope();
+  const { clusterLabels, scopeLoaded, isTokenScope } = useScope();
   const {
     searchFilter,
     featureFilter,
@@ -139,7 +139,10 @@ const Container = () => {
             value={filterQuery}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && filterQuery) {
+              // Token scopes: NN search is unavailable (no vector table
+              // behind the nn endpoint) — Enter just leaves the dropdown of
+              // cluster matches open instead of firing a search.
+              if (e.key === 'Enter' && filterQuery && !isTokenScope) {
                 handleSelect({
                   type: filterConstants.SEARCH,
                   value: filterQuery,
@@ -147,7 +150,7 @@ const Container = () => {
                 });
               }
             }}
-            placeholder="Search dataset for..."
+            placeholder={isTokenScope ? 'Filter clusters for...' : 'Search dataset for...'}
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
           />
