@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Tooltip } from 'react-tooltip';
 import { useFilter } from '../contexts/FilterContext';
 import { useScope } from '../contexts/ScopeContext';
+import { tokenSnippet, cleanTokenString, DEFAULT_SNIPPET_WINDOW } from '../lib/tokenSnippet';
 // import DataTable from './DataTable';
 import 'react-data-grid/lib/styles.css';
 
@@ -21,6 +22,40 @@ FilterDataTable.propTypes = {
   onHover: PropTypes.func,
   onClick: PropTypes.func,
 };
+
+// Token-scope text cell: window the parent document's text around the token's
+// character span and highlight the token in place (built from substring
+// slices — no innerHTML). Tokens without a surface form (CLS/SEP/markers,
+// char_start === -1) fall back to the plain truncated text plus a muted note.
+function TokenSnippetCell({ row, column }) {
+  const text = row[column];
+  const snippet = tokenSnippet(text, row.char_start, row.char_end, DEFAULT_SNIPPET_WINDOW);
+  if (!snippet) {
+    const plain = typeof text === 'string' ? text : '';
+    return (
+      <span title={plain}>
+        <span className={styles.tokenSpecialNote}>{row.token_str} (special token) </span>
+        {plain.length > 2 * DEFAULT_SNIPPET_WINDOW
+          ? `${plain.slice(0, 2 * DEFAULT_SNIPPET_WINDOW)}…`
+          : plain}
+      </span>
+    );
+  }
+  // Three-segment flex so the highlighted token stays visible regardless of
+  // cell width: the before-context clips from the LEFT (dir="rtl" on the
+  // clipping span puts the ellipsis on the left; the inner <bdi dir="ltr">
+  // isolates the text so its rendering order is unaffected), the
+  // after-context clips from the right, and the token itself never shrinks.
+  return (
+    <span className={styles.tokenSnippetCell} title={text}>
+      <span className={styles.tokenSnippetBefore} dir="rtl">
+        <bdi dir="ltr">{snippet.before}</bdi>
+      </span>
+      <span className={styles.tokenHighlight}>{snippet.match}</span>
+      <span className={styles.tokenSnippetAfter}>{snippet.after}</span>
+    </span>
+  );
+}
 
 function RowWithHover({ props, onHover }) {
   const { row } = props;
@@ -54,7 +89,9 @@ function FilterDataTable({
 
   // Image scopes: binary image columns are excluded from rows-by-index
   // responses, so their cells are rendered from the static per-row thumbnails.
-  const { isImageScope, scopeImages, thumbUrl } = useScope();
+  // Token scopes: rows are tokens; the text column shows the parent document
+  // with the token's span highlighted, plus a compact token column.
+  const { isImageScope, scopeImages, thumbUrl, isTokenScope, scope } = useScope();
 
   // Track expanded rows by index
   const [expandedRows, setExpandedRows] = useState({});
@@ -81,10 +118,14 @@ function FilterDataTable({
     };
 
     const ls_features_column = 'ls_features';
+    const ls_token_column = 'ls_token';
+    // Token scopes window the text column the embedding was computed over.
+    const textColumn = (isTokenScope && scope?.embedding?.text_column) || dataset.text_column;
     let columns = ['ls_index'];
+    if (isTokenScope) columns.push(ls_token_column);
     // Text column is always the first column (after index)
 
-    columns.push(dataset.text_column);
+    columns.push(textColumn);
 
     // Image scopes: surface the image column(s) right after the text column
     // so the thumbnails are visible without horizontal scrolling.
@@ -97,9 +138,13 @@ function FilterDataTable({
     if (clusterMap && Object.keys(clusterMap).length) columns.push('ls_cluster');
     // if (tagset && Object.keys(tagset).length) columns.push('tags');
 
-    columns = columns.concat(
-      dataset.columns.filter((d) => d !== dataset.text_column && !columns.includes(d))
-    );
+    // Token-scope rows are synthesized from the scope parquet + .bin text, so
+    // the parent dataset's other columns (author, score, ...) aren't available.
+    if (!isTokenScope) {
+      columns = columns.concat(
+        dataset.columns.filter((d) => d !== textColumn && !columns.includes(d))
+      );
+    }
 
     function renderUrl(text) {
       const key = 'http';
@@ -172,6 +217,22 @@ function FilterDataTable({
         };
       }
 
+      if (col === ls_token_column) {
+        // Compact token column (frozen, so react-data-grid keeps it up front
+        // near the index column) showing the cleaned surface string.
+        return {
+          ...baseCol,
+          name: 'token',
+          width: 90,
+          frozen: true,
+          renderCell: ({ row }) => (
+            <span className={styles.tokenCell} title={row.token_str}>
+              {cleanTokenString(row.token_str)}
+            </span>
+          ),
+        };
+      }
+
       if (col === 'ls_cluster') {
         return {
           ...baseCol,
@@ -183,12 +244,15 @@ function FilterDataTable({
         };
       }
 
-      if (col === dataset.text_column) {
+      if (col === textColumn) {
         return {
           ...baseCol,
           width: 500,
-          renderHeaderCell: () => <div className={styles.textColumn}>{dataset.text_column}</div>,
+          renderHeaderCell: () => <div className={styles.textColumn}>{textColumn}</div>,
           renderCell: ({ row }) => {
+            if (isTokenScope) {
+              return <TokenSnippetCell row={row} column={col} />;
+            }
             const isExpanded = expandedRows[row.ls_index];
             return (
               <div
@@ -276,6 +340,8 @@ function FilterDataTable({
     handleRowExpand,
     scopeImages,
     thumbUrl,
+    isTokenScope,
+    scope,
   ]);
 
   // Row height calculation

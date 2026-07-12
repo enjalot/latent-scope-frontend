@@ -3,11 +3,10 @@ import { useParams } from 'react-router-dom';
 
 import { apiService, scopeAssetUrl } from '../lib/apiService';
 import {
-  maybeCachedGetSaeFeatures,
   maybeCachedGetDatasetFeatures,
   maybeCachedGetScopeRows,
 } from '../lib/cachedApiService';
-import { saeAvailable } from '../lib/SAE';
+import { getSaeForModel } from '../lib/SAE';
 
 const ScopeContext = createContext(null);
 
@@ -28,7 +27,11 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
 
   useEffect(() => {
     apiService.getScope(userId, datasetId, scopeId).then((scope) => {
-      if (saeAvailable[scope.embedding?.model_id]) {
+      // Token scopes (granularity: "tokens") have no LanceDB table behind the
+      // Modal API, so the SAE feature surface (per-row plots, feature
+      // filtering) can't work — disable it along with the other API filters.
+      const isTokens = scope.granularity === 'tokens';
+      if (!isTokens && getSaeForModel(scope.embedding?.model_id)) {
         setSae(scope.sae);
       } else {
         delete scope.sae;
@@ -88,20 +91,42 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
 
   useEffect(() => {
     if (scope?.sae_id) {
-      // apiService.getSaeFeatures(saeAvailable[scope.embedding?.model_id], (fts) => {
-      //   apiService.getDatasetFeatures(userId, datasetId, scope.sae_id).then((dsfts) => {
-      maybeCachedGetSaeFeatures(saeAvailable[scope.embedding?.model_id], (fts) => {
-        maybeCachedGetDatasetFeatures(userId, datasetId, scope.sae_id).then((dsfts) => {
-          dsfts.forEach((ft, i) => {
-            fts[i].dataset_max = ft.max_activation;
-            fts[i].dataset_avg = ft.avg_activation;
-            fts[i].dataset_count = ft.count;
-          });
-          setFeatures(fts);
-        });
+      const saeEntry = getSaeForModel(scope.embedding?.model_id);
+      if (!saeEntry) return;
+      // Join labels to the per-dataset stats BY FEATURE ID, not positionally:
+      // label parquets can omit dead features (e.g. MINILM_STAGEJ_49K has
+      // 45,059 labeled rows for 49,152 features), so row i is not feature i.
+      // Missing labels fall back to a generic "Feature N".
+      const labelsPromise = apiService.getFeatures(saeEntry.url).catch((err) => {
+        console.warn(
+          `SAE label parquet unavailable (${saeEntry.url}): ${err}; ` +
+            'falling back to generic feature labels'
+        );
+        return null;
+      });
+      Promise.all([
+        labelsPromise,
+        maybeCachedGetDatasetFeatures(userId, datasetId, scope.sae_id),
+      ]).then(([labeled, dsfts]) => {
+        const byFeature = new Map((labeled || []).map((f) => [f.feature, f]));
+        setFeatures(
+          dsfts.map((ft, i) => {
+            const featureId = ft.feature_id ?? i;
+            const lf = byFeature.get(featureId);
+            return {
+              feature: featureId,
+              label: lf?.label || `Feature ${featureId}`,
+              max_activation: lf?.max_activation ?? ft.max_activation,
+              order: lf?.order ?? featureId,
+              dataset_max: ft.max_activation,
+              dataset_avg: ft.avg_activation,
+              dataset_count: ft.count,
+            };
+          })
+        );
       });
     }
-  }, [scope]);
+  }, [scope, userId, datasetId]);
 
   const [clusterMap, setClusterMap] = useState({});
   const [clusterIndices, setClusterIndices] = useState([]);
@@ -112,9 +137,24 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
   const [deletedIndices, setDeletedIndices] = useState([]);
 
   const fetchScopeRows = useCallback(() => {
-    // apiService
-    //   .getScopeRows(userId, datasetId, scope.id)
-    maybeCachedGetScopeRows(userId, datasetId, scope.id)
+    // Token scopes have 100-300x the points of a row scope (1.77M for the
+    // dadabase token map); decode only the columns the Explore view reads.
+    const tokenColumns =
+      scope?.granularity === 'tokens'
+        ? [
+            'ls_index',
+            'x',
+            'y',
+            'cluster',
+            'tile_index_64',
+            'deleted',
+            'parent_index',
+            'token_str',
+            'char_start',
+            'char_end',
+          ]
+        : undefined;
+    maybeCachedGetScopeRows(userId, datasetId, scope.id, tokenColumns)
       .then((scopeRows) => {
         setScopeRows(scopeRows);
         let clusterMap = {};
@@ -160,6 +200,13 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
     if (scope) fetchScopeRows();
   }, [scope, fetchScopeRows]);
 
+  // Token scopes (granularity: "tokens") map one point per token of a
+  // late-interaction embedding instead of one per dataset row. Each scope row
+  // carries parent_index (the parent document's row in the .bin/dataset) and
+  // token_str/char_start/char_end (the token's surface form + span in the
+  // parent text).
+  const isTokenScope = scope?.granularity === 'tokens';
+
   const value = {
     userId,
     datasetId,
@@ -167,6 +214,7 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
     dataset,
     scope,
     sae,
+    isTokenScope,
     scopeLoaded,
     clusterMap,
     clusterLabels,

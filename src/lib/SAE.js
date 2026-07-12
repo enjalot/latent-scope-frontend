@@ -10,6 +10,31 @@ export const saeAvailable = {
     wikipedia_samples:
       'https://storage.googleapis.com/fun-data/latent-scope/sae/NOMIC_FWEDU_25k/wikipedia_samples/',
   },
-  // "🤗-sentence-transformers___all-MiniLM-L6-v2": {
-  // }
+  // Matryoshka SAE (nested 512/2048/8192/49152, k=64) over all-MiniLM-L6-v2.
+  // The label parquet is served by the latent-taxonomy site (GitHub Pages), so
+  // it must be fetched whole — GitHub Pages 416s ranged requests when the
+  // client accepts gzip. See apiService.getFeatures.
+  '🤗-sentence-transformers___all-MiniLM-L6-v2': {
+    label: 'MINILM_STAGEJ_49K',
+    embedding_model_id: '🤗-sentence-transformers___all-MiniLM-L6-v2',
+    model_id: 'enjalot/sae-all-MiniLM-L6-v2-stagej-49K',
+    k_expansion: '64_128',
+    url: 'https://enjalot.github.io/latent-taxonomy/models/MINILM_STAGEJ_49K/features.parquet?cachebust=1',
+  },
 };
+
+// Strip the provider prefix from an embedding model id so lookups are
+// prefix-agnostic: the canonical "huggingface-" and the legacy "🤗-" /
+// "transformers-" ids all resolve to the same HF model name.
+const stripHFPrefix = (id) => (id || '').replace(/^(huggingface-|🤗-|transformers-)/, '');
+
+// Look up the pretrained SAE for an embedding model id, tolerant of which HF
+// prefix the id carries (the SAE map is keyed by the legacy emoji id).
+export function getSaeForModel(modelId) {
+  const norm = stripHFPrefix(modelId);
+  if (!norm) return null;
+  for (const [key, sae] of Object.entries(saeAvailable)) {
+    if (stripHFPrefix(key) === norm) return sae;
+  }
+  return null;
+}

@@ -83,7 +83,12 @@ function CellDetail({ selectedCell, onClose, onOpenPoint }) {
       return;
     }
     const seq = ++reqSeq.current;
-    const lsIndices = pageMembers.map((i) => scopeRows[i].ls_index);
+    // Token scopes: the .bin covers the PARENT documents, so text is fetched
+    // by parent_index (only present on token-scope rows).
+    const lsIndices = pageMembers.map((i) => {
+      const row = scopeRows[i];
+      return row.parent_index ?? row.ls_index;
+    });
     apiService
       .getSnippets(userId, datasetId, scope.id, lsIndices)
       .then((texts) => {

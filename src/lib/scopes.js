@@ -12,8 +12,20 @@ const scopes = [
     dataUrl: 'https://huggingface.co/datasets/Marqo/marqo-ge-sample',
   },
   {
-    id: 'enjalot/ls-dadabase/scopes-001',
+    id: 'enjalot/ls-dadabase/scopes-004',
     label: 'Dadabase',
+    description: '52,751 dad jokes embedded with MiniLM and decomposed into 49K sparse autoencoder features.',
+    dataUrl: 'https://github.com/enjalot/latent-scope/blob/main/notebooks/dadabase.ipynb',
+  },
+  {
+    id: 'enjalot/ls-dadabase/scopes-003',
+    label: 'Dadabase Tokens',
+    description: 'Every ColBERT token of the dad jokes mapped as its own point.',
+    dataUrl: 'https://github.com/enjalot/latent-scope/blob/main/notebooks/dadabase.ipynb',
+  },
+  {
+    id: 'enjalot/ls-dadabase/scopes-001',
+    label: 'Dadabase (Nomic)',
     description: '50,000 r/dadjokes, lightly curated',
     dataUrl: 'https://github.com/enjalot/latent-scope/blob/main/notebooks/dadabase.ipynb',
   },

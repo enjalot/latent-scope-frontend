@@ -38,6 +38,7 @@ export function FilterProvider({ children }) {
     scope,
     scopeLoaded,
     clusterLabels,
+    isTokenScope,
   } = useScope();
 
   // Base set of non-deleted indices from the dataset.
@@ -143,6 +144,10 @@ export function FilterProvider({ children }) {
               break;
             }
             case filterConstants.SEARCH: {
+              // Token scopes: no LanceDB table backs the nn endpoint, and NN
+              // results would be document indices, not token points. The UI
+              // hides the option; this guards url-driven searches.
+              if (isTokenScope) break;
               const { filter } = searchFilter;
               indices = await filter(value);
               break;
@@ -157,6 +162,9 @@ export function FilterProvider({ children }) {
               break;
             }
             case filterConstants.COLUMN: {
+              // Token scopes: the column-filter endpoint 500s (no LanceDB
+              // table) and its indices would be document rows anyway.
+              if (isTokenScope) break;
               const { filter } = columnFilter;
               const { column } = filterConfig;
               indices = await filter(column, value);
@@ -193,6 +201,7 @@ export function FilterProvider({ children }) {
     scope,
     scopeLoaded,
     centeredIndices,
+    isTokenScope,
   ]);
 
   // === Fetch Data Table Rows Logic
@@ -261,13 +270,47 @@ export function FilterProvider({ children }) {
         );
       };
 
-      apiService
-        .getRowsByIndices(userId, datasetId, scope.id, nonDeletedIndices)
-        .then((rows) => (Array.isArray(rows) ? rows : Promise.reject(new Error('bad response'))))
-        .catch((error) => {
-          console.error('rows-by-index failed, falling back to static row data', error);
-          return fallbackRows(nonDeletedIndices);
-        })
+      // Token scopes: no LanceDB table backs rows-by-index, so never call it.
+      // Rows come from the already-loaded scope parquet (token_str + char
+      // span) hydrated with the PARENT document's text via ranged .bin reads
+      // on parent_index (the .bin covers the parent rows, not the tokens).
+      const tokenRows = async (indices) => {
+        const textColumn = scope?.embedding?.text_column || scope?.dataset?.text_column;
+        return Promise.all(
+          indices.map(async (index) => {
+            const row = { index, ...scopeRows[index] };
+            if (textColumn && row.parent_index !== undefined) {
+              try {
+                const text = await apiService.getHoverText(
+                  userId,
+                  datasetId,
+                  scope.id,
+                  row.parent_index
+                );
+                // trailing padding only — char_start/char_end stay valid
+                row[textColumn] = text?.replace(/\s+$/, '');
+              } catch (e) {
+                // leave the text cell empty
+              }
+            }
+            return row;
+          })
+        );
+      };
+
+      const fetchRows = isTokenScope
+        ? tokenRows(nonDeletedIndices)
+        : apiService
+            .getRowsByIndices(userId, datasetId, scope.id, nonDeletedIndices)
+            .then((rows) =>
+              Array.isArray(rows) ? rows : Promise.reject(new Error('bad response'))
+            )
+            .catch((error) => {
+              console.error('rows-by-index failed, falling back to static row data', error);
+              return fallbackRows(nonDeletedIndices);
+            });
+
+      fetchRows
         .then((rows) => {
           // Only update state if this is the latest request.
           if (lastRequestRef.current !== requestTimestamp) {
@@ -292,7 +335,7 @@ export function FilterProvider({ children }) {
     } else {
       setDataTableRows([]);
     }
-  }, [shownIndices, deletedIndices, userId, datasetId, scope]);
+  }, [shownIndices, deletedIndices, userId, datasetId, scope, isTokenScope, scopeRows]);
 
   // The context exposes only the state and setters that consumer components need.
   const value = {

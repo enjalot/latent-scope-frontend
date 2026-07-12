@@ -104,13 +104,15 @@ export const maybeCachedGetHoverText = async (userId, datasetId, scopeId, index)
   );
 };
 
-export const maybeCachedGetScopeRows = async (userId, datasetId, scopeId) => {
-  const requestKey = `${userId}/${datasetId}/${scopeId}`;
+export const maybeCachedGetScopeRows = async (userId, datasetId, scopeId, columns) => {
+  const requestKey = `${userId}/${datasetId}/${scopeId}:${columns ? columns.join(',') : 'all'}`;
 
   return withParquetRequestDeduplication('getScopeRows', requestKey, async () => {
     // Still use the regular cache for persistence across page loads
-    return withCache('getScopeRows', { userId, datasetId, scopeId }, () =>
-      apiService.getScopeRows(userId, datasetId, scopeId)
+    // (JSON.stringify drops an undefined `columns`, so full-read cache keys —
+    // including the pre-baked essay cache — are unchanged.)
+    return withCache('getScopeRows', { userId, datasetId, scopeId, columns }, () =>
+      apiService.getScopeRows(userId, datasetId, scopeId, columns)
     );
   });
 };

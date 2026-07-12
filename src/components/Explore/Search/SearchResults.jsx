@@ -175,7 +175,7 @@ const CustomMenu = ({ children, ...props }) => {
 export const NUM_SEARCH_RESULTS = 4;
 
 const SearchResults = ({ query, menuIsOpen, onSelect, setFilterQuery }) => {
-  const { features, userId, datasetId, scope, clusterLabels } = useScope();
+  const { features, userId, datasetId, scope, clusterLabels, isTokenScope } = useScope();
   const columnFilter = useColumnFilter(userId, datasetId, scope);
   const { columnFilters } = columnFilter;
 
@@ -191,7 +191,9 @@ const SearchResults = ({ query, menuIsOpen, onSelect, setFilterQuery }) => {
 
   // Transform column values into options
   const columnOptions = useMemo(() => {
-    if (!columnFilters) {
+    // Token scopes: the column-filter endpoint has no backing table, and its
+    // results would be document rows, not token points — hide the group.
+    if (!columnFilters || isTokenScope) {
       return [];
     }
 
@@ -212,12 +214,14 @@ const SearchResults = ({ query, menuIsOpen, onSelect, setFilterQuery }) => {
     return options
       .filter((option) => option.value.toString().toLowerCase().includes(searchTerm))
       .slice(0, NUM_SEARCH_RESULTS);
-  }, [columnFilters, query]);
+  }, [columnFilters, query, isTokenScope]);
 
   // Build grouped options.
   // First, if the user has typed something, add a NN option.
+  // (Token scopes: NN search is unavailable — no vector table behind the nn
+  // endpoint — so the option is hidden and the query just filters clusters.)
   const groupedOptions = [];
-  if (query.trim() !== '') {
+  if (query.trim() !== '' && !isTokenScope) {
     groupedOptions.push({
       label: 'Nearest Neighbors',
       options: [
