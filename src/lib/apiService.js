@@ -18,10 +18,12 @@ export const STATIC_BASE = rawStaticBase.endsWith('/') ? rawStaticBase : rawStat
 export const scopeAssetUrl = (userId, datasetId, relPath) =>
   `${STATIC_BASE}${userId}/${datasetId}/${relPath}`;
 
-const { asyncBufferFromUrl, parquetRead } = await import('hyparquet');
+const { asyncBufferFromUrl, parquetRead, parquetReadObjects } = await import('hyparquet');
 
 // Add a cache object at the module level
 const saeFeatureCache = {};
+// SAE label parquets keyed by URL (see getFeatures)
+const featureLabelCache = {};
 
 export const apiService = {
   getScope: async (userId, datasetId, scopeId) => {
@@ -64,28 +66,26 @@ export const apiService = {
       return rows.map((r) => r?.text ?? '');
     }
   },
-  getScopeRows: async (userId, datasetId, scopeId) => {
+  // `columns` (optional) limits which parquet columns are decoded — token
+  // scopes have 100-300x the points of a row scope, so they load only the
+  // columns the Explore view actually reads to keep memory sane.
+  getScopeRows: async (userId, datasetId, scopeId, columns) => {
     const url = `${STATIC_BASE}${userId}/${datasetId}/${scopeId}.parquet`;
     const buffer = await asyncBufferFromUrl(url);
     return new Promise((resolve) => {
       parquetRead({
         file: buffer,
         rowFormat: 'object',
+        columns,
         onComplete: (data) => {
           data.forEach((row, i) => {
+            // int64 columns (cluster, tile/voxel indices, parent_index, ...)
+            // decode as BigInt in hyparquet; the app indexes arrays and
+            // compares with === against plain numbers, so coerce in place.
+            for (const key in row) {
+              if (typeof row[key] === 'bigint') row[key] = Number(row[key]);
+            }
             row.ls_index = i;
-            row.cluster = parseInt(row.cluster);
-            row.raw_cluster = parseInt(row.raw_cluster);
-            row.tile_index_32 = parseInt(row.tile_index_32);
-            row.tile_index_64 = parseInt(row.tile_index_64);
-            row.tile_index_128 = parseInt(row.tile_index_128);
-            // 3D scopes carry a z coordinate + voxel bucket indices (int64 in
-            // parquet -> may arrive as BigInt from hyparquet). Coerce to Number.
-            if (row.z !== undefined && row.z !== null) row.z = Number(row.z);
-            if (row.voxel_index_32 !== undefined && row.voxel_index_32 !== null)
-              row.voxel_index_32 = Number(row.voxel_index_32);
-            if (row.voxel_index_64 !== undefined && row.voxel_index_64 !== null)
-              row.voxel_index_64 = Number(row.voxel_index_64);
           });
           resolve(data);
         },
@@ -111,6 +111,37 @@ export const apiService = {
         },
       });
     });
+  },
+  // Fetch an SAE label parquet (feature id -> label) and join-friendly fields.
+  // Fetches the WHOLE file and parses from the buffer instead of hyparquet's
+  // range-request reader (asyncBufferFromUrl): GitHub Pages answers range
+  // requests with 416 when the client accepts gzip (byte offsets don't exist
+  // in the compressed representation browsers always negotiate), which breaks
+  // label loading from enjalot.github.io entirely. Label parquets are a few
+  // MB — a single gzip-friendly GET is both correct and faster.
+  getFeatures: async (url) => {
+    if (featureLabelCache[url]) return featureLabelCache[url];
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch features parquet (${response.status}): ${url}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const file = {
+      byteLength: arrayBuffer.byteLength,
+      slice: (start, end) => arrayBuffer.slice(start, end),
+    };
+    const rows = await parquetReadObjects({
+      file,
+      columns: ['feature', 'max_activation', 'label', 'order'],
+    });
+    const features = rows.map((f) => ({
+      feature: Number(f.feature),
+      max_activation: f.max_activation,
+      label: f.label,
+      order: f.order,
+    }));
+    featureLabelCache[url] = features;
+    return features;
   },
   getSaeFeatures: async (saeMeta, callback) => {
     // Check if we have cached features for this model
