@@ -14,7 +14,7 @@ const scopes = [
   {
     id: 'enjalot/ls-dadabase/scopes-004',
     label: 'Dadabase',
-    description: '52,751 dad jokes embedded with MiniLM and decomposed into 49K sparse autoencoder features.',
+    description: '50,000 r/dadjokes, lightly curated, embedded with MiniLM',
     dataUrl: 'https://github.com/enjalot/latent-scope/blob/main/notebooks/dadabase.ipynb',
   },
   {
@@ -25,8 +25,8 @@ const scopes = [
   },
   {
     id: 'enjalot/ls-dadabase/scopes-001',
-    label: 'Dadabase (Nomic)',
-    description: '50,000 r/dadjokes, lightly curated',
+    label: 'Dadabase',
+    description: '50,000 r/dadjokes, lightly curated, embedded with Nomic',
     dataUrl: 'https://github.com/enjalot/latent-scope/blob/main/notebooks/dadabase.ipynb',
   },
   {

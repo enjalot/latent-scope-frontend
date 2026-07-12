@@ -1,5 +1,5 @@
 import { Modal, Button } from 'react-element-forge';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import styles from './FeatureModal.module.scss';
 import { useScope } from '../contexts/ScopeContext';
 import { getSaeForModel } from '../lib/SAE';
@@ -22,7 +22,22 @@ function FeatureModal({
   const { scope } = useScope();
   const taxonomyModel = getSaeForModel(scope?.embedding?.model_id)?.label || 'NOMIC_FWEDU_25k';
   const baseUrl = `https://enjalot.github.io/latent-taxonomy#model=${taxonomyModel}&feature=`;
-  const maxAct = Math.max(...topActs);
+
+  // The SAE h5 stores top-k indices/acts in arbitrary order (torch topk with
+  // sorted=False), so "top 15" must sort by activation here — slicing the raw
+  // array showed an arbitrary subset and dropped genuinely strong features.
+  // origIdx preserves the position in the unsorted array, which is what the
+  // canvas hover (hoveredIdx) refers to.
+  const ranked = useMemo(
+    () =>
+      topIndices
+        .map((featIdx, origIdx) => ({ featIdx, act: topActs[origIdx], origIdx }))
+        .filter(({ act }) => act > 0)
+        .sort((a, b) => b.act - a.act),
+    [topIndices, topActs]
+  );
+
+  const maxAct = ranked.length ? ranked[0].act : 1;
   const getWidth = (act) => {
     return `${(act / maxAct) * 100}%`;
   };
@@ -51,16 +66,16 @@ function FeatureModal({
         <Button onClick={onClose} icon="x" color="primary" variant="outline" size="small" />
       </div>
       <div className={styles.content}>
-        {topIndices.slice(0, TO_SHOW).map((featIdx, i) => {
+        {ranked.slice(0, TO_SHOW).map(({ featIdx, act, origIdx }, i) => {
           const feature = features?.[featIdx];
           return (
             <div className={styles.item} key={i} style={itemStyle(featIdx)}>
               <div
                 className={styles.itemBackground}
                 style={{
-                  width: getWidth(topActs[i]),
-                  borderBottom: hoveredIdx === i ? '2px solid #b87333' : 'none',
-                  backgroundColor: hoveredIdx === i ? '#b87333' : '#aaa',
+                  width: getWidth(act),
+                  borderBottom: hoveredIdx === origIdx ? '2px solid #b87333' : 'none',
+                  backgroundColor: hoveredIdx === origIdx ? '#b87333' : '#aaa',
                 }}
               />
               <div className={styles.featureLabel}>
@@ -69,7 +84,7 @@ function FeatureModal({
                   color="primary"
                   variant="outline"
                   size="small"
-                  onClick={() => featureClick(featIdx, topActs[i])}
+                  onClick={() => featureClick(featIdx, act)}
                 />
                 <span
                   title={`${baseUrl}${featIdx}`}
@@ -81,7 +96,7 @@ function FeatureModal({
                   {featIdx}:
                 </span>
                 <span className={styles.filterLabel}>
-                  {feature?.label} [ activation: {topActs?.[i]?.toFixed(3)} /{' '}
+                  {feature?.label} [ activation: {act?.toFixed(3)} /{' '}
                   {feature?.dataset_max?.toFixed(3)}] [count: {feature?.dataset_count}]
                 </span>
               </div>
