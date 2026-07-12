@@ -6,7 +6,7 @@ import {
   maybeCachedGetDatasetFeatures,
   maybeCachedGetScopeRows,
 } from '../lib/cachedApiService';
-import { getSaeForModel } from '../lib/SAE';
+import { getLabelSourceForScope } from '../lib/SAE';
 
 const ScopeContext = createContext(null);
 
@@ -27,11 +27,14 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
 
   useEffect(() => {
     apiService.getScope(userId, datasetId, scopeId).then((scope) => {
-      // Token scopes (granularity: "tokens") have no LanceDB table behind the
-      // Modal API, so the SAE feature surface (per-row plots, feature
-      // filtering) can't work — disable it along with the other API filters.
-      const isTokens = scope.granularity === 'tokens';
-      if (!isTokens && getSaeForModel(scope.embedding?.model_id)) {
+      // Enable the SAE feature surface (per-row/per-token plots, feature modal,
+      // feature search + filtering) whenever we can resolve a label source
+      // (either the embedding-model registry or the scope's own SAE model repo)
+      // OR the scope declares its own sae_id. Token scopes (granularity:
+      // "tokens") now have a LanceDB table behind the Modal feature +
+      // rows-by-index endpoints, so they qualify too. NN + column filters stay
+      // disabled for token scopes (still no backing table for those).
+      if (getLabelSourceForScope(scope) || scope.sae_id) {
         setSae(scope.sae);
       } else {
         delete scope.sae;
@@ -91,7 +94,10 @@ export function ScopeProvider({ children, userParam, datasetParam, scopeParam })
 
   useEffect(() => {
     if (scope?.sae_id) {
-      const saeEntry = getSaeForModel(scope.embedding?.model_id);
+      // Resolve the label parquet from EITHER the embedding-model registry or
+      // the scope's own SAE model repo (token scopes: jina-colbert-v2 has no
+      // registry entry, but its SAE model repo maps to the COLBERT label set).
+      const saeEntry = getLabelSourceForScope(scope);
       if (!saeEntry) return;
       // Join labels to the per-dataset stats BY FEATURE ID, not positionally:
       // label parquets can omit dead features (e.g. MINILM_STAGEJ_49K has

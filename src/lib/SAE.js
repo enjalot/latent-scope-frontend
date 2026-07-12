@@ -23,6 +23,21 @@ export const saeAvailable = {
   },
 };
 
+// Label parquets keyed by the SAE's OWN model repo (not the embedding model).
+// Used for SAEs a scope declares directly — e.g. token-granularity SAEs, whose
+// embedding model (jina-colbert-v2) has no saeAvailable entry. Same
+// whole-buffer fetch as above (GitHub Pages 416s ranged+gzip requests).
+export const saeLabels = {
+  'enjalot/sae-jina-colbert-v2-tokens-64K': {
+    label: 'COLBERT_JINA_64K',
+    url: 'https://enjalot.github.io/latent-taxonomy/models/COLBERT_JINA_64K/features.parquet?cachebust=1',
+  },
+};
+
+export function getLabelsForSaeModel(saeModelId) {
+  return saeLabels[saeModelId] || null;
+}
+
 // Strip the provider prefix from an embedding model id so lookups are
 // prefix-agnostic: the canonical "huggingface-" and the legacy "🤗-" /
 // "transformers-" ids all resolve to the same HF model name.
@@ -37,4 +52,12 @@ export function getSaeForModel(modelId) {
     if (stripHFPrefix(key) === norm) return sae;
   }
   return null;
+}
+
+// Resolve a label parquet source for a scope: either the embedding-model
+// registry (getSaeForModel) or the scope's own SAE model repo (saeLabels).
+export function getLabelSourceForScope(scope) {
+  return (
+    getSaeForModel(scope?.embedding?.model_id) || getLabelsForSaeModel(scope?.sae?.model_id) || null
+  );
 }
