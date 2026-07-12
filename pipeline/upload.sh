@@ -77,7 +77,9 @@ if [[ -d "$LANCE_SRC/$SCOPE.lance" ]]; then
   run modal volume put lancedb "$LANCE_SRC/$SCOPE.lance" "$USER_NS/$DATASET/$SCOPE.lance"
 else
   echo "NOTE: no LanceDB table at $LANCE_SRC/$SCOPE.lance — API endpoints will 500 for this scope."
-  echo "      Run latent-scope's scope export (export_lance) first."
+  echo "      Row scopes: run latent-scope's scope export (export_lance) first."
+  echo "      Token scopes (granularity tokens): ls-scope skips export_lance;"
+  echo "      build the SAE table with pipeline/build_token_sae_lance.py, then re-run."
 fi
 
 echo "Done. Frontend URL id: $USER_NS/$DATASET/$SCOPE (add to src/lib/scopes.js)"
