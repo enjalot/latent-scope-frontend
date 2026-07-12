@@ -117,6 +117,20 @@ def export_parquet(dataset_dir, scope_id, out_dir):
             "(scopes with deleted rows are not supported)"
         )
 
+    # Token scopes: join the char spans (highlighting offsets into the parent
+    # text) from {scope}-input.parquet — scope.py keeps them out of the scope
+    # parquet, but the hosted frontend is static and needs them client-side.
+    if {"parent_index", "token_str"} <= set(names) and "char_start" not in names:
+        input_src = os.path.join(dataset_dir, "scopes", f"{scope_id}-input.parquet")
+        if os.path.exists(input_src):
+            spans = pq.read_table(input_src, columns=["char_start", "char_end"])
+            if spans.num_rows == table.num_rows:
+                table = table.append_column("char_start", spans.column("char_start"))
+                table = table.append_column("char_end", spans.column("char_end"))
+                pq.write_table(table, dst)
+                return table.num_rows, table.column_names
+            log(f"  WARNING: {input_src} rows != scope rows; char spans not joined")
+
     shutil.copyfile(src, dst)
     return table.num_rows, names
 
@@ -329,13 +343,17 @@ def validate(out_dir, scope_id, meta):
     if exported.get("rows") != rows:
         problems.append(f"json rows={exported.get('rows')} != parquet rows={rows}")
 
+    bin_rows = rows
+    if exported.get("granularity") == "tokens":
+        # token scopes: .bin covers the parent documents, not the token rows
+        bin_rows = int((exported.get("dataset") or {}).get("length") or rows)
     bin_size = os.path.getsize(os.path.join(out_dir, f"{scope_id}.bin"))
-    if bin_size != rows * BIN_ROW_BYTES:
-        problems.append(f"bin size {bin_size} != rows*1000 ({rows * BIN_ROW_BYTES}")
+    if bin_size != bin_rows * BIN_ROW_BYTES:
+        problems.append(f"bin size {bin_size} != rows*1000 ({bin_rows * BIN_ROW_BYTES}")
 
     # spot-check bin decoding of first/last rows
     with open(os.path.join(out_dir, f"{scope_id}.bin"), "rb") as f:
-        for i in (0, rows - 1):
+        for i in (0, bin_rows - 1):
             f.seek(i * BIN_ROW_BYTES)
             chunk = f.read(BIN_ROW_BYTES)
             chunk.decode("utf-8", errors="replace")
@@ -386,8 +404,16 @@ def main():
     log(f"  parquet: {rows} rows, columns={columns}")
 
     text_column = pick_text_column(meta, args.text_column)
-    export_bin(dataset_dir, scope_id, out_dir, text_column, rows)
-    log(f"  bin: {rows} rows x {BIN_ROW_BYTES} bytes from column '{text_column}'")
+    # Token scopes (granularity: "tokens") have one parquet row per TOKEN, but
+    # hover/snippet text belongs to the parent documents: the .bin is written
+    # over the dataset's rows and addressed by the parquet's parent_index.
+    bin_rows = rows
+    if meta.get("granularity") == "tokens":
+        input_pf = pq.ParquetFile(os.path.join(dataset_dir, "input.parquet"))
+        bin_rows = input_pf.metadata.num_rows
+        log(f"  token scope: .bin over {bin_rows} parent documents (parquet rows are tokens)")
+    export_bin(dataset_dir, scope_id, out_dir, text_column, bin_rows)
+    log(f"  bin: {bin_rows} rows x {BIN_ROW_BYTES} bytes from column '{text_column}'")
 
     export_thumbnail(dataset_dir, scope_id, out_dir)
     log(f"  png: {scope_id}.png")
